@@ -1,0 +1,124 @@
+name: postgres
+description: PostgreSQL relational database for persistent data storage
+category: database
+version: "15"
+
+# Default configuration
+defaults:
+  image: postgres:15-alpine
+  port: 5432
+  database: local_dev
+  username: postgres
+  password: password
+  memory_limit: 512m
+  persistence: true
+  log_slow_queries: true
+
+# Environment variables this service provides
+environment:
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+  POSTGRES_DB: "${POSTGRES_DB:-local_dev}"
+  POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
+  POSTGRES_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+  DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+
+# Spring Boot configuration
+spring_config:
+  properties:
+    - "spring.datasource.url=jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+    - "spring.datasource.username=${POSTGRES_USER:-postgres}"
+    - "spring.datasource.password=${POSTGRES_PASSWORD:-password}"
+    - "spring.datasource.driver-class-name=org.postgresql.Driver"
+    - "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect"
+    - "spring.jpa.hibernate.ddl-auto=validate"
+    - "spring.jpa.show-sql=true"
+    - "spring.jpa.properties.hibernate.format_sql=true"
+  yaml: |
+    spring:
+      datasource:
+        url: jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}
+        username: ${POSTGRES_USER:-postgres}
+        password: ${POSTGRES_PASSWORD:-password}
+        driver-class-name: org.postgresql.Driver
+      jpa:
+        database-platform: org.hibernate.dialect.PostgreSQLDialect
+        hibernate:
+          ddl-auto: validate
+        show-sql: true
+        properties:
+          hibernate:
+            format_sql: true
+            jdbc:
+              lob:
+                non_contextual_creation: true
+
+# Health check configuration
+health_check:
+  command: ["pg_isready", "-U", "${POSTGRES_USER:-postgres}", "-d", "${POSTGRES_DB:-local_dev}"]
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
+
+# Dependencies
+dependencies: []
+
+# Ports that need to be available
+required_ports:
+  - "${POSTGRES_PORT:-5432}"
+
+# Volume mounts
+volumes:
+  - name: postgres-data
+    mount: /var/lib/postgresql/data
+    description: PostgreSQL database files and data
+  - name: init-scripts
+    mount: /docker-entrypoint-initdb.d
+    description: Database initialization scripts
+    optional: true
+
+# Web interfaces
+web_interfaces: []
+
+# Common CLI commands
+cli_commands:
+  connect: "docker exec -it ${PROJECT_NAME:-local-dev}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev}"
+  backup: "docker exec ${PROJECT_NAME:-local-dev}-postgres pg_dump -U ${POSTGRES_USER:-postgres} ${POSTGRES_DB:-local_dev} > backup.sql"
+  restore: "docker exec -i ${PROJECT_NAME:-local-dev}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev} < backup.sql"
+
+# Documentation links
+docs:
+  - name: PostgreSQL Documentation
+    url: https://www.postgresql.org/docs/
+  - name: Spring Boot Data JPA
+    url: https://docs.spring.io/spring-boot/docs/current/reference/html/data.html#data.sql.jpa-and-spring-data
+  - name: Hibernate PostgreSQL Dialect
+    url: https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#database-dialect
+
+# Common use cases
+use_cases:
+  - Primary application database
+  - User data storage
+  - Transactional data
+  - Relational data modeling
+  - ACID compliance requirements
+  - Complex queries and joins
+  - Data integrity constraints
+
+# Integration notes
+integration_notes:
+  - "Requires PostgreSQL JDBC driver in your application dependencies"
+  - "DDL auto is set to 'validate' - use Flyway/Liquibase for schema management"
+  - "Slow queries (>100ms) are logged for performance debugging"
+  - "pg_stat_statements extension enabled for query performance analysis"
+  - "Default encoding is UTF-8"
+  - "Connection pooling recommended for production applications"
+
+# Required dependencies
+required_dependencies:
+  maven:
+    - "org.postgresql:postgresql"
+  gradle:
+    - "implementation 'org.postgresql:postgresql'"

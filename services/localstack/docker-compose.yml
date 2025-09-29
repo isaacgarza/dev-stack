@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: "${PROJECT_NAME:-local-dev}-localstack"
+    ports:
+      - "${LOCALSTACK_PORT:-4566}:4566"
+      - "${LOCALSTACK_DASHBOARD_PORT:-8055}:8080"
+    environment:
+      - SERVICES=${LOCALSTACK_SERVICES:-sqs,sns}
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - PERSISTENCE=1
+      - LAMBDA_EXECUTOR=docker-reuse
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - START_WEB=1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - EAGER_SERVICE_LOADING=1
+    volumes:
+      - localstack-data:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./init-aws-resources.sh:/etc/localstack/init/ready.d/init-aws-resources.sh:ro
+      - ../../.localstack/aws-resources.json:/tmp/localstack/aws-resources.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    networks:
+      - local-dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  localstack-init:
+    image: amazon/aws-cli:latest
+    container_name: "${PROJECT_NAME:-local-dev}-localstack-init"
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./init-aws-resources.sh:/usr/local/bin/init-aws-resources.sh:ro
+      - localstack-data:/tmp/localstack:rw
+      - ../../.localstack/aws-resources.json:/tmp/localstack/aws-resources.json:ro
+    command: |
+      sh -c "
+        apk add --no-cache curl jq bash
+        chmod +x /usr/local/bin/init-aws-resources.sh
+        /usr/local/bin/init-aws-resources.sh
+      "
+    restart: "no"
+    networks:
+      - local-dev
+
+volumes:
+  localstack-data:
+    driver: local
+
+networks:
+  local-dev:
+    driver: bridge
+    name: "${PROJECT_NAME:-local-dev}-network"

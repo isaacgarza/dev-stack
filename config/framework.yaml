@@ -1,0 +1,206 @@
+# Local Development Framework Configuration
+# This file defines the global framework settings and available services
+
+framework:
+  name: "Local Development Framework"
+  version: "1.0.0"
+  description: "Modular local development environment for microservices"
+
+# Global defaults
+defaults:
+  project_name: "local-dev"
+  environment: "local"
+  network_name: "${PROJECT_NAME:-local-dev}-network"
+  compose_project_name: "${PROJECT_NAME:-local-dev}"
+
+# Available service categories
+categories:
+  database:
+    description: "Persistent data storage services"
+    services: [postgres, mysql]
+  cache:
+    description: "In-memory data storage and caching"
+    services: [redis]
+  observability:
+    description: "Monitoring, logging, and distributed tracing"
+    services: [jaeger, prometheus]
+  messaging:
+    description: "Message queues and event streaming"
+    services: [kafka]
+  cloud-services:
+    description: "Cloud service emulation"
+    services: [localstack]
+
+# Service definitions
+services:
+  redis:
+    enabled: true
+    category: cache
+    description: "In-memory data store for caching and session storage"
+    default_version: "7"
+    memory_requirement: 256
+    startup_time: 10
+
+  postgres:
+    enabled: true
+    category: database
+    description: "Relational database for persistent data storage"
+    default_version: "15"
+    memory_requirement: 512
+    startup_time: 30
+
+  mysql:
+    enabled: true
+    category: database
+    description: "Alternative relational database"
+    default_version: "8"
+    memory_requirement: 512
+    startup_time: 30
+
+  jaeger:
+    enabled: true
+    category: observability
+    description: "Distributed tracing system"
+    default_version: "1.51"
+    memory_requirement: 512
+    startup_time: 20
+
+  prometheus:
+    enabled: true
+    category: observability
+    description: "Metrics collection and monitoring (optional)"
+    default_version: "latest"
+    memory_requirement: 256
+    startup_time: 15
+
+  kafka:
+    enabled: true
+    category: messaging
+    description: "Apache Kafka event streaming platform with Zookeeper"
+    default_version: "latest"
+    memory_requirement: 1280
+    startup_time: 60
+
+  localstack:
+    enabled: true
+    category: cloud-services
+    description: "AWS cloud service emulator"
+    default_version: "latest"
+    memory_requirement: 512
+    startup_time: 30
+
+# Configuration file structure and defaults
+configuration:
+  file_name: "local-dev-config.yaml"
+  location: "same_directory_as_framework"
+
+  # Default configuration when no config file exists
+  default:
+    services:
+      enabled:
+        - redis
+        - jaeger
+
+    overrides: {}
+
+    validation:
+      skip_warnings: false
+      allow_multiple_databases: true
+
+# Service validation rules
+validation_rules:
+  conflicts:
+    mysql_postgres:
+      services: ["mysql", "postgres"]
+      level: "warning"
+      message: "Running both MySQL and PostgreSQL simultaneously. This is unusual and may indicate configuration confusion."
+
+    prometheus_without_metrics:
+      services: ["prometheus"]
+      conditions: ["no_spring_boot_actuator"]
+      level: "warning"
+      message: "Prometheus enabled but no Spring Boot application with actuator detected. Add spring-boot-starter-actuator to expose metrics."
+
+    localstack_many_services:
+      services: ["localstack"]
+      conditions: ["localstack_services_count > 3"]
+      level: "warning"
+      message: "LocalStack configured with many services. This will significantly increase memory usage and startup time."
+
+  resource_warnings:
+    high_memory:
+      threshold: 4096
+      level: "warning"
+      message: "Selected services require significant memory (>4GB). Ensure your system has adequate resources."
+
+    slow_startup:
+      threshold: 120
+      level: "info"
+      message: "Selected services may take over 2 minutes to fully start up."
+
+# Port ranges
+port_ranges:
+  databases: "3306, 5432-5439"
+  caches: "6379-6389"
+  messaging: "9092-9099"
+  monitoring: "9090-9099"
+  tracing: "14250-14299, 16686-16699"
+  web_uis: "8080-8099, 16686-16699"
+  cloud_services: "4566, 8055"
+
+# Default environment variables
+default_environment:
+  COMPOSE_PROJECT_NAME: "${PROJECT_NAME:-local-dev}"
+  COMPOSE_FILE: "docker-compose.generated.yml"
+  ENVIRONMENT: "local"
+  LOG_LEVEL: "DEBUG"
+  SPRING_PROFILES_ACTIVE: "local"
+
+# Framework behavior settings
+behavior:
+  auto_pull_images: true
+  auto_create_networks: true
+  auto_cleanup_on_stop: false
+  check_port_conflicts: true
+  wait_for_health_checks: true
+  generate_env_file: true
+  backup_existing_configs: true
+  config_driven: true
+  require_config_file: false
+
+# Integration settings
+integrations:
+  spring_boot:
+    enabled: true
+    auto_configure: true
+    generate_application_yml: true
+
+  datadog:
+    compatible: true
+    notes: "Framework services work alongside Datadog agents"
+
+  docker_compose:
+    version: "3.8"
+    generate_unified_file: true
+
+# Resource limits (for development safety)
+resource_limits:
+  max_memory_per_service: "2GB"
+  max_total_memory: "8GB"
+  max_services: 10
+  warn_threshold_memory: "4GB"
+
+# Validation rules
+validation:
+  required_docker_version: "20.0"
+  required_compose_version: "2.0"
+  check_available_memory: true
+  check_disk_space: true
+  min_disk_space: "2GB"
+
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "framework.log"
+  max_size: "10MB"
+  retention_days: 7
