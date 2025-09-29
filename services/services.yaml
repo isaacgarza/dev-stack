@@ -1,0 +1,139 @@
+###############################################################
+#  dev-stack: services.yaml                                   #
+#-------------------------------------------------------------#
+#  Single source of truth for dev-stack supported services &   #
+#  their options.                                             #
+#                                                             #
+#  - Used by scripts/generate_docs.py to auto-generate        #
+#    docs/services.md                                         #
+#  - Update this file when adding or changing services/options #
+#  - Do NOT manually edit docs/services.md (auto-generated)    #
+###############################################################
+
+redis:
+  description: In-memory data store for caching and session storage.
+  options:
+    - port
+    - password
+    - memory_limit
+    - persistence
+    - config
+  examples:
+    - "redis-cli -h localhost -p 6379 ping"
+    - "spring.data.redis.host=localhost"
+  usage_notes: "Use Redis for caching, session storage, and pub/sub. Set a password for production-like security."
+  links:
+    - "https://redis.io/documentation"
+    - "https://spring.io/projects/spring-data-redis"
+
+postgres:
+  description: Relational database (PostgreSQL) for structured data.
+  options:
+    - port
+    - database
+    - username
+    - password
+    - memory_limit
+    - shared_preload_libraries
+    - log_statement
+    - log_duration
+    - shared_buffers
+    - effective_cache_size
+    - work_mem
+  examples:
+    - 'psql -h localhost -U postgres -c "SELECT version();"'
+    - "spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev"
+  usage_notes: "Ideal for structured data and transactional workloads. Use overrides to set custom database/user."
+  links:
+    - "https://www.postgresql.org/docs/"
+    - "https://spring.io/projects/spring-data-jpa"
+
+mysql:
+  description: Relational database (MySQL) as an alternative to PostgreSQL.
+  options:
+    - port
+    - database
+    - username
+    - password
+    - root_password
+    - memory_limit
+    - character_set
+    - collation
+    - sql_mode
+    - innodb_buffer_pool_size
+  examples:
+    - 'mysql -h localhost -u root -e "SELECT VERSION();"'
+    - "spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev"
+  usage_notes: "Use MySQL for compatibility with legacy systems or when required by application stack."
+  links:
+    - "https://dev.mysql.com/doc/"
+    - "https://spring.io/projects/spring-data-jpa"
+
+jaeger:
+  description: Distributed tracing system for observability.
+  options:
+    - ui_port
+    - otlp_grpc_port
+    - otlp_http_port
+    - memory_limit
+    - sampling_strategy
+  examples:
+    - "curl http://localhost:16686"
+    - "spring.sleuth.enabled=true"
+  usage_notes: "Use Jaeger to trace requests across microservices. Access the UI at the configured port."
+  links:
+    - "https://www.jaegertracing.io/docs/"
+    - "https://docs.spring.io/spring-cloud-sleuth/docs/current/reference/html/"
+
+prometheus:
+  description: Metrics collection and monitoring system.
+  options:
+    - port
+    - scrape_interval
+    - memory_limit
+    - retention_time
+    - scrape_configs
+  examples:
+    - "curl http://localhost:9090"
+    - "spring.metrics.export.prometheus.enabled=true"
+  usage_notes: "Prometheus scrapes metrics from configured endpoints. Use for monitoring and alerting."
+  links:
+    - "https://prometheus.io/docs/"
+    - "https://micrometer.io/docs/registry/prometheus"
+
+localstack:
+  description: AWS cloud services emulator for local development.
+  options:
+    - port
+    - dashboard_port
+    - memory_limit
+    - services
+    - sqs_queues
+    - sns_topics
+    - dynamodb_tables
+  examples:
+    - "aws --endpoint-url=http://localhost:4566 sqs list-queues"
+    - "spring.cloud.aws.sqs.endpoint=http://localhost:4566"
+  usage_notes: "Emulates AWS APIs for local testing. Enable only the services you need for faster startup."
+  links:
+    - "https://docs.localstack.cloud/"
+    - "https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-endpoints.html"
+
+kafka:
+  description: Event streaming platform for messaging and pub/sub.
+  options:
+    - port
+    - ui_port
+    - zookeeper_port
+    - memory_limit
+    - auto_create_topics
+    - num_partitions
+    - replication_factor
+    - topics
+  examples:
+    - "kafka-topics --bootstrap-server localhost:9092 --list"
+    - "spring.kafka.bootstrap-servers=localhost:9092"
+  usage_notes: "Use Kafka for event-driven architectures. Configure topics and partitions as needed."
+  links:
+    - "https://kafka.apache.org/documentation/"
+    - "https://docs.spring.io/spring-kafka/docs/current/reference/html/"

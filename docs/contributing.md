@@ -1,20 +1,115 @@
 # Contributing Guide
 
+## 📝 Quick Contributor Checklist
+
+- [ ] Set up Python environment with pyenv (see below)
+- [ ] Install dependencies: `pip install -r requirements.txt`
+- [ ] Edit YAML manifests (`scripts/commands.yaml`, `services/services.yaml`) for changes
+- [ ] Run `python scripts/generate_docs.py` to update docs
+- [ ] Commit both the manifest and generated docs
+- [ ] Follow the contributing guide and PR template
+
 This guide explains how to contribute to the Local Development Framework, including adding new services, improving existing functionality, and maintaining the codebase.
 
 ## 📋 Overview
 
 We welcome contributions from the development community! Whether you're fixing bugs, adding new services, improving documentation, or enhancing existing features, your contributions help make the framework better for everyone.
 
+---
+
+## 📚 Automated Documentation & YAML Manifests
+
+**dev-stack** uses YAML manifest files as the single source of truth for commands and services:
+
+---
+
+### 🐍 Python Environment Setup (Recommended)
+
+We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage Python versions and virtual environments for isolation.  
+The required Python version is specified in the `.python-version` file at the root of the repo.
+
+```bash
+# Install pyenv
+curl https://pyenv.run | bash
+
+# Install required Python version (see .python-version)
+pyenv install 3.11.2
+pyenv local 3.11.2
+
+# (Optional) Create and activate a virtualenv
+pyenv virtualenv 3.11.2 dev-stack-env
+pyenv activate dev-stack-env
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+To auto-generate documentation from YAML manifests, dev-stack uses a Python script and the [PyYAML](https://pyyaml.org/) library.
+
+**Run the Doc Generation Script:**
+```bash
+python scripts/generate_docs.py
+```
+
+This will update `docs/reference.md` and `docs/services.md` based on the latest YAML manifests.
+
+**Contributor Workflow Checklist:**
+1. Run `make setup` to set up your Python environment and install dependencies (uses pyenv, virtualenv, and requirements.txt).
+2. Edit `scripts/commands.yaml` and/or `services/services.yaml` to add or update commands/services.
+3. Run `make docs` to regenerate documentation from YAML manifests.
+4. Commit both the manifest and the updated docs.
+5. Never manually edit auto-generated docs (`docs/reference.md`, `docs/services.md`).
+6. Optionally, set up CI or pre-commit hooks to automate doc generation.
+
+- `scripts/commands.yaml`: Lists all available CLI commands and flags for `setup.sh` and `manage.sh`.
+- `services/services.yaml`: Lists all supported services and their configuration options.
+
+Documentation for commands (`docs/reference.md`) and services (`docs/services.md`) is auto-generated from these manifests using the script `scripts/generate_docs.py`.
+
+See the top of `scripts/generate_docs.py` for usage instructions.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Docker and Docker Compose
+- Python 3 (managed via pyenv and virtualenv; see `.python-version`)
+- Make (for running project automation tasks)
 - Basic understanding of YAML, Bash scripting, and Docker
 - Familiarity with the framework's architecture and usage
 
 ### Development Setup
+
+Follow these steps to set up your environment for contributing:
+
+1. Clone the framework repository:
+   ```bash
+   git clone <framework-repo> local-dev-framework-dev
+   cd local-dev-framework-dev
+   ```
+
+2. Set up Python environment and install dependencies:
+   ```bash
+   make setup
+   ```
+   This will use pyenv/virtualenv and requirements.txt.
+
+3. Create a test project to work with:
+   ```bash
+   mkdir test-project
+   cd test-project
+   ```
+
+4. Link to your development framework:
+   ```bash
+   ln -s ../local-dev-framework-dev local-dev-framework
+   ```
+
+5. Test your changes:
+   ```bash
+   ./local-dev-framework/scripts/setup.sh --init
+   ./local-dev-framework/scripts/setup.sh
+   ```
 
 ```bash
 # Clone the framework repository
@@ -38,24 +133,29 @@ ln -s ../local-dev-framework-dev local-dev-framework
 ### Directory Structure
 
 ```
-local-dev-framework/
-├── scripts/                       # Main framework scripts
+dev-stack/
+├── scripts/                       # Main framework scripts and manifests
 │   ├── setup.sh                  # Setup and configuration script
 │   ├── manage.sh                 # Service management script
-│   └── lib/                      # Shared library functions
-├── services/                     # Service definitions
+│   ├── lib/                      # Shared library functions
+│   ├── commands.yaml             # YAML manifest for CLI commands (single source of truth)
+│   └── generate_docs.py          # Python script to auto-generate docs from manifests
+├── services/                     # Service definitions and manifests
 │   ├── redis/                    # Redis service
 │   ├── postgres/                 # PostgreSQL service
 │   ├── mysql/                    # MySQL service
 │   ├── jaeger/                   # Jaeger service
 │   ├── prometheus/               # Prometheus service
 │   ├── localstack/               # LocalStack service
-│   └── kafka/                    # Kafka service
+│   ├── kafka/                    # Kafka service
+│   └── services.yaml             # YAML manifest for all services/options (single source of truth)
 ├── config/                       # Framework configuration
 │   └── framework.yaml            # Framework metadata and defaults
 ├── templates/                    # Configuration templates
 │   └── spring-boot/              # Spring Boot integration templates
-├── docs/                         # Documentation
+├── docs/                         # Documentation (auto-generated and manual)
+│   ├── reference.md              # Auto-generated command reference
+│   ├── services.md               # Auto-generated services guide
 └── local-dev-config.sample.yaml # Sample configuration
 ```
 
@@ -593,6 +693,25 @@ services:
 - Keep formatting consistent
 - Use proper markdown syntax
 
+---
+
+## 📝 How to Update Commands and Services Documentation
+
+You can use the Makefile to automate documentation generation:
+
+1. Edit the YAML manifests (`scripts/commands.yaml`, `services/services.yaml`).
+2. Run `make docs` to regenerate documentation.
+3. Commit both the manifest and the updated docs.
+
+See the Contributor Workflow Checklist above for the recommended steps.
+
+**Note:**  
+Do not manually edit `docs/reference.md` or `docs/services.md`—these files are always generated from the manifests.
+
+**Tip:**  
+You can automate this process with a pre-commit hook or CI workflow. See the script header in `scripts/generate_docs.py` for details.
+
+
 ## 🏆 Recognition
 
 Contributors are recognized in several ways:
@@ -632,6 +751,16 @@ Contributors are recognized in several ways:
 - **Security updates**: Apply security patches promptly
 
 ### Release Process
+
+## 📚 See Also
+
+- [README](../README.md)
+- [Configuration Guide](configuration.md)
+- [Services Guide](services.md)
+- [Setup Guide](setup.md)
+- [Usage Guide](usage.md)
+- [Troubleshooting Guide](troubleshooting.md)
+- [Integration Guide](integration.md)
 
 1. **Version planning**: Plan new features and improvements
 2. **Development cycle**: Implement and test changes

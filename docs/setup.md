@@ -1,6 +1,18 @@
-# Setup & Installation Guide
+# Setup & Installation Guide (dev-stack)
 
-This guide covers everything you need to get the Local Development Framework up and running on your system.
+> **Quick Checklist**
+> - Docker installed and running
+> - Sufficient RAM, disk, and CPU
+> - Framework copied or linked to your project
+> - Initial configuration created and edited
+> - Setup script run and services verified
+> - See troubleshooting below for common issues
+
+
+This guide covers everything you need to get **dev-stack** up and running on your system.
+
+> For a quick start, main configuration example, and command reference, see the [README](../README.md).
+> For troubleshooting and advanced help, see [Troubleshooting Guide](troubleshooting.md).
 
 ## 📋 Prerequisites
 
@@ -256,49 +268,39 @@ ln -s /shared/path/to/local-dev-framework /path/to/your/project/local-dev-framew
 
 ## 🚀 Initial Setup
 
+See the [README](../README.md) for the main configuration example and command reference.
+
 ### 1. Initialize Configuration
 
 ```bash
-cd /path/to/your/project
-./local-dev-framework/scripts/setup.sh --init
+./scripts/setup.sh --init
 ```
 
 This creates a sample `local-dev-config.yaml` file in your project root.
 
 ### 2. Edit Configuration
 
-```bash
-vim local-dev-config.yaml
-```
-
-Customize the configuration for your project needs. See the [Configuration Guide](configuration.md) for detailed options.
+Edit `local-dev-config.yaml` to customize your stack.  
+See the [Configuration Guide](configuration.md) for all options.
 
 ### 3. Run Setup
 
 ```bash
-./local-dev-framework/scripts/setup.sh
+./scripts/setup.sh
 ```
 
 This will:
 - Validate your configuration
 - Pull required Docker images
-- Generate Docker Compose files
+- Generate Docker Compose and environment files
 - Start services
-- Generate Spring Boot configuration (if applicable)
 
 ### 4. Verify Installation
 
 ```bash
-# Check service status
-./local-dev-framework/scripts/manage.sh status
-
-# View connection information
-./local-dev-framework/scripts/manage.sh info
-
-# Test services
-docker ps                                    # See running containers
-curl http://localhost:16686                  # Jaeger UI (if enabled)
-redis-cli -h localhost -p 6379 ping         # Redis (if enabled)
+./scripts/manage.sh status      # Check service status
+./scripts/manage.sh info        # View connection information
+docker ps                      # See running containers
 ```
 
 ## 🔄 Multi-Repository Usage
@@ -420,21 +422,12 @@ After setup, verify everything works:
 - [ ] IDE integration works: Database connections, Redis access
 - [ ] Application connects: Spring Boot can connect to services
 
-## 📚 Next Steps
+## 🗂️ See Also
 
-Once setup is complete:
-
-1. **[Configuration Guide](configuration.md)** - Learn about advanced configuration options
-2. **[Usage Guide](usage.md)** - Daily commands and service management
-3. **[Integration Guide](integration.md)** - Spring Boot and IDE integration
-4. **[Services Guide](services.md)** - Detailed service configurations
-
-## 🆘 Getting Help
-
-If you encounter issues:
-
-1. Check the [Troubleshooting Guide](troubleshooting.md)
-2. Run setup with verbose logging: `./scripts/setup.sh --verbose`
-3. Check service logs: `./scripts/manage.sh logs`
-4. Verify Docker resources: `docker system df`
-5. Contact the development tools team for support
+- [README](../README.md)
+- [Configuration Guide](configuration.md)
+- [Services Guide](services.md)
+- [Usage Guide](usage.md)
+- [Troubleshooting Guide](troubleshooting.md)
+- [Integration Guide](integration.md)
+- [Reference](reference.md)
