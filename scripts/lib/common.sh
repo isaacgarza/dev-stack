@@ -12,6 +12,44 @@ _COMMON_LIB_LOADED=true
 # Framework constants
 FRAMEWORK_VERSION="1.0.0"
 
+
+
+
+# Function to check if a port is in use
+check_port_in_use() {
+    local port=$1
+    if lsof -i:"$port" > /dev/null 2>&1; then
+        print_debug "Port $port is in use."
+        return 0
+    else
+        print_debug "Port $port is available."
+        return 1
+    fi
+}
+
+# Function to parse command-line arguments
+parse_arguments() {
+    print_debug "Starting argument parsing..."
+    for arg in "$@"; do
+        print_debug "Processing argument: $arg"
+        case $arg in
+            --init)
+                print_debug "--init flag detected. Setting INIT_MODE to true."
+                INIT_MODE=true
+                ;;
+            --test)
+                print_debug "--test flag detected. Setting TEST_MODE to true."
+                TEST_MODE=true
+                ;;
+            *)
+                print_warning "Unknown argument: $arg"
+                ;;
+        esac
+    done
+}
+
+
+
 # Determine script directory and framework paths
 if [[ -n "${SCRIPT_DIR:-}" ]]; then
     # Use existing SCRIPT_DIR if already set
@@ -30,8 +68,8 @@ WORK_DIR="$PWD"
 
 # Common configuration files
 FRAMEWORK_CONFIG="$CONFIG_DIR/framework.yaml"
-PROJECT_CONFIG="$WORK_DIR/local-dev-config.yaml"
-SAMPLE_CONFIG="$FRAMEWORK_DIR/local-dev-config.sample.yaml"
+PROJECT_CONFIG="$WORK_DIR/dev-stack-config.yaml"
+SAMPLE_CONFIG="$FRAMEWORK_DIR/dev-stack-config.sample.yaml"
 COMPOSE_FILE="$WORK_DIR/docker-compose.generated.yml"
 ENV_FILE="$WORK_DIR/.env.generated"
 
@@ -47,51 +85,57 @@ NC='\033[0m' # No Color
 
 # Basic logging functions
 print_header() {
-    echo -e "${BOLD}${BLUE}$1${NC}"
+    echo "${BOLD}${BLUE}$1${NC}"
     echo "$(printf '=%.0s' $(seq 1 ${#1}))"
 }
 
+print_debug() {
+    if [ "${DEBUG:-false}" = true ]; then
+        echo "${PURPLE}[DEBUG] $1${NC}"
+    fi
+}
+
 print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+    echo "${GREEN}✅ $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+    echo "${YELLOW}⚠️  $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo "${RED}❌ $1${NC}"
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
+    echo  "${BLUE}ℹ️  $1${NC}"
 }
 
 print_step() {
-    echo -e "${CYAN}📋 $1${NC}"
+    echo "${CYAN}📋 $1${NC}"
 }
 
 print_verbose() {
     if [ "${VERBOSE:-false}" = true ]; then
-        echo -e "${PURPLE}🔍 $1${NC}"
+        echo "${PURPLE}🔍 $1${NC}"
     fi
 }
 
 # Enhanced logging functions for grouped output
 print_sub_info() {
-    echo -e "   ${BLUE}ℹ️  $1${NC}"
+    echo "   ${BLUE}ℹ️  $1${NC}"
 }
 
 print_sub_success() {
-    echo -e "   ${GREEN}✅ $1${NC}"
+    echo "   ${GREEN}✅ $1${NC}"
 }
 
 print_sub_step() {
-    echo -e "   ${CYAN}• $1${NC}"
+    echo "   ${CYAN}• $1${NC}"
 }
 
 print_celebration() {
-    echo -e "${GREEN}🎉 $1${NC}"
+    echo "${GREEN}🎉 $1${NC}"
 }
 
 print_section_break() {
@@ -100,17 +144,18 @@ print_section_break() {
 
 # Show framework banner (corrected version from setup.sh)
 show_banner() {
+    print_debug "Entering show_banner function"
     local version_text="Version $FRAMEWORK_VERSION"
     local version_padding=$(( (62 - ${#version_text}) / 2 ))
     local version_right_padding=$(( 62 - ${#version_text} - version_padding ))
 
-    echo -e "${BOLD}${BLUE}"
+    echo "${BOLD}${BLUE}"
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║              🚀 Local Development Framework                   ║"
+    echo "║                     🚀 dev-stack                             ║"
     printf "║%*s%s%*s║\n" $version_padding "" "$version_text" $version_right_padding ""
     echo "║                   Config-Driven Setup                        ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
+    echo "${NC}"
 }
 
 # Environment and configuration functions
@@ -171,6 +216,7 @@ get_available_services() {
 
 # Parse YAML configuration (simple key extraction)
 parse_yaml_key() {
+    print_debug "Entering parse_yaml_key function with arguments: $@"
     local file="$1"
     local key="$2"
 
@@ -182,6 +228,7 @@ parse_yaml_key() {
 
 # Parse YAML array (simple implementation)
 parse_yaml_array() {
+    print_debug "Entering parse_yaml_array function with arguments: $@"
     local file="$1"
     local key="$2"
 
@@ -203,6 +250,7 @@ parse_yaml_array() {
 
 # Extract service names from project config
 extract_project_services() {
+    print_debug "Entering extract_project_services function with arguments: $@"
     local config_file="${1:-$PROJECT_CONFIG}"
 
     if [ -f "$config_file" ]; then
@@ -229,6 +277,7 @@ extract_project_services() {
 
 # Extract project name from config
 extract_project_name() {
+    print_debug "Entering extract_project_name function with arguments: $@"
     local config_file="${1:-$PROJECT_CONFIG}"
     local project_name
 
@@ -249,11 +298,12 @@ extract_project_name() {
     fi
 
     # Default fallback
-    echo "${project_name:-local-dev}"
+    echo "${project_name:-dev-stack}"
 }
 
 # Check for port conflicts
 check_port_in_use() {
+    print_debug "Entering check_port_in_use function with arguments: $@"
     local port="$1"
     if [ -n "$port" ] && [ "$port" != "null" ]; then
         lsof -i ":$port" >/dev/null 2>&1
@@ -286,6 +336,12 @@ is_framework_volume() {
 
 # Find all framework containers
 find_framework_containers() {
+    print_debug "Entering find_framework_containers function with arguments: $@"
+    if ! command -v docker > /dev/null 2>&1; then
+        print_error "Docker command not found. Ensure Docker is installed and available in PATH."
+        return 1
+    fi
+
     local status_filter="${1:-all}" # all, running, stopped
     local filter_flag=""
 
@@ -295,11 +351,21 @@ find_framework_containers() {
         "all") filter_flag="-a" ;;
     esac
 
+    print_debug "Using filter_flag: $filter_flag"
+    print_debug "Running docker ps command with filter_flag: $filter_flag"
     docker ps $filter_flag --format "{{.Names}}" 2>/dev/null | while read -r container; do
-        if [ -n "$container" ] && is_framework_container "$container"; then
-            echo "$container"
+        print_debug "Checking container: $container"
+        if [ -n "$container" ]; then
+            print_debug "Processing container: $container"
+            if is_framework_container "$container"; then
+                print_debug "Container matches framework pattern: $container"
+                echo "$container"
+            else
+                print_debug "Container does not match framework pattern: $container"
+            fi
         fi
     done
+    print_debug "Exiting find_framework_containers function"
 }
 
 # Find all framework networks
@@ -322,19 +388,24 @@ find_framework_volumes() {
 
 # Validation helper: check if service exists in framework
 validate_service_exists() {
+    print_debug "Entering validate_service_exists function with arguments: $@"
     local service="$1"
     local available_services=($(get_available_services))
 
+    print_debug "Validating service: $service"
     for available in "${available_services[@]}"; do
         if [ "$service" = "$available" ]; then
+            print_debug "Service '$service' is valid."
             return 0
         fi
     done
+    print_debug "Service '$service' is invalid."
     return 1
 }
 
 # Create directory if it doesn't exist
 ensure_directory() {
+    print_debug "Entering ensure_directory function with arguments: $@"
     local dir="$1"
     if [ ! -d "$dir" ]; then
         mkdir -p "$dir"
@@ -343,6 +414,7 @@ ensure_directory() {
 
 # Safe file operations
 backup_file() {
+    print_debug "Entering backup_file function with arguments: $@"
     local file="$1"
     local backup_suffix="${2:-.backup.$(date +%Y%m%d_%H%M%S)}"
 
@@ -365,12 +437,14 @@ cleanup_temp_files() {
 
 # Register temp file for cleanup
 register_temp_file() {
+    print_debug "Entering register_temp_file function with arguments: $@"
     local temp_file="$1"
     TEMP_FILES="${TEMP_FILES:-} $temp_file"
 }
 
 # Create safe temp file
 make_temp_file() {
+    print_debug "Entering make_temp_file function"
     local temp_file=$(mktemp)
     register_temp_file "$temp_file"
     echo "$temp_file"
@@ -383,6 +457,7 @@ setup_cleanup_trap() {
 
 # Version comparison (simple)
 version_compare() {
+    print_debug "Entering version_compare function with arguments: $@"
     local version1="$1"
     local version2="$2"
 

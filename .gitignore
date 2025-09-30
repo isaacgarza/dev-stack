@@ -230,6 +230,9 @@ init-scripts/
 .env.generated
 .env.local
 docker-compose.generated.yml
+dev-stack-config.yaml
+dev-stack-config.bad.yaml
+.devstack-debug
 
 # Ignore backups and temp files
 *.bak

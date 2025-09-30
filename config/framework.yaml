@@ -1,17 +1,17 @@
-# Local Development Framework Configuration
+# dev-stack framework configuration file
 # This file defines the global framework settings and available services
 
 framework:
-  name: "Local Development Framework"
+  name: "dev-stack framework"
   version: "1.0.0"
   description: "Modular local development environment for microservices"
 
 # Global defaults
 defaults:
-  project_name: "local-dev"
+  project_name: "dev-stack"
   environment: "local"
-  network_name: "${PROJECT_NAME:-local-dev}-network"
-  compose_project_name: "${PROJECT_NAME:-local-dev}"
+  network_name: "${PROJECT_NAME:-dev-stack}-network"
+  compose_project_name: "${PROJECT_NAME:-dev-stack}"
 
 # Available service categories
 categories:
@@ -91,7 +91,7 @@ services:
 
 # Configuration file structure and defaults
 configuration:
-  file_name: "local-dev-config.yaml"
+  file_name: "dev-stack-config.yaml"
   location: "same_directory_as_framework"
 
   # Default configuration when no config file exists
@@ -150,7 +150,7 @@ port_ranges:
 
 # Default environment variables
 default_environment:
-  COMPOSE_PROJECT_NAME: "${PROJECT_NAME:-local-dev}"
+  COMPOSE_PROJECT_NAME: "${PROJECT_NAME:-dev-stack}"
   COMPOSE_FILE: "docker-compose.generated.yml"
   ENVIRONMENT: "local"
   LOG_LEVEL: "DEBUG"

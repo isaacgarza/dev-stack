@@ -400,7 +400,7 @@ docker stats
 ### Configuration Issues
 ```bash
 # Validate YAML syntax
-python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"
+python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
 
 # Validate framework configuration
 ./scripts/setup.sh --validate-only
@@ -471,7 +471,7 @@ cat .env.generated
 cat application-local.yml.generated
 
 # Backup configuration
-cp local-dev-config.yaml local-dev-config.yaml.bak
+cp dev-stack-config.yaml dev-stack-config.yaml.bak
 
 # Compare configurations
 diff config1.yaml config2.yaml
@@ -480,7 +480,7 @@ diff config1.yaml config2.yaml
 ## 🌟 Best Practices
 
 ### Configuration Management
-- Use version control for `local-dev-config.yaml`
+- Use version control for `dev-stack-config.yaml`
 - Create team-specific configuration templates
 - Document custom configurations
 - Regular validation with `--validate-only`
@@ -508,14 +508,14 @@ diff config1.yaml config2.yaml
 ## 📁 File Structure Reference
 ```
 your-project/
-├── local-dev-framework/           # Framework directory
+├── dev-stack-framework/           # Framework directory
 │   ├── scripts/
 │   │   ├── setup.sh              # Setup script
 │   │   └── manage.sh             # Management script
 │   ├── services/                  # Service definitions
 │   ├── config/                    # Framework configuration
-│   └── local-dev-config.sample.yaml
-├── local-dev-config.yaml         # Your configuration
+│   └── dev-stack-config.sample.yaml
+├── dev-stack-config.yaml         # Your configuration
 ├── docker-compose.generated.yml  # Generated Docker Compose
 ├── .env.generated                 # Generated environment variables
 ├── application-local.yml.generated # Generated Spring config
@@ -567,7 +567,7 @@ docker --version
 
 # Framework status
 ./scripts/manage.sh info
-cat local-dev-config.yaml
+cat dev-stack-config.yaml
 
 # Recent logs
 ./scripts/manage.sh logs --since=1h

@@ -53,7 +53,16 @@ spring_config:
 
 # Health check configuration
 health_check:
-  command: ["mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER:-root}", "-p${MYSQL_PASSWORD:-password}"]
+  command:
+    [
+      "mysqladmin",
+      "ping",
+      "-h",
+      "localhost",
+      "-u",
+      "${MYSQL_USER:-root}",
+      "-p${MYSQL_PASSWORD:-password}",
+    ]
   interval: 10s
   timeout: 5s
   retries: 5
@@ -81,9 +90,9 @@ web_interfaces: []
 
 # Common CLI commands
 cli_commands:
-  connect: "docker exec -it ${PROJECT_NAME:-local-dev}-mysql mysql -u ${MYSQL_USER:-root} -p${MYSQL_PASSWORD:-password} ${MYSQL_DATABASE:-local_dev}"
-  backup: "docker exec ${PROJECT_NAME:-local-dev}-mysql mysqldump -u ${MYSQL_USER:-root} -p${MYSQL_PASSWORD:-password} ${MYSQL_DATABASE:-local_dev} > backup.sql"
-  restore: "docker exec -i ${PROJECT_NAME:-local-dev}-mysql mysql -u ${MYSQL_USER:-root} -p${MYSQL_PASSWORD:-password} ${MYSQL_DATABASE:-local_dev} < backup.sql"
+  connect: "docker exec -it ${PROJECT_NAME:-dev-stack}-mysql mysql -u ${MYSQL_USER:-root} -p${MYSQL_PASSWORD:-password} ${MYSQL_DATABASE:-local_dev}"
+  backup: "docker exec ${PROJECT_NAME:-dev-stack}-mysql mysqldump -u ${MYSQL_USER:-root} -p${MYSQL_PASSWORD:-password} ${MYSQL_DATABASE:-local_dev} > backup.sql"
+  restore: "docker exec -i ${PROJECT_NAME:-dev-stack}-mysql mysql -u ${MYSQL_USER:-root} -p${MYSQL_PASSWORD:-password} ${MYSQL_DATABASE:-local_dev} < backup.sql"
 
 # Documentation links
 docs:

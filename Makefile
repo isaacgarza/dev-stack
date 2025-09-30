@@ -2,7 +2,7 @@ PYTHON ?= python3
 VENV ?= dev-stack-env
 PYTHON_VERSION := $(shell cat .python-version)
 
-.PHONY: setup docs lint clean help
+.PHONY: setup docs lint clean help test
 
 setup:
 	@echo "Setting up Python environment with pyenv and virtualenv..."
@@ -22,6 +22,7 @@ setup:
 	pyenv local $(PYTHON_VERSION)
 	pyenv virtualenv $(PYTHON_VERSION) $(VENV) || true
 	@echo "Installing dependencies in dev-stack-env virtualenv..."
+	@echo "To activate the virtual environment, run: pyenv activate $(VENV)"
 	$(HOME)/.pyenv/versions/$(VENV)/bin/pip install --upgrade pip
 	$(HOME)/.pyenv/versions/$(VENV)/bin/pip install -r requirements.txt
 
@@ -54,16 +55,26 @@ clean:
 	@echo "Cleaning up generated files..."
 	rm -f docs/reference.md docs/services.md lint.log
 
+test:
+	@echo "Running Python framework tests with pytest..."
+	@if ! command -v pytest >/dev/null 2>&1; then \
+		echo "Error: pytest is not installed. Install it with 'pip install pytest'."; \
+		exit 1; \
+	fi
+	@$(HOME)/.pyenv/versions/$(VENV)/bin/python -m pytest tests/
+
 help:
 	@echo "Available targets:"
 	@echo "  setup   - Set up Python environment and install dependencies"
 	@echo "  docs    - Generate documentation from YAML manifests"
 	@echo "  lint    - Lint Python scripts in scripts/"
 	@echo "  clean   - Remove generated documentation and lint files"
+	@echo "  test    - Run Python framework tests with pytest"
 	@echo "  help    - Show this help message"
 	@echo ""
 	@echo "Usage examples:"
 	@echo "  make setup"
 	@echo "  make docs"
 	@echo "  make lint"
+	@echo "  make test"
 	@echo "  make clean"

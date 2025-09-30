@@ -93,11 +93,11 @@ web_interfaces:
 
 # Common CLI commands
 cli_commands:
-  connect: "docker exec -it ${PROJECT_NAME:-local-dev}-kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning"
-  create_topic: "docker exec ${PROJECT_NAME:-local-dev}-kafka kafka-topics --create --bootstrap-server localhost:9092 --topic test --partitions 3 --replication-factor 1"
-  list_topics: "docker exec ${PROJECT_NAME:-local-dev}-kafka kafka-topics --list --bootstrap-server localhost:9092"
-  describe_topic: "docker exec ${PROJECT_NAME:-local-dev}-kafka kafka-topics --describe --bootstrap-server localhost:9092 --topic"
-  produce_message: "docker exec -it ${PROJECT_NAME:-local-dev}-kafka kafka-console-producer --bootstrap-server localhost:9092 --topic test"
+  connect: "docker exec -it ${PROJECT_NAME:-dev-stack}-kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning"
+  create_topic: "docker exec ${PROJECT_NAME:-dev-stack}-kafka kafka-topics --create --bootstrap-server localhost:9092 --topic test --partitions 3 --replication-factor 1"
+  list_topics: "docker exec ${PROJECT_NAME:-dev-stack}-kafka kafka-topics --list --bootstrap-server localhost:9092"
+  describe_topic: "docker exec ${PROJECT_NAME:-dev-stack}-kafka kafka-topics --describe --bootstrap-server localhost:9092 --topic"
+  produce_message: "docker exec -it ${PROJECT_NAME:-dev-stack}-kafka kafka-console-producer --bootstrap-server localhost:9092 --topic test"
 
 # Documentation links
 docs:

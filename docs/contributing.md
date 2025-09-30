@@ -25,7 +25,7 @@ We welcome contributions from the development community! Whether you're fixing b
 
 ### 🐍 Python Environment Setup (Recommended)
 
-We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage Python versions and virtual environments for isolation.  
+We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage Python versions and virtual environments for isolation.
 The required Python version is specified in the `.python-version` file at the root of the repo.
 
 ```bash
@@ -84,8 +84,8 @@ Follow these steps to set up your environment for contributing:
 
 1. Clone the framework repository:
    ```bash
-   git clone <framework-repo> local-dev-framework-dev
-   cd local-dev-framework-dev
+   git clone <framework-repo> dev-stack-framework-dev
+   cd dev-stack-framework-dev
    ```
 
 2. Set up Python environment and install dependencies:
@@ -102,30 +102,30 @@ Follow these steps to set up your environment for contributing:
 
 4. Link to your development framework:
    ```bash
-   ln -s ../local-dev-framework-dev local-dev-framework
+   ln -s ../dev-stack-framework-dev dev-stack-framework
    ```
 
 5. Test your changes:
    ```bash
-   ./local-dev-framework/scripts/setup.sh --init
-   ./local-dev-framework/scripts/setup.sh
+   ./dev-stack-framework/scripts/setup.sh --init
+   ./dev-stack-framework/scripts/setup.sh
    ```
 
 ```bash
 # Clone the framework repository
-git clone <framework-repo> local-dev-framework-dev
-cd local-dev-framework-dev
+git clone <framework-repo> dev-stack-framework-dev
+cd dev-stack-framework-dev
 
 # Create a test project to work with
 mkdir test-project
 cd test-project
 
 # Link to your development framework
-ln -s ../local-dev-framework-dev local-dev-framework
+ln -s ../dev-stack-framework-dev dev-stack-framework
 
 # Test your changes
-./local-dev-framework/scripts/setup.sh --init
-./local-dev-framework/scripts/setup.sh
+./dev-stack-framework/scripts/setup.sh --init
+./dev-stack-framework/scripts/setup.sh
 ```
 
 ## 🏗️ Architecture Overview
@@ -156,7 +156,7 @@ dev-stack/
 ├── docs/                         # Documentation (auto-generated and manual)
 │   ├── reference.md              # Auto-generated command reference
 │   ├── services.md               # Auto-generated services guide
-└── local-dev-config.sample.yaml # Sample configuration
+└── dev-stack-config.sample.yaml # Sample configuration
 ```
 
 ### Service Structure
@@ -207,7 +207,7 @@ defaults:
   memory_limit: "256m"
   cpu_limit: "0.5"
   restart_policy: "unless-stopped"
-  
+
   # Environment variables
   environment:
     MY_SERVICE_HOST: "localhost"
@@ -244,7 +244,7 @@ health_check:
 # Dependencies (other services required)
 dependencies:
   - redis  # Optional dependency
-  
+
 # Spring Boot integration
 spring_boot:
   enabled: true
@@ -270,7 +270,7 @@ resources:
     min: "100m"
     recommended: "1g"
 
-# Tags for service discovery and grouping  
+# Tags for service discovery and grouping
 tags:
   - "database"
   - "nosql"
@@ -296,7 +296,7 @@ services:
       - my-service-data:/data
       - ${MY_SERVICE_CONFIG_FILE:-./config/my-service.conf}:/etc/my-service/my-service.conf:ro
     networks:
-      - ${NETWORK_NAME:-local-dev-framework}
+      - ${NETWORK_NAME:-dev-stack-framework}
     restart: ${MY_SERVICE_RESTART_POLICY:-unless-stopped}
     mem_limit: ${MY_SERVICE_MEMORY_LIMIT:-256m}
     cpus: ${MY_SERVICE_CPU_LIMIT:-0.5}
@@ -307,18 +307,18 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      - "local-dev-framework.service=my-service"
-      - "local-dev-framework.project=${PROJECT_NAME}"
+      - "dev-stack-framework.service=my-service"
+      - "dev-stack-framework.project=${PROJECT_NAME}"
 
 volumes:
   my-service-data:
     driver: local
     labels:
-      - "local-dev-framework.service=my-service"
-      - "local-dev-framework.project=${PROJECT_NAME}"
+      - "dev-stack-framework.service=my-service"
+      - "dev-stack-framework.project=${PROJECT_NAME}"
 
 networks:
-  local-dev-framework:
+  dev-stack-framework:
     external: true
 ```
 
@@ -389,19 +389,19 @@ services:
 cd test-project
 echo "services:
   enabled:
-    - my-service" > local-dev-config.yaml
+    - my-service" > dev-stack-config.yaml
 
-./local-dev-framework/scripts/setup.sh
-./local-dev-framework/scripts/manage.sh status
-./local-dev-framework/scripts/manage.sh info my-service
+./dev-stack-framework/scripts/setup.sh
+./dev-stack-framework/scripts/manage.sh status
+./dev-stack-framework/scripts/manage.sh info my-service
 
 # Test with other services
 echo "services:
   enabled:
     - redis
-    - my-service" > local-dev-config.yaml
+    - my-service" > dev-stack-config.yaml
 
-./local-dev-framework/scripts/setup.sh
+./dev-stack-framework/scripts/setup.sh
 ```
 
 ## 🔧 Improving Existing Services
@@ -640,14 +640,14 @@ set -euo pipefail
 function my_function() {
     local param1="$1"
     local param2="${2:-default}"
-    
+
     # Use descriptive variable names
     local service_name="$param1"
     local config_file="$param2"
-    
+
     # Quote variables
     echo "Processing service: ${service_name}"
-    
+
     # Check for required parameters
     if [[ -z "${service_name}" ]]; then
         echo "Error: Service name is required" >&2
@@ -677,7 +677,7 @@ services:
     environment:
       SERVICE_HOST: "localhost"
       SERVICE_PASSWORD: "${PASSWORD:-}"
-    
+
     # Use comments for complex configurations
     health_check:
       # Check every 30 seconds with 10 second timeout
@@ -705,10 +705,10 @@ You can use the Makefile to automate documentation generation:
 
 See the Contributor Workflow Checklist above for the recommended steps.
 
-**Note:**  
+**Note:**
 Do not manually edit `docs/reference.md` or `docs/services.md`—these files are always generated from the manifests.
 
-**Tip:**  
+**Tip:**
 You can automate this process with a pre-commit hook or CI workflow. See the script header in `scripts/generate_docs.py` for details.
 
 
@@ -726,7 +726,7 @@ Contributors are recognized in several ways:
 ### Development Questions
 
 - **Architecture questions**: Review existing service implementations
-- **Integration questions**: Check Spring Boot template examples  
+- **Integration questions**: Check Spring Boot template examples
 - **Testing questions**: Look at existing service test patterns
 
 ### Code Review

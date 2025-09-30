@@ -1,18 +1,19 @@
-# Local Development Framework Configuration
-# Copy this file to 'local-dev-config.yaml' in the same directory and customize as needed
+# dev-stack Configuration
+# Copy this file to 'dev-stack-config.yaml' in the same directory and customize as needed
 
 # Project configuration
 project:
-  name: "my-project" # Used for container names and network naming
-  environment: "local"
+  # Used for container names and network naming
+  name: dev-stack
+  environment: local
 
 # Services to enable
 services:
   enabled:
     - redis
-    - postgres
     - jaeger
-    # - mysql        # Alternative to postgres
+    # - postgres     # Relational database for persistent data storage
+    # - mysql        # Relational database (alternative to postgres)
     # - prometheus   # Metrics collection (requires Spring Boot Actuator)
     # - localstack   # AWS service emulation
     # - kafka        # Event streaming platform
