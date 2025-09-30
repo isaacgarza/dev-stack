@@ -1,5 +1,29 @@
 # Troubleshooting Guide
 
+## 🚨 Top 5 Issues (Quick Reference)
+
+1. **Docker Not Running**  
+   - Run `docker info` to check status.
+   - Start Docker/Colima if not running.
+
+2. **Port Conflicts**  
+   - Run `lsof -i :PORT_NUMBER` to find conflicts.
+   - Use `--cleanup-existing` to resolve.
+
+3. **Service Won't Start**  
+   - Check logs: `./scripts/manage.sh logs SERVICE_NAME`
+   - Restart service: `./scripts/manage.sh restart SERVICE_NAME`
+
+4. **Memory Issues**  
+   - Check usage: `docker stats`
+   - Increase Docker memory limit.
+
+5. **Invalid Configuration**  
+   - Validate YAML: `python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"`
+   - Run setup with debug: `./scripts/setup.sh --debug`
+
+---
+
 This guide covers common issues, debugging techniques, and solutions for the Local Development Framework.
 
 ## 📋 Overview
@@ -823,6 +847,18 @@ export DEBUG=1
 - **[Quick Reference](reference.md)** - Commands cheatsheet
 
 ## 🏥 Emergency Procedures
+
+---
+
+## 📚 See Also
+
+- [README](../README.md)
+- [Setup Guide](setup.md)
+- [Configuration Guide](configuration.md)
+- [Services Guide](services.md)
+- [Usage Guide](usage.md)
+- [Integration Guide](integration.md)
+- [Contributing Guide](contributing.md)
 
 ### Complete System Recovery
 

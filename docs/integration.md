@@ -4,6 +4,14 @@ This guide covers integrating the Local Development Framework with Spring Boot a
 
 ## 📋 Overview
 
+### Quick Integration Patterns
+
+- **Spring Boot:** Use generated configuration for datasource, Redis, Kafka, and AWS services.
+- **CI/CD:** Use framework services in GitHub Actions, GitLab CI, or Docker Compose for integration tests.
+- **IDE Integration:** Connect to framework databases, Redis, Kafka, and LocalStack from IntelliJ or VS Code.
+- **Testcontainers:** Use framework images or connect to running services for integration tests.
+
+
 The framework automatically generates configuration files and provides seamless integration with popular development tools and frameworks. This guide shows how to make the most of these integrations.
 
 ## 🍃 Spring Boot Integration
@@ -676,7 +684,16 @@ public class FrameworkMetrics {
 }
 ```
 
-## 📚 Next Steps
+## 🧭 Next Steps
+
+## 📚 See Also
+
+- [README](../README.md)
+- [Configuration Guide](configuration.md)
+- [Services Guide](services.md)
+- [Usage Guide](usage.md)
+- [Troubleshooting Guide](troubleshooting.md)
+- [Contributing Guide](contributing.md)
 
 - **[Configuration Guide](configuration.md)** - Advanced configuration options
 - **[Services Guide](services.md)** - Detailed service information

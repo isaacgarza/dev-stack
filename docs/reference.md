@@ -2,125 +2,97 @@
 
 This is a quick reference guide for the Local Development Framework, providing essential commands, configurations, and troubleshooting tips.
 
-## 📋 Essential Commands
+<!-- AUTO-GENERATED-START -->
+# Command Reference (dev-stack)
 
-### Setup Commands
+This section is auto-generated from `scripts/commands.yaml`.
+
+## setup
+- `--init`
+- `--services`
+- `--project`
+- `--cleanup-existing`
+- `--connect-existing`
+- `--force`
+- `--dry-run`
+- `--skip-validation`
+- `--validate-only`
+- `--debug`
+- `--config`
+- `--list-services`
+- `--interactive`
+
+## manage
+- `start`
+- `stop`
+- `restart`
+- `info`
+- `status`
+- `logs`
+- `connect`
+- `exec`
+- `backup`
+- `restore`
+- `update`
+- `cleanup`
+- `list-all`
+- `cleanup-all`
+- `monitor`
+- `scale`
+- `cp`
+- `help`
+<!-- AUTO-GENERATED-END -->
+
+> **Note:** The section above is auto-generated and lists all available commands and flags. For practical usage, workflows, and troubleshooting, see below.
+
+## 🚀 Usage Patterns
+
+### Common Workflows
+
+#### Starting All Services
 ```bash
-# Initialize configuration
-./scripts/setup.sh --init
-
-# Setup with default config
-./scripts/setup.sh
-
-# Setup with specific services
-./scripts/setup.sh --services=redis,postgres,jaeger
-
-# Interactive setup
-./scripts/setup.sh --interactive
-
-# Dry run (preview changes)
-./scripts/setup.sh --dry-run
-
-# Force recreation
-./scripts/setup.sh --force
-
-# Validate configuration only
-./scripts/setup.sh --validate-only
-```
-
-### Management Commands
-```bash
-# Start all services
 ./scripts/manage.sh start
+```
+See the auto-generated section above for all available flags.
 
-# Stop all services
+#### Stopping All Services
+```bash
 ./scripts/manage.sh stop
+```
 
-# Restart all services
-./scripts/manage.sh restart
-
-# Service status
-./scripts/manage.sh status
-
-# Connection information
-./scripts/manage.sh info
-
-# View logs
+#### Viewing Logs
+```bash
 ./scripts/manage.sh logs
-
-# Follow logs
 ./scripts/manage.sh logs -f
-
-# Monitor resources
-./scripts/manage.sh monitor
 ```
 
-### Service-Specific Commands
+#### Service-Specific Actions
 ```bash
-# Start specific service
 ./scripts/manage.sh start redis
-
-# Stop specific service
 ./scripts/manage.sh stop postgres
-
-# View service logs
-./scripts/manage.sh logs postgres
-
-# Connect to service CLI
 ./scripts/manage.sh connect postgres
-./scripts/manage.sh connect redis
-./scripts/manage.sh connect mysql
-
-# Execute commands in container
-./scripts/manage.sh exec postgres psql -U postgres
-./scripts/manage.sh exec redis redis-cli INFO
 ```
 
-### Data Management
+#### Data Management
 ```bash
-# Backup databases
 ./scripts/manage.sh backup postgres
-./scripts/manage.sh backup mysql
-
-# Restore from backup
 ./scripts/manage.sh restore postgres backup.sql
-
-# Clear Redis cache
-./scripts/manage.sh exec redis redis-cli FLUSHALL
-
-# Copy files to/from containers
-./scripts/manage.sh cp backup.sql postgres:/tmp/
-./scripts/manage.sh cp postgres:/tmp/export.sql ./
 ```
 
-### Multi-Repository Management
+#### Multi-Repository Management
 ```bash
-# List all framework instances
 ./scripts/manage.sh list-all
-
-# Cleanup all instances (all repos)
 ./scripts/manage.sh cleanup-all
-
-# Handle existing instances
-./scripts/setup.sh --cleanup-existing
-./scripts/setup.sh --connect-existing
 ```
 
-### Maintenance Commands
+#### Maintenance
 ```bash
-# Update service images
 ./scripts/manage.sh update
-
-# Clean up unused Docker resources
 ./scripts/manage.sh cleanup-docker
-
-# Complete cleanup (destructive!)
-./scripts/manage.sh cleanup
-
-# Show help
-./scripts/setup.sh --help
-./scripts/manage.sh --help
 ```
+
+> See the auto-generated section above for a complete list of commands and flags.
+
 
 ## 🌐 Default Service Ports
 

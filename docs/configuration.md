@@ -1,41 +1,22 @@
-# Configuration Guide
+# Configuration Guide (dev-stack)
 
-This guide covers all configuration options for the Local Development Framework, from basic setups to advanced configurations with multiple services.
+> For troubleshooting configuration issues, see [Troubleshooting Guide](troubleshooting.md).
+
+This guide covers all configuration options for **dev-stack**, from basic setups to advanced configurations with multiple services.
 
 ## 📋 Overview
 
-The framework uses a single `local-dev-config.yaml` file to define your entire development stack. This configuration-driven approach ensures consistency across team members and projects.
+**dev-stack** uses a single `local-dev-config.yaml` file to define your entire development stack. This configuration-driven approach ensures consistency across team members and projects.
+
+> For a quick checklist of configuration best practices, see the end of this guide.
 
 ## 🚀 Quick Start
 
 ### 1. Create Configuration File
 
-```bash
-./scripts/setup.sh --init
-```
+See the [README](../README.md) for a quick start and command reference.
 
-This creates a sample `local-dev-config.yaml` with common defaults.
-
-### 2. Basic Configuration Structure
-
-```yaml
-# local-dev-config.yaml
-project:
-  name: "my-api"
-  environment: "local"
-
-services:
-  enabled:
-    - redis
-    - postgres
-    - jaeger
-
-overrides: {}
-
-validation:
-  skip_warnings: false
-  allow_multiple_databases: false
-```
+For a full configuration schema and examples, continue below.
 
 ## 🏗️ Configuration Schema
 
@@ -721,9 +702,11 @@ python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"
 ./scripts/setup.sh --validate-only
 ```
 
-## 📚 Next Steps
+## 🧭 See Also
 
-- **[Services Guide](services.md)** - Detailed information about each service
-- **[Usage Guide](usage.md)** - Daily commands and workflows
-- **[Integration Guide](integration.md)** - Spring Boot and IDE integration
-- **[Troubleshooting](troubleshooting.md)** - Common issues and solutions
+- [README](../README.md)
+- [Services Guide](services.md)
+- [Usage Guide](usage.md)
+- [Integration Guide](integration.md)
+- [Troubleshooting Guide](troubleshooting.md)
+- [Contributing Guide](contributing.md)
