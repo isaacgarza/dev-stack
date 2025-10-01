@@ -142,7 +142,7 @@ spring:
   datasource:
     url: jdbc:tc:postgresql:15:///test_db
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
-  
+
   # Or connect to running framework services
   datasource:
     url: jdbc:postgresql://localhost:5432/local_dev
@@ -173,7 +173,7 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:kafka'
     testImplementation 'org.testcontainers:localstack'
-    
+
     // Use framework services instead of embedded
     testImplementation 'redis.clients:jedis'
     testRuntimeOnly 'org.postgresql:postgresql'
@@ -211,13 +211,13 @@ class IntegrationTest {
 @SpringBootTest
 @Testcontainers
 class ContainerizedIntegrationTest {
-    
+
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test_db")
             .withUsername("test_user")
             .withPassword("test_password");
-    
+
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -242,10 +242,10 @@ Install these plugins for better Docker/framework integration:
 
 ```bash
 # Copy the entire framework to your project
-cp -r /path/to/local-dev-framework /path/to/your/project/
+cp -r /path/to/dev-stack-framework /path/to/your/project/
 
 # Make scripts executable
-chmod +x /path/to/your/project/local-dev-framework/scripts/*.sh
+chmod +x /path/to/your/project/dev-stack-framework/scripts/*.sh
 ```
 
 ### Option 2: Git Submodule (Recommended)
@@ -253,7 +253,7 @@ chmod +x /path/to/your/project/local-dev-framework/scripts/*.sh
 ```bash
 # Add framework as a git submodule
 cd /path/to/your/project
-git submodule add <framework-repo-url> local-dev-framework
+git submodule add <framework-repo-url> dev-stack-framework
 
 # Initialize and update submodule
 git submodule update --init --recursive
@@ -263,7 +263,7 @@ git submodule update --init --recursive
 
 ```bash
 # Create symbolic link to shared framework
-ln -s /shared/path/to/local-dev-framework /path/to/your/project/local-dev-framework
+ln -s /shared/path/to/dev-stack-framework /path/to/your/project/dev-stack-framework
 ```
 
 ## 🚀 Initial Setup
@@ -276,11 +276,11 @@ See the [README](../README.md) for the main configuration example and command re
 ./scripts/setup.sh --init
 ```
 
-This creates a sample `local-dev-config.yaml` file in your project root.
+This creates a sample `dev-stack-config.yaml` file in your project root.
 
 ### 2. Edit Configuration
 
-Edit `local-dev-config.yaml` to customize your stack.  
+Edit `dev-stack-config.yaml` to customize your stack.
 See the [Configuration Guide](configuration.md) for all options.
 
 ### 3. Run Setup
@@ -316,18 +316,18 @@ The framework automatically detects existing instances from other repositories a
 **First Repository:**
 ```bash
 cd /path/to/repo1
-./local-dev-framework/scripts/setup.sh
+./dev-stack-framework/scripts/setup.sh
 # Services start on standard ports
 ```
 
 **Second Repository (Conflict Detection):**
 ```bash
 cd /path/to/repo2
-./local-dev-framework/scripts/setup.sh
+./dev-stack-framework/scripts/setup.sh
 
 # Framework detects existing instances and prompts:
 # 1) Clean up existing instances and start fresh
-# 2) Connect to existing instances (reuse repo1's services) 
+# 2) Connect to existing instances (reuse repo1's services)
 # 3) Cancel setup
 
 # Choose option 2 to reuse services, or 1 to start fresh
@@ -337,13 +337,13 @@ cd /path/to/repo2
 
 ```bash
 # Auto-cleanup existing and start fresh
-./local-dev-framework/scripts/setup.sh --cleanup-existing
+./dev-stack-framework/scripts/setup.sh --cleanup-existing
 
 # Auto-connect to existing instances
-./local-dev-framework/scripts/setup.sh --connect-existing  
+./dev-stack-framework/scripts/setup.sh --connect-existing
 
 # Force cleanup without prompts
-./local-dev-framework/scripts/setup.sh --force
+./dev-stack-framework/scripts/setup.sh --force
 ```
 
 ## 🐛 Common Setup Issues
@@ -369,7 +369,7 @@ sudo usermod -aG docker $USER
 # Logout and login again
 
 # Or run with sudo (temporary)
-sudo ./local-dev-framework/scripts/setup.sh
+sudo ./dev-stack-framework/scripts/setup.sh
 ```
 
 ### Port Conflicts
@@ -382,7 +382,7 @@ lsof -i :6379
 kill -9 PID
 
 # Or let framework handle it
-./local-dev-framework/scripts/setup.sh --cleanup-existing
+./dev-stack-framework/scripts/setup.sh --cleanup-existing
 ```
 
 ### Memory Issues

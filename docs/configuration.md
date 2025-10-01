@@ -6,7 +6,7 @@ This guide covers all configuration options for **dev-stack**, from basic setups
 
 ## 📋 Overview
 
-**dev-stack** uses a single `local-dev-config.yaml` file to define your entire development stack. This configuration-driven approach ensures consistency across team members and projects.
+**dev-stack** uses a single `dev-stack-config.yaml` file to define your entire development stack. This configuration-driven approach ensures consistency across team members and projects.
 
 > For a quick checklist of configuration best practices, see the end of this guide.
 
@@ -24,8 +24,10 @@ For a full configuration schema and examples, continue below.
 
 ```yaml
 project:
-  name: "my-project"        # Used for container names and network naming
-  environment: "local"      # Development environment identifier
+  # Used for container names and network naming
+  name: "my-project"
+  # Development environment identifier
+  environment: "local"
 ```
 
 **Properties:**
@@ -49,7 +51,7 @@ services:
 **Available Services:**
 - **redis**: In-memory data structure store
 - **postgres**: PostgreSQL relational database
-- **mysql**: MySQL relational database  
+- **mysql**: MySQL relational database
 - **jaeger**: Distributed tracing system
 - **prometheus**: Metrics collection and monitoring
 - **localstack**: AWS services emulation (SQS, SNS, DynamoDB, S3, etc.)
@@ -208,7 +210,7 @@ overrides:
       - sns
       - dynamodb
       - s3
-    
+
     # SQS queues to create automatically
     sqs_queues:
       - name: "user-events"
@@ -218,7 +220,7 @@ overrides:
         dead_letter_queue: true  # Creates "user-events-dlq"
       - name: "notifications"
         dead_letter_queue: "notifications-dlq"  # Custom DLQ name
-    
+
     # SNS topics to create automatically
     sns_topics:
       - name: "user-notifications"
@@ -227,7 +229,7 @@ overrides:
           - protocol: "sqs"
             endpoint: "user-events"
             raw_message_delivery: true
-    
+
     # DynamoDB tables to create automatically
     dynamodb_tables:
       - name: "users"
@@ -293,7 +295,7 @@ overrides:
     auto_create_topics: true
     num_partitions: 3
     replication_factor: 1
-    
+
     # Custom topics to create
     topics:
       - name: "user-events"
@@ -480,13 +482,13 @@ You can create different configurations for different environments:
 
 ```bash
 # Development configuration
-cp local-dev-config.yaml local-dev-config.dev.yaml
+cp dev-stack-config.yaml dev-stack-config.dev.yaml
 
-# Testing configuration  
-cp local-dev-config.yaml local-dev-config.test.yaml
+# Testing configuration
+cp dev-stack-config.yaml dev-stack-config.test.yaml
 
 # Use specific config
-./scripts/setup.sh --config=local-dev-config.test.yaml
+./scripts/setup.sh --config=dev-stack-config.test.yaml
 ```
 
 ### Configuration Validation
@@ -582,7 +584,7 @@ If migrating from the old template system:
 ./scripts/setup.sh --template=web-api
 
 # New way - create equivalent config
-cat > local-dev-config.yaml << EOF
+cat > dev-stack-config.yaml << EOF
 services:
   enabled:
     - redis
@@ -597,13 +599,13 @@ When updating the framework:
 
 ```bash
 # Backup current config
-cp local-dev-config.yaml local-dev-config.yaml.bak
+cp dev-stack-config.yaml dev-stack-config.yaml.bak
 
 # Generate new sample
 ./scripts/setup.sh --init --force
 
 # Merge changes manually
-diff local-dev-config.yaml.bak local-dev-config.yaml
+diff dev-stack-config.yaml.bak dev-stack-config.yaml
 ```
 
 ## 📋 Configuration Reference
@@ -630,28 +632,28 @@ overrides:
     port: 6379
     password: "dev-redis-password"
     memory_limit: "256m"
-    
+
   postgres:
     port: 5432
     database: "awesome_api_dev"
     username: "api_user"
     password: "dev-db-password"
     memory_limit: "512m"
-    
+
   jaeger:
     ui_port: 16686
     memory_limit: "256m"
-    
+
   prometheus:
     port: 9090
     scrape_interval: "15s"
-    
+
   localstack:
     services: ["sqs", "sns", "s3"]
     sqs_queues:
       - name: "events"
         dead_letter_queue: true
-        
+
   kafka:
     auto_create_topics: true
     topics:
@@ -671,7 +673,7 @@ validation:
 **Invalid YAML syntax:**
 ```bash
 # Validate YAML syntax
-python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"
+python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
 ```
 
 **Service conflicts:**

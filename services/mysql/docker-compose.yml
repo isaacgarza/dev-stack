@@ -1,7 +1,7 @@
 services:
   mysql:
     image: mysql:8-oracle
-    container_name: "${PROJECT_NAME:-local-dev}-mysql"
+    container_name: "${PROJECT_NAME:-dev-stack}-mysql"
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     environment:
@@ -14,13 +14,23 @@ services:
       - ./init-scripts:/docker-entrypoint-initdb.d
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD:-password}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_PASSWORD:-password}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
     networks:
-      - local-dev
+      - dev-stack
     command: >
       --default-authentication-plugin=mysql_native_password
       --slow-query-log=1
@@ -35,6 +45,6 @@ volumes:
     driver: local
 
 networks:
-  local-dev:
+  dev-stack:
     driver: bridge
-    name: "${PROJECT_NAME:-local-dev}-network"
+    name: "${PROJECT_NAME:-dev-stack}-network"

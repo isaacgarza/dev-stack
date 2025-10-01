@@ -1,116 +1,176 @@
 #!/usr/bin/env bash
+echo "[DEBUG] setup.sh execution started."
 
-# Local Development Framework - Config-Driven Setup Script
-# This script provides a configuration-driven way to set up local development environments
+# Simplified setup.sh for testing common.sh sourcing
+INIT_MODE=false
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "[DEBUG] Current working directory: $(pwd)"
+MANAGE_SH_PATH="$SCRIPT_DIR/manage.sh"
+echo "[DEBUG] SCRIPT_DIR is resolved to: $SCRIPT_DIR"
+echo "[DEBUG] Resolving manage.sh path to: $MANAGE_SH_PATH"
+ls -l "$MANAGE_SH_PATH"
+if ls "$MANAGE_SH_PATH" > /dev/null 2>&1; then
+    echo "[DEBUG] Successfully located manage.sh at $MANAGE_SH_PATH"
+    echo "[DEBUG] Re-sourcing common.sh to ensure all functions are loaded..."
+    source "$SCRIPT_DIR/lib/common.sh"
+    echo "[DEBUG] Logging available functions after re-sourcing common.sh:"
+    declare -F
+    if find_framework_containers > /dev/null 2>&1; then
+        echo "[DEBUG] find_framework_containers function is available."
+    else
+        echo "[ERROR] find_framework_containers function is not available after re-sourcing common.sh."
+        echo "[DEBUG] Checking if docker command is available..."
+        if ! command -v docker > /dev/null 2>&1; then
+            echo "[ERROR] Docker command not found. Ensure Docker is installed and available in PATH."
+        else
+            echo "[DEBUG] Docker command is available."
+        fi
+        exit 1
+    fi
+else
+    echo "[ERROR] manage.sh not found at $MANAGE_SH_PATH"
+    exit 1
+fi
+
+# Initialize variables from common.sh
+init_common_lib
+
+# Source services.sh
+SERVICES_SH_PATH="$SCRIPT_DIR/lib/services.sh"
+echo "[DEBUG] Resolving services.sh path to: $SERVICES_SH_PATH"
+if [ -f "$SERVICES_SH_PATH" ]; then
+    source "$SERVICES_SH_PATH"
+else
+    echo "[ERROR] services.sh not found at $SERVICES_SH_PATH"
+    exit 1
+fi
+
+# Function definitions
+initialize_config() {
+    echo "[DEBUG] Entering initialize_config function."
+    print_step "Initializing configuration..."
+    if [ ! -f "$WORK_DIR/dev-stack-config.yaml" ]; then
+        echo "[DEBUG] dev-stack-config.yaml not found. Creating from sample."
+        cp "$SAMPLE_CONFIG" "$WORK_DIR/dev-stack-config.yaml"
+        print_success "Configuration initialized successfully."
+    else
+        echo "[DEBUG] dev-stack-config.yaml already exists. Skipping initialization."
+        print_info "Configuration already exists. Skipping initialization."
+    fi
+    echo "[DEBUG] Exiting initialize_config function."
+}
+
+# Parse command-line arguments
+echo "[DEBUG] Starting argument parsing..."
+echo "[DEBUG] Initial arguments: $@"
+for arg in "$@"; do
+    echo "[DEBUG] Processing argument: $arg"
+    case $arg in
+        --init)
+            echo "[DEBUG] --init flag detected. Setting INIT_MODE to true."
+            INIT_MODE=true
+            ;;
+        --test)
+
+            ;;
+        *)
+            echo "[DEBUG] Adding unrecognized argument to FORWARD_ARGS: $arg"
+            FORWARD_ARGS+=("$arg")
+            ;;
+    esac
+done
+
+# Debug FORWARD_ARGS after processing all arguments
+echo "[DEBUG] FORWARD_ARGS after processing: ${FORWARD_ARGS[@]}"
+echo "[DEBUG] Remaining positional parameters: $@"
+
+# Update positional parameters to exclude handled flags
+
+
+# Debug final arguments to be passed to manage.sh
+
+set -- "${FORWARD_ARGS[@]}"
+
+
+
+
+if [ "$INIT_MODE" = true ]; then
+    echo "[DEBUG] Executing initialize_config function for --init flag."
+    initialize_config
+    echo "[DEBUG] Initialization complete. Exiting."
+    exit 0
+fi
+
+# Update positional parameters to exclude handled flags
+echo "[DEBUG] Positional parameters before set --: $@"
+echo "[DEBUG] FORWARD_ARGS before set --: ${FORWARD_ARGS[@]}"
+set -- "${FORWARD_ARGS[@]}"
+echo "[DEBUG] Positional parameters after set --: $@"
+echo "[DEBUG] Checking if arguments are correctly forwarded to manage.sh..."
+echo "[DEBUG] Checking if manage.sh is accessible after updating positional parameters..."
+if [ -f "$MANAGE_SH_PATH" ]; then
+    echo "[DEBUG] manage.sh is accessible after set --."
+else
+    echo "[ERROR] manage.sh not found at $MANAGE_SH_PATH after set --."
+    echo "[DEBUG] Exiting setup.sh due to manage.sh not being accessible."
+    echo "[DEBUG] Exiting setup.sh due to prerequisites not being met."
+    exit 1
+fi
 
 set -e
 
-# Determine script directory and source common library
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/lib/common.sh"
+# cleanup_existing_instances function is defined below - removing this duplicate
 
-# Script-specific global variables
-PROJECT_NAME=""
-SERVICES=()
-INTERACTIVE_MODE=false
-DRY_RUN=false
-FORCE=false
-SKIP_VALIDATION=false
-CLEANUP_EXISTING=false
-CONNECT_EXISTING=false
+# Check for existing instances function will be defined later in the main flow
+# Port conflicts will be checked dynamically by check_port_conflicts function
+# based on enabled services only
 
-# Check for existing framework instances
-check_existing_instances() {
-    print_step "Checking for existing framework instances..."
-
+# Detect conflicts for instances and ports
+detect_existing_conflicts() {
     local existing_containers=()
     local existing_networks=()
     local conflicting_ports=()
 
-    # Find containers with framework naming pattern
-    local all_containers=$(docker ps --format "{{.Names}}" 2>/dev/null || echo "")
+    # Find existing framework containers
+    local containers=$(find_framework_containers "all")
+    if [ -n "$containers" ]; then
+        while IFS= read -r container; do
+            if [ -n "$container" ]; then
+                existing_containers+=("$container")
+            fi
+        done <<< "$containers"
+    fi
 
-    while IFS= read -r container; do
-        if [ -n "$container" ] && is_framework_container "$container"; then
-            existing_containers+=("$container")
-        fi
-    done <<< "$all_containers"
+    # Find existing framework networks
+    local networks=$(find_framework_networks)
+    if [ -n "$networks" ]; then
+        while IFS= read -r network; do
+            if [ -n "$network" ]; then
+                existing_networks+=("$network")
+            fi
+        done <<< "$networks"
+    fi
 
-    # Find networks with framework naming pattern
-    local all_networks=$(find_framework_networks)
-    while IFS= read -r network; do
-        if [ -n "$network" ]; then
-            existing_networks+=("$network")
-        fi
-    done <<< "$all_networks"
-
-    # Check for port conflicts with common framework ports
-    local ports_to_check=(6379 5432 3306 16686 9090 9092 4566 8055 8080 2181)
-    for port in "${ports_to_check[@]}"; do
+    # Check for hardcoded ports that might conflict before services are loaded
+    # This is a basic check - detailed port checking happens in check_port_conflicts
+    local common_ports=(6379 5432 3306 16686 9090 9092 4566 8055 8080 2181)
+    for port in "${common_ports[@]}"; do
         if check_port_in_use "$port"; then
             conflicting_ports+=("$port")
         fi
     done
 
-    # If no conflicts found, continue normally
+    # Return status - 0 if no conflicts, 1 if conflicts found
     if [ ${#existing_containers[@]} -eq 0 ] && [ ${#existing_networks[@]} -eq 0 ] && [ ${#conflicting_ports[@]} -eq 0 ]; then
-        print_success "No existing instances detected"
         return 0
+    else
+        return 1
     fi
-
-    # Display detected conflicts
-    print_warning "Existing framework instances detected!"
-    echo ""
-
-    if [ ${#existing_containers[@]} -gt 0 ]; then
-        print_info "Running containers:"
-        for container in "${existing_containers[@]}"; do
-            local status=$(docker ps --filter "name=$container" --format "{{.Status}}" 2>/dev/null || echo "Unknown")
-            echo "  • $container ($status)"
-        done
-        echo ""
-    fi
-
-    if [ ${#existing_networks[@]} -gt 0 ]; then
-        print_info "Existing networks:"
-        for network in "${existing_networks[@]}"; do
-            echo "  • $network"
-        done
-        echo ""
-    fi
-
-    if [ ${#conflicting_ports[@]} -gt 0 ]; then
-        print_info "Ports in use:"
-        for port in "${conflicting_ports[@]}"; do
-            local process=$(get_port_process "$port")
-            echo "  • Port $port (used by $process)"
-        done
-        echo ""
-    fi
-
-    # Handle force mode
-    if [ "$FORCE" = true ]; then
-        print_info "Force mode enabled - cleaning up existing instances..."
-        cleanup_existing_instances
-        return 0
-    fi
-
-    # Handle non-interactive mode
-    if [ "$INTERACTIVE_MODE" = false ] && [ "$CLEANUP_EXISTING" = false ] && [ "$CONNECT_EXISTING" = false ]; then
-        print_warning "Existing instances detected but running in non-interactive mode."
-        print_info "Use --cleanup-existing to remove existing instances"
-        print_info "Use --connect-existing to connect to existing instances"
-        print_info "Use --force to automatically cleanup and continue"
-        exit 1
-    fi
-
-    # Interactive prompt for user choice
-    prompt_user_choice
 }
 
 # Prompt user for what to do with existing instances
 prompt_user_choice() {
-    echo -e "${BOLD}What would you like to do?${NC}"
+    echo "${BOLD}What would you like to do?${NC}"
     echo "1) Clean up existing instances and start fresh"
     echo "2) Connect to existing instances (use existing configuration)"
     echo "3) Cancel setup"
@@ -118,6 +178,7 @@ prompt_user_choice() {
     echo -n "Choose an option (1-3): "
 
     local choice
+    print_debug "Prompting user for choice with existing instances or conflicts detected."
     read -r choice
 
     case $choice in
@@ -130,7 +191,8 @@ prompt_user_choice() {
             connect_to_existing_instances
             ;;
         3)
-            print_info "Setup cancelled by user"
+            print_info "Setup cancelled by user."
+            print_success "Exiting gracefully after user cancellation."
             exit 0
             ;;
         *)
@@ -190,9 +252,10 @@ cleanup_existing_instances() {
     fi
 
     # Clean up any orphaned resources
-    docker system prune -f >/dev/null 2>&1 || true
+    docker system prune -f >/dev/null 2>&1 || print_debug "Docker system prune failed or no resources to clean."
+    print_debug "Cleanup completed for containers, networks, and volumes."
 
-    print_success "Cleanup completed"
+    print_success "Cleanup completed."
     print_section_break
 }
 
@@ -240,6 +303,8 @@ connect_to_existing_instances() {
         fi
     fi
 
+    print_success "Connected to existing instances. Setup process completed."
+    print_debug "Existing instances connected successfully. Skipping new setup."
     exit 0
 }
 
@@ -254,23 +319,32 @@ get_available_services() {
             fi
         fi
     done
-    echo "${services[@]}"
+    print_debug "Available services: ${services[*]}"
+    # Services available for use
 }
 
 # Load project configuration
 load_project_config() {
-    if [ -f "$PROJECT_CONFIG" ]; then
-        print_verbose "Loading project configuration: $PROJECT_CONFIG"
+    local config_file="$PROJECT_CONFIG"
+    print_debug "Forcing use of PROJECT_CONFIG: $PROJECT_CONFIG"
+
+    if [ -f "$config_file" ]; then
+        print_verbose "Loading project configuration: $config_file"
+        print_debug "Using configuration file: $config_file"
 
         # Extract project name (simplified YAML parsing)
-        if grep -q "name:" "$PROJECT_CONFIG"; then
-            PROJECT_NAME=$(grep "name:" "$PROJECT_CONFIG" | head -1 | sed 's/.*name: *["'"'"']*\([^"'"'"']*\)["'"'"']*/\1/')
+        if grep -q "name:" "$config_file"; then
+            PROJECT_NAME=$(grep "name:" "$config_file" | head -1 | sed 's/.*name: *["'"'"']*\([^"'"'"']*\)["'"'"']*/\1/')
+            print_debug "Extracted project name: $PROJECT_NAME"
+        else
+            print_debug "No project name found in configuration."
         fi
 
         # Extract enabled services (robust YAML parsing)
-        if grep -A 100 "enabled:" "$PROJECT_CONFIG" >/dev/null 2>&1; then
+        if grep -A 100 "enabled:" "$config_file" >/dev/null 2>&1; then
             # Get the services list between 'enabled:' and the next top-level key or end of file
-            local enabled_services=$(awk '/^[[:space:]]*enabled:[[:space:]]*$/{flag=1; next} /^[[:space:]]*[a-zA-Z]/ && !/^[[:space:]]*-/ && flag{flag=0} flag && /^[[:space:]]*-[[:space:]]*[a-zA-Z]/{gsub(/^[[:space:]]*-[[:space:]]*/, ""); gsub(/[[:space:]]*#.*$/, ""); if($0 != "") print $0}' "$PROJECT_CONFIG")
+            local enabled_services=$(awk '/^[[:space:]]*enabled:[[:space:]]*$/{flag=1; next} /^[[:space:]]*[a-zA-Z]/ && !/^[[:space:]]*-/ && flag{flag=0} flag && /^[[:space:]]*-[[:space:]]*[a-zA-Z]/{gsub(/^[[:space:]]*-[[:space:]]*/, ""); gsub(/[[:space:]]*#.*$/, ""); if($0 != "") print $0}' "$config_file")
+            print_debug "Raw enabled services extracted: $enabled_services"
 
             # Convert to array
             SERVICES=()
@@ -278,30 +352,37 @@ load_project_config() {
                 while IFS= read -r service; do
                     if [ -n "$service" ]; then
                         SERVICES+=("$service")
+                        print_debug "Added service to SERVICES array: $service"
                     fi
                 done <<< "$enabled_services"
+            else
+                print_debug "No enabled services found in configuration."
             fi
+        else
+            print_debug "No 'enabled' section found in configuration."
         fi
 
         print_verbose "Loaded services: ${SERVICES[*]}"
+        print_debug "Services array populated with: ${SERVICES[*]}"
     else
-        print_info "No configuration file found at: $PROJECT_CONFIG"
+        print_info "No configuration file found at: $config_file"
         print_info "Creating from sample configuration..."
 
         if [ -f "$SAMPLE_CONFIG" ]; then
-            cp "$SAMPLE_CONFIG" "$PROJECT_CONFIG"
-            print_success "Created: $(basename $PROJECT_CONFIG)"
+            cp "$SAMPLE_CONFIG" "$config_file"
+            print_success "Created: $(basename $config_file)"
             print_info "Edit this file to configure your services, then run './scripts/setup.sh' again"
 
             # Show sample content
             echo ""
             print_header "Sample Configuration Created"
-            echo "You can now customize $PROJECT_CONFIG with your desired services:"
+            echo "You can now customize $config_file with your desired services:"
             echo ""
-            head -20 "$PROJECT_CONFIG"
+            head -20 "$config_file"
             echo "..."
             echo ""
             print_info "Run './scripts/setup.sh' again after editing the configuration"
+            print_debug "Sample configuration created at: $config_file"
             exit 0
         else
             # Create minimal config if sample doesn't exist
@@ -317,8 +398,8 @@ create_minimal_config() {
     cat > "$PROJECT_CONFIG" << EOF
 # Local Development Framework Configuration
 project:
-  name: "local-dev"
-  environment: "local"
+  name: dev-stack
+  environment: local
 
 services:
   enabled:
@@ -340,21 +421,30 @@ EOF
 validate_services() {
     if [ "$SKIP_VALIDATION" = true ]; then
         print_info "Skipping service validation"
+        print_debug "Skipping service validation"
         return
     fi
+
+    print_debug "Starting service validation..."
 
     local available_services=($(get_available_services))
     local invalid_services=()
 
     for service in "${SERVICES[@]}"; do
         if ! validate_service_exists "$service"; then
+            print_debug "Service '$service' is invalid."
+            # Service validation handled by print_debug above
             invalid_services+=("$service")
+        else
+            print_debug "Service '$service' is valid."
         fi
     done
 
     if [ ${#invalid_services[@]} -gt 0 ]; then
-        print_error "Invalid services: ${invalid_services[*]}"
-        print_info "Available services: ${available_services[*]}"
+        print_error "Invalid services detected: ${invalid_services[*]}"
+        print_info "Available services are: ${available_services[*]}"
+        print_debug "Validation failed. Invalid services: ${invalid_services[*]}"
+        print_debug "Validation failed due to invalid services: ${invalid_services[*]}"
         exit 1
     fi
 
@@ -562,13 +652,13 @@ generate_compose_file() {
 
     # Start with compose file header
     cat > "$temp_file" << EOF
-# Generated by Local Development Framework v$FRAMEWORK_VERSION
-# Project: ${PROJECT_NAME:-local-dev}
+# Generated by dev-stack Framework v$FRAMEWORK_VERSION
+# Project: ${PROJECT_NAME:-dev-stack}
 # Services: ${SERVICES[*]}
 # Generated on: $(date)
 
 networks:
-  ${PROJECT_NAME:-local-dev}-network:
+  ${PROJECT_NAME:-dev-stack}-network:
     driver: bridge
 
 services:
@@ -593,7 +683,7 @@ EOF
                     in_services=false
                 elif [[ "$in_services" == true ]]; then
                     # Fix network references
-                    line="${line//- local-dev/- ${PROJECT_NAME:-local-dev}-network}"
+                    line="${line//- dev-stack/- ${PROJECT_NAME:-dev-stack}-network}"
                     echo "$line" >> "$temp_file"
                 fi
             done < "$service_compose"
@@ -610,7 +700,7 @@ EOF
                     elif [[ "$in_volumes" == true ]] && [[ "$line" =~ ^[[:space:]]*([a-zA-Z][a-zA-Z0-9_-]*): ]]; then
                         local volume_name="${BASH_REMATCH[1]}"
                         # Skip network definitions that might be in volumes section
-                        if [[ ! "$volume_name" =~ ^(local-dev|${PROJECT_NAME:-local-dev})$ ]]; then
+                        if [[ ! "$volume_name" =~ ^(dev-stack|${PROJECT_NAME:-dev-stack})$ ]]; then
                             unique_volumes["$volume_name"]=1
                         fi
                     fi
@@ -645,7 +735,7 @@ generate_env_file() {
     # Add header
     cat > "$temp_file" << EOF
 # Generated by Local Development Framework v$FRAMEWORK_VERSION
-# Project: ${PROJECT_NAME:-local-dev}
+# Project: ${PROJECT_NAME:-dev-stack}
 # Generated on: $(date)
 #
 # This file contains environment variables for all configured services.
@@ -654,9 +744,9 @@ generate_env_file() {
 # ============================================================================
 # PROJECT CONFIGURATION
 # ============================================================================
-PROJECT_NAME=${PROJECT_NAME:-local-dev}
+PROJECT_NAME=${PROJECT_NAME:-dev-stack}
 ENVIRONMENT=local
-COMPOSE_PROJECT_NAME=${PROJECT_NAME:-local-dev}
+COMPOSE_PROJECT_NAME=${PROJECT_NAME:-dev-stack}
 
 EOF
 
@@ -702,7 +792,7 @@ JAEGER_OTLP_ENDPOINT=http://localhost:$jaeger_otlp_http_port
 # OpenTelemetry configuration
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:$jaeger_otlp_http_port
 OTEL_EXPORTER_OTLP_HEADERS=""
-OTEL_RESOURCE_ATTRIBUTES="service.name=${PROJECT_NAME:-local-dev}"
+OTEL_RESOURCE_ATTRIBUTES="service.name=${PROJECT_NAME:-dev-stack}"
 
 EOF
                 ;;
@@ -1390,7 +1480,7 @@ show_access_info() {
     for service in "${SERVICES[@]}"; do
         local service_file="$SERVICES_DIR/$service/service.yaml"
         if [ -f "$service_file" ]; then
-            echo -e "${BOLD}$service:${NC}"
+            echo "${BOLD}$service:${NC}"
 
             # Show web interfaces
             if grep -q "web_interfaces:" "$service_file"; then
@@ -1438,10 +1528,10 @@ show_access_info() {
         fi
     done
 
-    echo -e "${YELLOW}💡 Configuration files generated:${NC}"
-    [ -f "$WORK_DIR/docker-compose.generated.yml" ] && echo -e "  📄 docker-compose.generated.yml"
-    [ -f "$WORK_DIR/.env.generated" ] && echo -e "  📄 .env.generated"
-    [ -f "$WORK_DIR/application-local.yml.generated" ] && echo -e "  📄 application-local.yml.generated"
+    echo "${YELLOW}💡 Configuration files generated:${NC}"
+    [ -f "$WORK_DIR/docker-compose.generated.yml" ] && echo "  📄 docker-compose.generated.yml"
+    [ -f "$WORK_DIR/.env.generated" ] && echo "  📄 .env.generated"
+    [ -f "$WORK_DIR/application-local.yml.generated" ] && echo "  📄 application-local.yml.generated"
 }
 
 # Interactive mode
@@ -1449,9 +1539,9 @@ run_interactive() {
     print_header "🔧 Interactive Configuration"
 
     # Get project name
-    echo -n "Enter project name (default: local-dev): "
+    echo -n "Enter project name (default: dev-stack): "
     read -r input_project_name
-    PROJECT_NAME="${input_project_name:-local-dev}"
+    PROJECT_NAME="${input_project_name:-dev-stack}"
 
     # Get available services
     local available_services=($(get_available_services))
@@ -1500,7 +1590,7 @@ EOF
 
     # Confirmation
     echo ""
-    echo -e "${BOLD}Configuration Summary:${NC}"
+    echo "${BOLD}Configuration Summary:${NC}"
     echo "Project: $PROJECT_NAME"
     echo "Services: ${SERVICES[*]}"
     echo ""
@@ -1518,11 +1608,11 @@ EOF
 # Show help
 show_help() {
     cat << EOF
-Local Development Framework v$FRAMEWORK_VERSION - Config-Driven Setup
+dev-stack v$FRAMEWORK_VERSION - Config-Driven Setup
 
 Usage: $0 [OPTIONS]
 
-This framework uses a configuration file (local-dev-config.yaml) to define which
+This framework uses a configuration file (dev-stack-config.yaml) to define which
 services to enable and how to configure them.
 
 OPTIONS:
@@ -1540,7 +1630,7 @@ OPTIONS:
     --help, -h             Show this help
 
 CONFIGURATION:
-    The framework looks for 'local-dev-config.yaml' in the current directory.
+    The framework looks for 'dev-stack-config.yaml' in the current directory.
     If not found, a sample configuration will be created.
 
     Example configuration:
@@ -1559,7 +1649,7 @@ AVAILABLE SERVICES:
 $(get_available_services | tr ' ' '\n' | sed 's/^/    /')
 
 EXAMPLES:
-    $0                              # Use local-dev-config.yaml
+    $0                             # Use dev-stack-config.yaml
     $0 --interactive               # Interactive setup
     $0 --init                      # Create sample config
     $0 --services=redis,jaeger     # Override services
@@ -1574,7 +1664,7 @@ EXISTING INSTANCES:
     3) Cancel setup
 
 WORKFLOW:
-    1. Create/edit local-dev-config.yaml
+    1. Create/edit dev-stack-config.yaml
     2. Run ./scripts/setup.sh
     3. Use ./scripts/manage.sh to control services
 
@@ -1658,6 +1748,88 @@ parse_args() {
     done
 }
 
+# Check for existing instances and handle conflicts
+check_existing_instances() {
+    local existing_containers=()
+    local existing_networks=()
+    local conflicting_ports=()
+
+    # Find existing framework containers
+    local containers=$(find_framework_containers "all")
+    if [ -n "$containers" ]; then
+        while IFS= read -r container; do
+            if [ -n "$container" ]; then
+                existing_containers+=("$container")
+            fi
+        done <<< "$containers"
+    fi
+
+    # Find existing framework networks
+    local networks=$(find_framework_networks)
+    if [ -n "$networks" ]; then
+        while IFS= read -r network; do
+            if [ -n "$network" ]; then
+                existing_networks+=("$network")
+            fi
+        done <<< "$networks"
+    fi
+
+    # Check for port conflicts - but only if we have services loaded
+    # This will be checked later in validation when services are known
+
+    # If no conflicts found, continue normally
+    if [ ${#existing_containers[@]} -eq 0 ] && [ ${#existing_networks[@]} -eq 0 ]; then
+        print_success "No existing instances detected"
+        return 0
+    fi
+
+    # Display detected conflicts
+    print_warning "Existing framework instances detected!"
+    echo ""
+
+    if [ ${#existing_containers[@]} -gt 0 ]; then
+        print_info "Running containers:"
+        for container in "${existing_containers[@]}"; do
+            local status=$(docker ps --filter "name=$container" --format "{{.Status}}" 2>/dev/null || echo "Unknown")
+            echo "  • $container ($status)"
+        done
+        echo ""
+    fi
+
+    if [ ${#existing_networks[@]} -gt 0 ]; then
+        print_info "Existing networks:"
+        for network in "${existing_networks[@]}"; do
+            echo "  • $network"
+        done
+        echo ""
+    fi
+
+    # Handle force mode
+    if [ "$FORCE" = true ]; then
+        print_info "Force mode enabled - cleaning up existing instances..."
+        cleanup_existing_instances
+        return 0
+    fi
+
+    # Handle non-interactive mode
+    if [ "$INTERACTIVE_MODE" = false ] && [ "$CLEANUP_EXISTING" = false ] && [ "$CONNECT_EXISTING" = false ]; then
+        print_warning "Existing instances detected but running in non-interactive mode."
+        print_info "Use --cleanup-existing to remove existing instances"
+        print_info "Use --connect-existing to connect to existing instances"
+        print_info "Use --force to automatically cleanup and continue"
+        cleanup_existing_instances
+        return 0
+    fi
+
+    # Interactive prompt for user choice
+    if [ "$INTERACTIVE_MODE" = true ] && [ -z "$TEST_MODE" ] && [ "$INIT_MODE" = false ]; then
+        prompt_user_choice
+    else
+        print_info "Non-interactive mode detected. Proceeding with default actions."
+        cleanup_existing_instances
+    fi
+}
+
 # Main execution function
 main() {
     show_banner
@@ -1692,7 +1864,7 @@ main() {
     if [ -n "$PROJECT_NAME" ]; then
         print_verbose "Using project name from command line: $PROJECT_NAME"
     else
-        PROJECT_NAME="${PROJECT_NAME:-local-dev}"
+        PROJECT_NAME="${PROJECT_NAME:-dev-stack}"
     fi
 
     # Validate we have services

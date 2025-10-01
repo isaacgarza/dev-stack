@@ -7,7 +7,7 @@ This guide shows how to use Apache Kafka with the Local Development Framework fo
 ### 1. Enable Kafka in Configuration
 
 ```yaml
-# local-dev-config.yaml
+# dev-stack-config.yaml
 services:
   enabled:
     - redis
@@ -142,19 +142,19 @@ When you specify custom topics, only your configured topics are created.
 @Service
 @Slf4j
 public class EventPublisher {
-    
+
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
-    
+
     public void publishUserEvent(String userId, String action) {
-        String message = String.format("{\"userId\":\"%s\",\"action\":\"%s\",\"timestamp\":\"%s\"}", 
+        String message = String.format("{\"userId\":\"%s\",\"action\":\"%s\",\"timestamp\":\"%s\"}",
                                      userId, action, Instant.now());
-        
+
         kafkaTemplate.send("user-events", userId, message)
             .addCallback(
-                result -> log.info("Sent message=[{}] with offset=[{}]", 
+                result -> log.info("Sent message=[{}] with offset=[{}]",
                                  message, result.getRecordMetadata().offset()),
-                failure -> log.error("Unable to send message=[{}] due to : {}", 
+                failure -> log.error("Unable to send message=[{}] due to : {}",
                                     message, failure.getMessage())
             );
     }
@@ -167,20 +167,20 @@ public class EventPublisher {
 @Component
 @Slf4j
 public class EventConsumer {
-    
+
     @KafkaListener(topics = "user-events")
     public void handleUserEvent(@Payload String message,
                                @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
                                @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition,
                                @Header(KafkaHeaders.OFFSET) long offset) {
-        
-        log.info("Received: Topic=[{}] Partition=[{}] Offset=[{}] Message=[{}]", 
+
+        log.info("Received: Topic=[{}] Partition=[{}] Offset=[{}] Message=[{}]",
                 topic, partition, offset, message);
-        
+
         // Process the event
         processUserEvent(message);
     }
-    
+
     private void processUserEvent(String message) {
         // Your business logic here
         log.info("Processing user event: {}", message);
@@ -194,7 +194,7 @@ public class EventConsumer {
 @Configuration
 @EnableKafka
 public class KafkaConfig {
-    
+
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
@@ -205,12 +205,12 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.RETRIES_CONFIG, 3);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
-    
+
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
-    
+
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
@@ -252,13 +252,13 @@ public class KafkaConfig {
 
 ```bash
 # List consumer groups
-docker exec local-dev-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --list
+docker exec dev-stack-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --list
 
 # Check consumer group lag
-docker exec local-dev-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --group my-app-group --describe
+docker exec dev-stack-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --group my-app-group --describe
 
 # Delete topic (be careful!)
-docker exec local-dev-kafka kafka-topics --delete --bootstrap-server localhost:9092 --topic my-topic
+docker exec dev-stack-kafka kafka-topics --delete --bootstrap-server localhost:9092 --topic my-topic
 ```
 
 ## 📊 Common Patterns
@@ -268,22 +268,22 @@ docker exec local-dev-kafka kafka-topics --delete --bootstrap-server localhost:9
 ```java
 @Service
 public class UserService {
-    
+
     @Autowired
     private EventPublisher eventPublisher;
-    
+
     @Autowired
     private UserRepository userRepository;
-    
+
     @Transactional
     public User createUser(CreateUserRequest request) {
         // Create user
         User user = new User(request.getName(), request.getEmail());
         user = userRepository.save(user);
-        
+
         // Publish event
         eventPublisher.publishUserEvent(user.getId(), "USER_CREATED");
-        
+
         return user;
     }
 }
@@ -295,7 +295,7 @@ public class UserService {
 // Command side
 @RestController
 public class UserCommandController {
-    
+
     @PostMapping("/users")
     public ResponseEntity<String> createUser(@RequestBody CreateUserCommand command) {
         String eventId = UUID.randomUUID().toString();
@@ -307,7 +307,7 @@ public class UserCommandController {
 // Query side
 @Component
 public class UserProjectionHandler {
-    
+
     @KafkaListener(topics = "user-events")
     public void handleUserEvent(UserEvent event) {
         // Update read model/projection
@@ -321,19 +321,19 @@ public class UserProjectionHandler {
 ```java
 @Component
 public class OrderSagaOrchestrator {
-    
+
     @KafkaListener(topics = "order-created")
     public void handleOrderCreated(OrderCreatedEvent event) {
         // Step 1: Reserve inventory
         kafkaTemplate.send("inventory-commands", new ReserveInventoryCommand(event.getOrderId()));
     }
-    
+
     @KafkaListener(topics = "inventory-reserved")
     public void handleInventoryReserved(InventoryReservedEvent event) {
         // Step 2: Process payment
         kafkaTemplate.send("payment-commands", new ProcessPaymentCommand(event.getOrderId()));
     }
-    
+
     @KafkaListener(topics = "payment-failed")
     public void handlePaymentFailed(PaymentFailedEvent event) {
         // Compensate: Release inventory
@@ -347,7 +347,7 @@ public class OrderSagaOrchestrator {
 ### Framework Configuration
 
 ```yaml
-# local-dev-config.yaml
+# dev-stack-config.yaml
 overrides:
   kafka:
     port: 9092                    # Kafka broker port
@@ -401,7 +401,7 @@ overrides:
 **Consumer Lag Issues**:
 ```bash
 # Check consumer group status
-docker exec local-dev-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --group my-group --describe
+docker exec dev-stack-kafka kafka-consumer-groups --bootstrap-server localhost:9092 --group my-group --describe
 ```
 
 **Connection Refused**:
@@ -419,7 +419,7 @@ docker exec local-dev-kafka kafka-consumer-groups --bootstrap-server localhost:9
 open http://localhost:8080
 
 # Check topic metrics
-curl http://localhost:8080/api/clusters/local-dev/topics
+curl http://localhost:8080/api/clusters/dev-stack/topics
 ```
 
 ## 📚 Best Practices

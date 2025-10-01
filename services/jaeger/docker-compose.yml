@@ -1,15 +1,15 @@
 services:
   jaeger:
     image: jaegertracing/all-in-one:1.51
-    container_name: "${PROJECT_NAME:-local-dev}-jaeger"
+    container_name: "${PROJECT_NAME:-dev-stack}-jaeger"
     ports:
-      - "${JAEGER_UI_PORT:-16686}:16686"           # Web UI
-      - "${JAEGER_OTLP_HTTP_PORT:-4318}:4318"     # OTLP HTTP traces
-      - "${JAEGER_OTLP_GRPC_PORT:-4317}:4317"     # OTLP gRPC traces
-      - "${JAEGER_HTTP_PORT:-14268}:14268"        # HTTP receiver for traces
-      - "${JAEGER_GRPC_PORT:-14250}:14250"        # gRPC receiver for traces
-      - "6831:6831/udp"                           # UDP receiver for Jaeger agent
-      - "6832:6832/udp"                           # UDP receiver for Jaeger agent
+      - "${JAEGER_UI_PORT:-16686}:16686" # Web UI
+      - "${JAEGER_OTLP_HTTP_PORT:-4318}:4318" # OTLP HTTP traces
+      - "${JAEGER_OTLP_GRPC_PORT:-4317}:4317" # OTLP gRPC traces
+      - "${JAEGER_HTTP_PORT:-14268}:14268" # HTTP receiver for traces
+      - "${JAEGER_GRPC_PORT:-14250}:14250" # gRPC receiver for traces
+      - "6831:6831/udp" # UDP receiver for Jaeger agent
+      - "6832:6832/udp" # UDP receiver for Jaeger agent
     environment:
       - COLLECTOR_OTLP_ENABLED=true
       - COLLECTOR_ZIPKIN_HOST_PORT=9411
@@ -23,9 +23,9 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - local-dev
+      - dev-stack
 
 networks:
-  local-dev:
+  dev-stack:
     driver: bridge
-    name: "${PROJECT_NAME:-local-dev}-network"
+    name: "${PROJECT_NAME:-dev-stack}-network"

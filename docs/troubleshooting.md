@@ -2,24 +2,24 @@
 
 ## 🚨 Top 5 Issues (Quick Reference)
 
-1. **Docker Not Running**  
+1. **Docker Not Running**
    - Run `docker info` to check status.
    - Start Docker/Colima if not running.
 
-2. **Port Conflicts**  
+2. **Port Conflicts**
    - Run `lsof -i :PORT_NUMBER` to find conflicts.
    - Use `--cleanup-existing` to resolve.
 
-3. **Service Won't Start**  
+3. **Service Won't Start**
    - Check logs: `./scripts/manage.sh logs SERVICE_NAME`
    - Restart service: `./scripts/manage.sh restart SERVICE_NAME`
 
-4. **Memory Issues**  
+4. **Memory Issues**
    - Check usage: `docker stats`
    - Increase Docker memory limit.
 
-5. **Invalid Configuration**  
-   - Validate YAML: `python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"`
+5. **Invalid Configuration**
+   - Validate YAML: `python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"`
    - Run setup with debug: `./scripts/setup.sh --debug`
 
 ---
@@ -156,7 +156,7 @@ docker stats
 # Colima: colima start --memory 8
 
 # Reduce service memory usage in config
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   postgres:
 #     memory_limit: "256m"
@@ -307,7 +307,7 @@ netstat -tulpn | grep :PORT
 kill -9 PID
 
 # Use different ports in configuration
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   postgres:
 #     port: 5433
@@ -333,7 +333,7 @@ vim local-dev-config.yaml
 
 # Check Docker network
 docker network ls
-docker network inspect local-dev-framework_default
+docker network inspect dev-stack-framework_default
 
 # Recreate network
 ./scripts/manage.sh cleanup
@@ -352,7 +352,7 @@ docker network inspect local-dev-framework_default
 **Diagnosis:**
 ```bash
 # Validate YAML syntax
-python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"
+python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
 
 # Check configuration with framework
 ./scripts/setup.sh --validate-only
@@ -367,7 +367,7 @@ python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"
 ./scripts/setup.sh --init --force
 
 # Fix YAML syntax errors
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # Common issues:
 # - Incorrect indentation (use spaces, not tabs)
 # - Missing quotes around strings with special characters
@@ -392,7 +392,7 @@ cat .env.generated
 cat application-local.yml.generated
 
 # Compare with sample configuration
-diff local-dev-config.yaml local-dev-framework/local-dev-config.sample.yaml
+diff dev-stack-config.yaml dev-stack-framework/dev-stack-config.sample.yaml
 
 # Reset to defaults
 ./scripts/setup.sh --init
@@ -423,7 +423,7 @@ docker volume rm $(docker volume ls -q | grep postgres)
 ./scripts/manage.sh exec postgres createdb -U postgres my_app_dev
 
 # Or recreate with correct configuration
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   postgres:
 #     database: "my_app_dev"
@@ -451,7 +451,7 @@ vim local-dev-config.yaml
 ./scripts/manage.sh exec redis redis-cli FLUSHALL
 
 # Increase memory limit
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   redis:
 #     memory_limit: "512m"
@@ -463,7 +463,7 @@ vim local-dev-config.yaml
 ./scripts/manage.sh exec redis redis-cli LASTSAVE
 
 # Disable persistence for development
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   redis:
 #     config: |
@@ -528,7 +528,7 @@ aws --endpoint-url=http://localhost:4566 dynamodb describe-table --table-name my
 ./scripts/manage.sh monitor
 
 # Reduce memory limits for faster startup
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   global:
 #     memory_limit: "256m"
@@ -560,7 +560,7 @@ docker stats
 ./scripts/manage.sh monitor
 
 # Reduce service memory limits
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   postgres:
 #     memory_limit: "256m"
@@ -587,7 +587,7 @@ vim local-dev-config.yaml
 ./scripts/manage.sh exec postgres psql -U postgres -c "SELECT * FROM pg_stat_activity;"
 
 # Optimize PostgreSQL for development
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 # overrides:
 #   postgres:
 #     config: |
@@ -630,7 +630,7 @@ docker logs --timestamps CONTAINER_NAME
 ```bash
 # Check Docker networks
 docker network ls
-docker network inspect local-dev-framework_default
+docker network inspect dev-stack-framework_default
 
 # Test network connectivity between containers
 ./scripts/manage.sh exec app-container ping postgres
@@ -672,14 +672,14 @@ docker system prune -a
 docker volume prune
 
 # Remove configuration and start fresh
-rm local-dev-config.yaml
+rm dev-stack-config.yaml
 rm docker-compose.generated.yml
 rm .env.generated
 rm application-local.yml.generated
 
 # Initialize new configuration
 ./scripts/setup.sh --init
-vim local-dev-config.yaml
+vim dev-stack-config.yaml
 ./scripts/setup.sh
 ```
 
@@ -689,17 +689,17 @@ If the framework itself is corrupted:
 
 ```bash
 # Update framework (if using git submodule)
-git submodule update --remote local-dev-framework
+git submodule update --remote dev-stack-framework
 
 # Or re-copy framework files
-rm -rf local-dev-framework
-cp -r /path/to/fresh/local-dev-framework ./
+rm -rf dev-stack-framework
+cp -r /path/to/fresh/dev-stack-framework ./
 
 # Make scripts executable
-chmod +x local-dev-framework/scripts/*.sh
+chmod +x dev-stack-framework/scripts/*.sh
 
 # Regenerate configuration
-./local-dev-framework/scripts/setup.sh --init
+./dev-stack-framework/scripts/setup.sh --init
 ```
 
 ### System Resource Recovery
@@ -789,7 +789,7 @@ Before seeking help, try these steps:
    - [ ] System logs: `dmesg | tail` (Linux)
 
 3. **Validate configuration:**
-   - [ ] YAML syntax: `python -c "import yaml; yaml.safe_load(open('local-dev-config.yaml'))"`
+   - [ ] YAML syntax: `python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"`
    - [ ] Framework validation: `./scripts/setup.sh --validate-only`
 
 4. **Try simple fixes:**
@@ -812,7 +812,7 @@ docker compose version
 ./scripts/manage.sh status
 
 # Configuration
-cat local-dev-config.yaml
+cat dev-stack-config.yaml
 
 # Recent logs
 ./scripts/manage.sh logs --since=1h

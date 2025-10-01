@@ -7,7 +7,7 @@ This guide shows how to use LocalStack with the Local Development Framework for 
 ### 1. Enable LocalStack in Configuration
 
 ```yaml
-# local-dev-config.yaml
+# dev-stack-config.yaml
 services:
   enabled:
     - redis
@@ -155,18 +155,18 @@ sqs_queues:
     visibility_timeout: 60
     max_receive_count: 3
     dead_letter_queue: true # Creates "orders-dlq" automatically
-  
+
   # Custom DLQ name
   - name: "notifications"
     visibility_timeout: 30
     max_receive_count: 5
     dead_letter_queue: "custom-dlq-name" # Custom DLQ name
-  
+
   # No DLQ (default behavior)
   - name: "simple-queue"
     visibility_timeout: 30
     # No dead_letter_queue specified
-  
+
   # Explicitly disable DLQ
   - name: "no-dlq-queue"
     visibility_timeout: 30
@@ -181,7 +181,7 @@ sqs_queues:
 - **receive_message_wait_time**: Long polling wait time in seconds (default: 0)
 - **delay_seconds**: Delay before message becomes available (default: 0)
 - **max_receive_count**: Max receives before moving to DLQ (default: 3)
-- **dead_letter_queue**: 
+- **dead_letter_queue**:
   - `true`: Auto-create DLQ as `{{queue-name}}-dlq`
   - `"custom-name"`: Create DLQ with custom name
   - `false` or omitted: No DLQ created
@@ -308,11 +308,11 @@ sns_topics:
 ### Subscription Properties
 
 - **protocol** (required): `sqs`, `http`, `https`, `email`, `sms`, or `lambda`
-- **endpoint** (required): 
+- **endpoint** (required):
   - SQS: Queue name (must exist in `sqs_queues`)
   - HTTP/HTTPS: Full URL
   - Email: Email address
-- **raw_message_delivery**: 
+- **raw_message_delivery**:
   - `true`: Deliver message content directly
   - `false`: Wrap in SNS JSON envelope (default for non-SQS)
 - **filter_policy**: JSON object for message filtering (optional)
@@ -325,10 +325,10 @@ sns_topics:
 @Service
 @Slf4j
 public class MessageProducer {
-    
+
     @Autowired
     private QueueMessagingTemplate queueMessagingTemplate;
-    
+
     public void sendMessage(String queueName, Object message) {
         try {
             queueMessagingTemplate.convertAndSend(queueName, message);
@@ -337,14 +337,14 @@ public class MessageProducer {
             log.error("Failed to send message to queue: {}", queueName, e);
         }
     }
-    
+
     public void sendUserEvent(String userId, String action) {
         UserEvent event = UserEvent.builder()
             .userId(userId)
             .action(action)
             .timestamp(Instant.now())
             .build();
-            
+
         sendMessage("user-events", event);
     }
 }
@@ -356,12 +356,12 @@ public class MessageProducer {
 @Component
 @Slf4j
 public class MessageConsumer {
-    
+
     @SqsListener("user-events")
-    public void handleUserEvent(UserEvent event, 
+    public void handleUserEvent(UserEvent event,
                                @Header("SenderId") String senderId) {
         log.info("Received user event: {} for user: {}", event.getAction(), event.getUserId());
-        
+
         try {
             processUserEvent(event);
         } catch (Exception e) {
@@ -369,13 +369,13 @@ public class MessageConsumer {
             throw e; // Will be retried and eventually sent to DLQ
         }
     }
-    
+
     @SqsListener("notifications")
     public void handleNotification(NotificationMessage message) {
         log.info("Received notification: {}", message.getContent());
         sendNotification(message);
     }
-    
+
     // Handle messages from dead letter queue
     @SqsListener("user-events-dlq")
     public void handleFailedUserEvent(UserEvent event) {
@@ -383,7 +383,7 @@ public class MessageConsumer {
         // Handle failed messages (alert, manual processing, etc.)
         alertOperations("Failed to process user event", event);
     }
-    
+
     private void processUserEvent(UserEvent event) {
         // Your business logic here
         switch (event.getAction()) {
@@ -406,10 +406,10 @@ public class MessageConsumer {
 @Service
 @Slf4j
 public class UserService {
-    
+
     @Autowired
     private DynamoDBMapper dynamoDBMapper;
-    
+
     public void saveUser(User user) {
         try {
             dynamoDBMapper.save(user);
@@ -418,32 +418,32 @@ public class UserService {
             log.error("Failed to save user to DynamoDB", e);
         }
     }
-    
+
     public User getUser(String userId) {
         return dynamoDBMapper.load(User.class, userId);
     }
-    
+
     public List<User> getUsersByEmail(String email) {
         DynamoDBScanExpression scanExpression = new DynamoDBScanExpression()
             .withFilterExpression("email = :email")
             .withExpressionAttributeValues(Map.of(":email", new AttributeValue().withS(email)));
-        
+
         return dynamoDBMapper.scan(User.class, scanExpression);
     }
 }
 
 @DynamoDBTable(tableName = "users")
 public class User {
-    
+
     @DynamoDBHashKey
     private String userId;
-    
+
     @DynamoDBIndexHashKey(globalSecondaryIndexName = "EmailIndex")
     private String email;
-    
+
     private String name;
     private Instant createdTime;
-    
+
     // getters and setters
 }
 ```
@@ -454,10 +454,10 @@ public class User {
 @Service
 @Slf4j
 public class NotificationPublisher {
-    
+
     @Autowired
     private NotificationMessagingTemplate notificationMessagingTemplate;
-    
+
     public void publishNotification(String topicName, Object message) {
         try {
             notificationMessagingTemplate.convertAndSend(topicName, message);
@@ -466,7 +466,7 @@ public class NotificationPublisher {
             log.error("Failed to publish message to topic: {}", topicName, e);
         }
     }
-    
+
     public void publishUserNotification(String userId, String message) {
         UserNotification notification = UserNotification.builder()
             .userId(userId)
@@ -474,10 +474,10 @@ public class NotificationPublisher {
             .timestamp(Instant.now())
             .type("USER_NOTIFICATION")
             .build();
-            
+
         publishNotification("user-notifications", notification);
     }
-    
+
     public void publishSystemAlert(String level, String message) {
         SystemAlert alert = SystemAlert.builder()
             .level(level)
@@ -485,7 +485,7 @@ public class NotificationPublisher {
             .timestamp(Instant.now())
             .source("application")
             .build();
-            
+
         // This will be delivered to all subscribers of system-alerts topic
         publishNotification("system-alerts", alert);
     }
@@ -499,7 +499,7 @@ public class NotificationPublisher {
 @EnableSqs
 @EnableSns
 public class AwsConfig {
-    
+
     @Bean
     @Primary
     public AmazonSQSAsync amazonSQS() {
@@ -511,7 +511,7 @@ public class AwsConfig {
                 new BasicAWSCredentials("test", "test")))
             .build();
     }
-    
+
     @Bean
     @Primary
     public AmazonSNSAsync amazonSNS() {
@@ -606,10 +606,10 @@ awslocal dynamodb delete-item \
 
 ```bash
 # Check LocalStack logs
-docker logs local-dev-localstack
+docker logs dev-stack-localstack
 
 # Execute commands in LocalStack container
-docker exec -it local-dev-localstack bash
+docker exec -it dev-stack-localstack bash
 
 # Check LocalStack health
 # Check DynamoDB tables
@@ -658,22 +658,22 @@ overrides:
 // Order Service publishes events
 @Service
 public class OrderService {
-    
+
     @Autowired
     private NotificationPublisher publisher;
-    
+
     public Order createOrder(CreateOrderRequest request) {
         Order order = new Order(request);
         order = orderRepository.save(order);
-        
+
         // Publish event to SNS topic
-        publisher.publishNotification("order-events", 
+        publisher.publishNotification("order-events",
             OrderCreatedEvent.builder()
                 .orderId(order.getId())
                 .customerId(order.getCustomerId())
                 .amount(order.getAmount())
                 .build());
-        
+
         return order;
     }
 }
@@ -681,7 +681,7 @@ public class OrderService {
 // Inventory Service consumes events
 @Component
 public class InventoryEventHandler {
-    
+
     @SqsListener("inventory-queue")
     public void handleOrderCreated(OrderCreatedEvent event) {
         // Reserve inventory for the order
@@ -692,7 +692,7 @@ public class InventoryEventHandler {
 // Email Service consumes events
 @Component
 public class EmailEventHandler {
-    
+
     @SqsListener("email-queue")
     public void handleOrderCreated(OrderCreatedEvent event) {
         // Send confirmation email
@@ -707,31 +707,31 @@ public class EmailEventHandler {
 @Component
 @Slf4j
 public class DeadLetterQueueHandler {
-    
+
     // DLQ created automatically with dead_letter_queue: true
     @SqsListener("user-events-dlq")
-    public void handleFailedUserEvents(UserEvent event, 
+    public void handleFailedUserEvents(UserEvent event,
                                      @Header Map<String, Object> headers) {
-        
+
         String approximateReceiveCount = (String) headers.get("ApproximateReceiveCount");
-        log.error("Processing failed user event (receive count: {}): {}", 
+        log.error("Processing failed user event (receive count: {}): {}",
                   approximateReceiveCount, event);
-        
+
         // Alert operations team
-        alertService.sendAlert("DLQ Processing", 
-            "Failed to process user event after " + approximateReceiveCount + " attempts", 
+        alertService.sendAlert("DLQ Processing",
+            "Failed to process user event after " + approximateReceiveCount + " attempts",
             event);
-        
+
         // Optionally try manual processing or store for later analysis
         failedEventRepository.save(FailedEvent.from(event, headers));
     }
-    
+
     // DLQ created automatically with dead_letter_queue: true
     @SqsListener("orders-dlq")
     public void handleFailedOrders(OrderEvent event) {
         // Critical business process - might need immediate attention
         alertService.sendCriticalAlert("Order Processing Failed", event);
-        
+
         // Try alternative processing path
         orderRecoveryService.processFailedOrder(event);
     }
@@ -809,13 +809,13 @@ lsof -i :8055
 **Queues/Topics Not Created**:
 ```bash
 # Check initialization logs
-docker logs local-dev-localstack-init
+docker logs dev-stack-localstack-init
 
 # Verify configuration file
 cat .localstack-config.json
 
 # Manually run initialization
-docker exec -it local-dev-localstack bash
+docker exec -it dev-stack-localstack bash
 /etc/localstack/init/ready.d/init-aws-resources.sh
 ```
 
@@ -842,7 +842,7 @@ awslocal sns list-subscriptions-by-topic \
 awslocal dynamodb list-tables
 
 # Check table creation logs
-docker logs local-dev-localstack-init
+docker logs dev-stack-localstack-init
 
 # Manually create table if needed
 awslocal dynamodb create-table \

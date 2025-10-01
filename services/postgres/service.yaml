@@ -56,7 +56,14 @@ spring_config:
 
 # Health check configuration
 health_check:
-  command: ["pg_isready", "-U", "${POSTGRES_USER:-postgres}", "-d", "${POSTGRES_DB:-local_dev}"]
+  command:
+    [
+      "pg_isready",
+      "-U",
+      "${POSTGRES_USER:-postgres}",
+      "-d",
+      "${POSTGRES_DB:-local_dev}",
+    ]
   interval: 10s
   timeout: 5s
   retries: 5
@@ -84,9 +91,9 @@ web_interfaces: []
 
 # Common CLI commands
 cli_commands:
-  connect: "docker exec -it ${PROJECT_NAME:-local-dev}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev}"
-  backup: "docker exec ${PROJECT_NAME:-local-dev}-postgres pg_dump -U ${POSTGRES_USER:-postgres} ${POSTGRES_DB:-local_dev} > backup.sql"
-  restore: "docker exec -i ${PROJECT_NAME:-local-dev}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev} < backup.sql"
+  connect: "docker exec -it ${PROJECT_NAME:-dev-stack}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev}"
+  backup: "docker exec ${PROJECT_NAME:-dev-stack}-postgres pg_dump -U ${POSTGRES_USER:-postgres} ${POSTGRES_DB:-local_dev} > backup.sql"
+  restore: "docker exec -i ${PROJECT_NAME:-dev-stack}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev} < backup.sql"
 
 # Documentation links
 docs:
