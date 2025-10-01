@@ -1,0 +1,105 @@
+# golangci-lint configuration for dev-stack
+# See https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  go: "1.21"
+
+output:
+  formats:
+    - format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: false
+
+  govet:
+    enable:
+      - shadow
+
+  gocyclo:
+    min-complexity: 15
+
+  goimports:
+    local-prefixes: github.com/isaacgarza/dev-stack
+
+  misspell:
+    locale: US
+
+  lll:
+    line-length: 120
+
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+
+  funlen:
+    lines: 100
+    statements: 50
+
+  gocognit:
+    min-complexity: 20
+
+  revive:
+    confidence: 0.8
+    rules:
+      - name: exported
+      - name: package-comments
+      - name: var-naming
+
+  staticcheck:
+    checks: ["all"]
+
+linters:
+  disable-all: true
+  enable:
+    # Essential linters
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+
+    # Code quality
+    - goimports
+    - gofmt
+    - misspell
+    - goconst
+    - revive
+    - gosec
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on test files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - funlen
+        - goconst
+
+    # Allow long lines in build constraint comments
+    - source: "^//go:build"
+      linters:
+        - lll
+
+    # Allow long lines with go:generate
+    - source: "^//go:generate "
+      linters:
+        - lll
+
+  max-issues-per-linter: 50
+  max-same-issues: 3
+  new: false
+
+severity:
+  default-severity: error

@@ -1,10 +1,83 @@
+# Go Build Configuration
+GO_VERSION ?= 1.21
+BINARY_NAME = dev-stack
+BUILD_DIR = build
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS = -ldflags "-X github.com/isaacgarza/dev-stack/internal/cli.version=$(VERSION) \
+                   -X github.com/isaacgarza/dev-stack/internal/cli.commit=$(COMMIT) \
+                   -X github.com/isaacgarza/dev-stack/internal/cli.date=$(BUILD_DATE)"
+
+# Python Configuration (legacy)
 PYTHON ?= python3
 VENV ?= dev-stack-env
-PYTHON_VERSION := $(shell cat .python-version)
+PYTHON_VERSION := $(shell cat .python-version 2>/dev/null || echo "3.11")
 
-.PHONY: setup docs lint clean help test
+# Platform detection
+GOOS ?= $(shell go env GOOS)
+GOARCH ?= $(shell go env GOARCH)
 
-setup:
+.PHONY: help build build-all install clean test test-go test-python lint lint-go lint-python deps deps-go deps-python setup docs
+
+## Default target
+all: build
+
+## Go targets
+build: deps-go ## Build the Go binary for current platform
+	@echo "Building $(BINARY_NAME) for $(GOOS)/$(GOARCH)..."
+	@mkdir -p $(BUILD_DIR)
+	go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/dev-stack
+
+build-all: deps-go ## Build binaries for all supported platforms
+	@echo "Building $(BINARY_NAME) for all platforms..."
+	@mkdir -p $(BUILD_DIR)
+	# Linux
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 ./cmd/dev-stack
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-arm64 ./cmd/dev-stack
+	# macOS
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 ./cmd/dev-stack
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 ./cmd/dev-stack
+	# Windows
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe ./cmd/dev-stack
+	@echo "Binaries built in $(BUILD_DIR)/"
+
+install: build ## Install the binary to GOPATH/bin
+	@echo "Installing $(BINARY_NAME)..."
+	go install $(LDFLAGS) ./cmd/dev-stack
+
+deps-go: ## Download Go dependencies
+	@echo "Downloading Go dependencies..."
+	go mod download
+	go mod tidy
+
+test-go: deps-go ## Run Go tests
+	@echo "Running Go tests..."
+	go test -v -race -coverprofile=coverage.out ./...
+
+test-go-integration: build ## Run Go integration tests
+	@echo "Running Go integration tests..."
+	go test -v -tags=integration ./tests/...
+
+lint-go: ## Run Go linting
+	@echo "Running Go linting..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	fi
+	$(shell go env GOPATH)/bin/golangci-lint run ./...
+
+fmt-go: ## Format Go code
+	@echo "Formatting Go code..."
+	go fmt ./...
+	goimports -w .
+
+vet-go: ## Run Go vet
+	@echo "Running go vet..."
+	go vet ./...
+
+## Python targets (legacy support)
+setup: ## Set up Python environment (legacy)
 	@echo "Setting up Python environment with pyenv and virtualenv..."
 	@if ! command -v pyenv >/dev/null 2>&1; then \
 		echo "Error: pyenv is not installed. See https://github.com/pyenv/pyenv"; \
@@ -26,17 +99,21 @@ setup:
 	$(HOME)/.pyenv/versions/$(VENV)/bin/pip install --upgrade pip
 	$(HOME)/.pyenv/versions/$(VENV)/bin/pip install -r requirements.txt
 
-docs:
-	@which $(PYTHON) >/dev/null || (echo "$(PYTHON) not found. Run 'make setup' first."; exit 1)
-	@$(PYTHON) -c "import yaml" 2>/dev/null || (echo "pyyaml not installed. Run 'make setup' first."; exit 1)
-	@if [ ! -f scripts/generate_docs.py ]; then \
-		echo "Error: scripts/generate_docs.py not found."; \
+deps-python: ## Download Python dependencies (legacy)
+	@echo "Installing Python dependencies..."
+	@if [ -f requirements.txt ]; then \
+		pip install -r requirements.txt; \
+	fi
+
+test-python: ## Run Python tests (legacy)
+	@echo "Running Python framework tests with pytest..."
+	@if ! command -v pytest >/dev/null 2>&1; then \
+		echo "Error: pytest is not installed. Install it with 'pip install pytest'."; \
 		exit 1; \
 	fi
-	@echo "Generating documentation from YAML manifests..."
-	$(PYTHON) scripts/generate_docs.py
+	@$(HOME)/.pyenv/versions/$(VENV)/bin/python -m pytest tests/ || python -m pytest tests/
 
-lint:
+lint-python: ## Lint Python scripts (legacy)
 	@echo "Linting Python scripts..."
 	@if ! command -v flake8 >/dev/null 2>&1; then \
 		echo "Error: flake8 is not installed. Install it with 'pip install flake8'."; \
@@ -51,30 +128,124 @@ lint:
 		exit 1; \
 	fi
 
-clean:
-	@echo "Cleaning up generated files..."
-	rm -f docs/reference.md docs/services.md lint.log
-
-test:
-	@echo "Running Python framework tests with pytest..."
-	@if ! command -v pytest >/dev/null 2>&1; then \
-		echo "Error: pytest is not installed. Install it with 'pip install pytest'."; \
+docs: ## Generate documentation from YAML manifests (legacy)
+	@which $(PYTHON) >/dev/null || (echo "$(PYTHON) not found. Run 'make setup' first."; exit 1)
+	@$(PYTHON) -c "import yaml" 2>/dev/null || (echo "pyyaml not installed. Run 'make setup' first."; exit 1)
+	@if [ ! -f scripts/generate_docs.py ]; then \
+		echo "Error: scripts/generate_docs.py not found."; \
 		exit 1; \
 	fi
-	@$(HOME)/.pyenv/versions/$(VENV)/bin/python -m pytest tests/
+	@echo "Generating documentation from YAML manifests..."
+	$(PYTHON) scripts/generate_docs.py
 
-help:
-	@echo "Available targets:"
-	@echo "  setup   - Set up Python environment and install dependencies"
-	@echo "  docs    - Generate documentation from YAML manifests"
-	@echo "  lint    - Lint Python scripts in scripts/"
-	@echo "  clean   - Remove generated documentation and lint files"
-	@echo "  test    - Run Python framework tests with pytest"
-	@echo "  help    - Show this help message"
+## Combined targets
+deps: deps-go deps-python ## Download all dependencies
+
+test: test-go ## Run all tests (focusing on Go, Python as fallback)
+	@if [ -f requirements.txt ] && [ -d tests/ ]; then \
+		$(MAKE) test-python; \
+	fi
+
+lint: lint-go ## Run all linting (focusing on Go, Python as fallback)
+	@if [ -f requirements.txt ] && [ -d scripts/ ]; then \
+		$(MAKE) lint-python; \
+	fi
+
+## Development targets
+dev: build ## Build and run in development mode
+	@echo "Running $(BINARY_NAME) in development mode..."
+	./$(BUILD_DIR)/$(BINARY_NAME) --help
+
+watch: ## Watch for changes and rebuild (requires entr)
+	@if ! command -v entr >/dev/null 2>&1; then \
+		echo "Error: entr is not installed. Install it with your package manager."; \
+		exit 1; \
+	fi
+	@echo "Watching for changes... (requires entr)"
+	find . -name "*.go" | entr -r make build
+
+## Release targets
+release-check: ## Check if ready for release
+	@echo "Checking release readiness..."
+	@git diff --exit-code || (echo "Error: Uncommitted changes found"; exit 1)
+	@git diff --cached --exit-code || (echo "Error: Staged changes found"; exit 1)
+	@echo "Ready for release!"
+
+## Docker targets
+docker-build: ## Build Docker image
+	@echo "Building Docker image..."
+	docker build -t dev-stack:$(VERSION) .
+
+docker-run: docker-build ## Run Docker container
+	@echo "Running Docker container..."
+	docker run --rm -it dev-stack:$(VERSION)
+
+## Cleanup targets
+clean: ## Remove build artifacts and generated files
+	@echo "Cleaning up..."
+	rm -rf $(BUILD_DIR)/
+	rm -f coverage.out
+	rm -f lint.log
+	rm -f docs/reference.md docs/services.md
+	go clean
+
+clean-all: clean ## Remove all generated files including dependencies
+	go clean -modcache
+	rm -rf vendor/
+
+## Version and info targets
+version: ## Show version information
+	@echo "Version: $(VERSION)"
+	@echo "Commit: $(COMMIT)"
+	@echo "Build Date: $(BUILD_DATE)"
+	@echo "Go Version: $(shell go version)"
+
+info: ## Show build information
+	@echo "Binary Name: $(BINARY_NAME)"
+	@echo "Build Directory: $(BUILD_DIR)"
+	@echo "Target OS/Arch: $(GOOS)/$(GOARCH)"
+	@echo "Go Version: $(shell go version)"
+	@echo "Git Status: $(shell git status --porcelain | wc -l) uncommitted changes"
+
+## Help target
+help: ## Show this help message
+	@echo "dev-stack Makefile"
 	@echo ""
-	@echo "Usage examples:"
-	@echo "  make setup"
-	@echo "  make docs"
-	@echo "  make lint"
-	@echo "  make test"
-	@echo "  make clean"
+	@echo "Go Targets (Primary):"
+	@echo "  build          - Build the Go binary for current platform"
+	@echo "  build-all      - Build binaries for all supported platforms"
+	@echo "  install        - Install the binary to GOPATH/bin"
+	@echo "  test-go        - Run Go tests"
+	@echo "  lint-go        - Run Go linting"
+	@echo "  fmt-go         - Format Go code"
+	@echo "  deps-go        - Download Go dependencies"
+	@echo ""
+	@echo "Development Targets:"
+	@echo "  dev            - Build and run in development mode"
+	@echo "  watch          - Watch for changes and rebuild"
+	@echo "  docker-build   - Build Docker image"
+	@echo "  docker-run     - Run Docker container"
+	@echo ""
+	@echo "Legacy Python Targets:"
+	@echo "  setup          - Set up Python environment"
+	@echo "  test-python    - Run Python tests"
+	@echo "  lint-python    - Lint Python scripts"
+	@echo "  docs           - Generate documentation from YAML"
+	@echo ""
+	@echo "Combined Targets:"
+	@echo "  test           - Run all tests"
+	@echo "  lint           - Run all linting"
+	@echo "  deps           - Download all dependencies"
+	@echo ""
+	@echo "Utility Targets:"
+	@echo "  clean          - Remove build artifacts"
+	@echo "  clean-all      - Remove all generated files"
+	@echo "  version        - Show version information"
+	@echo "  info           - Show build information"
+	@echo "  help           - Show this help message"
+	@echo ""
+	@echo "Usage Examples:"
+	@echo "  make build                    # Build for current platform"
+	@echo "  make build-all               # Build for all platforms"
+	@echo "  make test                    # Run tests"
+	@echo "  make GOOS=linux GOARCH=amd64 build  # Cross-compile"
