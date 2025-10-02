@@ -1,6 +1,8 @@
 # dev-stack
 > A powerful development stack management tool built in Go for streamlined local development automation.
 
+> **🎉 Migration Complete**: dev-stack has successfully migrated from Python to a pure Go implementation with enhanced performance, comprehensive CLI features, and no external language dependencies.
+
 ## Overview
 
 **dev-stack** is a modern CLI tool that helps you quickly set up, manage, and tear down development environments with consistent configurations across your team. Built in Go for performance and reliability, it provides a unified interface for managing Docker-based development stacks.
@@ -68,6 +70,15 @@ dev-stack down
 | `dev-stack status` | Show status of services |
 | `dev-stack doctor` | Run system health checks |
 | `dev-stack version` | Show version information |
+| `dev-stack docs` | Generate documentation from YAML manifests |
+| `dev-stack logs` | View service logs |
+| `dev-stack exec` | Execute commands in running containers |
+| `dev-stack scale` | Scale services up or down |
+| `dev-stack backup` | Create backups of service data |
+| `dev-stack restore` | Restore service data from backups |
+| `dev-stack cleanup` | Clean up stopped containers and resources |
+| `dev-stack connect` | Connect to running services |
+| `dev-stack monitor` | Monitor service health and performance |
 
 ### Examples
 
@@ -116,9 +127,11 @@ dev-stack/
 ## 🔧 Development
 
 ### Prerequisites
-- Go 1.21 or later
+- Go 1.21 or later (for development)
 - Docker and Docker Compose
-- Make
+- Make (build system)
+
+> **Note**: End users only need Docker - the dev-stack binary is self-contained with no runtime dependencies.
 
 ### Build Commands
 ```bash
@@ -194,9 +207,10 @@ dev-stack seamlessly integrates with Docker and Docker Compose:
 
 ## 🎯 Project Templates
 
-Supported project types:
+dev-stack provides project scaffolding templates for different application types. All templates are managed by the Go-based CLI:
+
 - **go**: Go application with Docker
-- **node**: Node.js application with Docker
+- **node**: Node.js application with Docker  
 - **python**: Python application with Docker
 - **fullstack**: Multi-service full-stack application
 
@@ -206,21 +220,31 @@ Each template includes:
 - Health checks and monitoring
 - Best practice directory structure
 
-## 📖 Legacy Python Support
+## 📚 Documentation Generation
 
-The repository also contains the legacy Python implementation in the `scripts/` directory. While the Go implementation is the primary focus, Python scripts are maintained for backward compatibility.
+dev-stack includes a built-in documentation generation system that creates comprehensive reference docs from YAML manifests.
 
-### Python Setup (Legacy)
+### Generating Documentation
 ```bash
-# Set up Python environment
-make setup
+# Generate all documentation from YAML manifests
+dev-stack docs
 
-# Generate documentation
-make docs
+# Generate only command reference
+dev-stack docs --commands-only
 
-# Run Python tests
-make test-python
+# Generate only services guide
+dev-stack docs --services-only
+
+# Preview changes without writing files
+dev-stack docs --dry-run
+
+# Show detailed progress
+dev-stack docs --verbose
 ```
+
+The documentation system automatically generates:
+- **Command Reference** (`docs/reference.md`) from `scripts/commands.yaml`
+- **Services Guide** (`docs/services.md`) from `services/services.yaml`
 
 ## 🤝 Contributing
 
@@ -248,6 +272,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🚀 Roadmap
 
+- [x] **Complete Go Migration** - Python-free implementation ✅
+- [x] **Comprehensive CLI** - Full feature parity achieved ✅
+- [x] **Documentation Generation** - Native Go implementation ✅
+- [x] **Mature Build System** - 40+ make targets with release automation ✅
 - [ ] Plugin system for extensibility
 - [ ] Advanced version management
 - [ ] Team collaboration features

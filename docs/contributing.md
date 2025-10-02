@@ -23,13 +23,13 @@ We welcome contributions from the development community! Whether you're fixing b
 
 ---
 
-### 🐍 Python Environment Setup (Recommended)
+### 📚 Documentation Generation (Go-based)
 
-The project is built with Go and requires no additional language dependencies for development.
+The project is built entirely in Go and requires no additional language dependencies for development.
 
-To auto-generate documentation from YAML manifests, dev-stack uses a Python script and the [PyYAML](https://pyyaml.org/) library.
+To auto-generate documentation from YAML manifests, dev-stack uses a native Go implementation with built-in YAML processing.
 
-**Run the Doc Generation Script:**
+**Run the Doc Generation Command:**
 ```bash
 dev-stack docs
 ```
@@ -37,17 +37,32 @@ dev-stack docs
 This will update `docs/reference.md` and `docs/services.md` based on the latest YAML manifests.
 
 **Contributor Workflow Checklist:**
-1. Run `make setup` to set up your Python environment and install dependencies (uses pyenv, virtualenv, and requirements.txt).
+1. Ensure you have Go 1.21+ installed and the project built (`make build`).
 2. Edit `scripts/commands.yaml` and/or `services/services.yaml` to add or update commands/services.
-3. Run `make docs` to regenerate documentation from YAML manifests.
+3. Run `dev-stack docs` to regenerate documentation from YAML manifests.
 4. Commit both the manifest and the updated docs.
 5. Never manually edit auto-generated docs (`docs/reference.md`, `docs/services.md`).
 6. Optionally, set up CI or pre-commit hooks to automate doc generation.
 
-- `scripts/commands.yaml`: Lists all available CLI commands and flags for `setup.sh` and `manage.sh`.
+**Additional Documentation Options:**
+```bash
+# Generate only command reference
+dev-stack docs --commands-only
+
+# Generate only services guide  
+dev-stack docs --services-only
+
+# Preview changes without writing files
+dev-stack docs --dry-run
+
+# Show detailed progress
+dev-stack docs --verbose
+```
+
+- `scripts/commands.yaml`: Lists all available CLI commands and flags for the dev-stack CLI.
 - `services/services.yaml`: Lists all supported services and their configuration options.
 
-Documentation for commands (`docs/reference.md`) and services (`docs/services.md`) is auto-generated from these manifests using the `dev-stack docs` command.
+Documentation for commands (`docs/reference.md`) and services (`docs/services.md`) is auto-generated from these manifests using the native Go `dev-stack docs` command.
 
 See `dev-stack docs --help` for usage instructions.
 
@@ -686,10 +701,17 @@ See the Contributor Workflow Checklist above for the recommended steps.
 Do not manually edit `docs/reference.md` or `docs/services.md`—these files are always generated from the manifests.
 
 **Tip:**
-You can automate this process with a pre-commit hook or CI workflow using `dev-stack docs`.
+You can automate this process with a pre-commit hook or CI workflow using `./dev-stack docs`.
 
+## 🤖 GitHub Workflows & CI/CD
 
-## 🏆 Recognition
+For information about GitHub Actions workflows, CI/CD pipeline, and automation:
+- **[GitHub Workflows Documentation](../.github/github-workflows.md)** - Complete overview of CI/CD setup
+- **[Workflows README](../.github/workflows/README.md)** - Detailed workflow documentation
+- **[Contributing to CI](../.github/workflows/README.md#development-workflow)** - How to work with the automation
+
+Key workflows:
+- **CI Pipeline**:# 🏆 Recognition
 
 Contributors are recognized in several ways:
 
