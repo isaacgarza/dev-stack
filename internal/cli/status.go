@@ -16,6 +16,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Status constants
+const (
+	StateRunning  = "running"
+	StateStarting = "starting"
+	EmojiYellow   = "🟡"
+)
+
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
 	Use:   "status [service...]",
@@ -55,7 +62,11 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("failed to create service manager: %w", err)
 		}
-		defer manager.Close()
+		defer func() {
+			if closeErr := manager.Close(); closeErr != nil {
+				log.Warn("failed to close manager", "error", closeErr)
+			}
+		}()
 
 		if len(args) == 0 {
 			if !quiet {
@@ -147,7 +158,7 @@ func displayStatusTable(services []types.ServiceStatus, quiet bool) error {
 		health := getHealthIcon(service.Health) + " " + service.Health
 
 		var cpuStr, memStr, uptimeStr string
-		if service.State == "running" {
+		if service.State == StateRunning {
 			cpuStr = fmt.Sprintf("%.1f%%", service.CPUUsage)
 			if service.Memory.Limit > 0 {
 				memStr = fmt.Sprintf("%.1fMB", float64(service.Memory.Used)/1024/1024)
@@ -188,8 +199,8 @@ func getStateIcon(state string) string {
 		return "🟢"
 	case "stopped", "exited":
 		return "🔴"
-	case "starting":
-		return "🟡"
+	case StateStarting:
+		return EmojiYellow
 	case "stopping":
 		return "🟠"
 	default:
@@ -203,8 +214,8 @@ func getHealthIcon(health string) string {
 		return "✅"
 	case "unhealthy":
 		return "❌"
-	case "starting":
-		return "🟡"
+	case StateStarting:
+		return EmojiYellow
 	default:
 		return "➖"
 	}

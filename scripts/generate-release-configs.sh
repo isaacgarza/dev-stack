@@ -53,48 +53,48 @@ print_status "Generating release configuration files from $CONFIG_FILE"
 # Generate commitlint configuration
 print_status "Generating .commitlintrc.json..."
 
-# Extract commit types as a JSON array
-COMMIT_TYPES=$(yq eval '.commit_types[].type' "$CONFIG_FILE" | jq -R . | jq -s .)
-HEADER_MAX_LENGTH=$(yq eval '.commit_lint.header_max_length' "$CONFIG_FILE")
-SUBJECT_CASE_RULES=$(yq eval '.commit_lint.subject_case_rules' "$CONFIG_FILE" -o=json)
+# Extract commit types as a JSON array with proper formatting
+COMMIT_TYPES=$(yq eval '.commit_types[].type' "$CONFIG_FILE" | jq -R . | jq -s . | jq -c .)
+HEADER_MAX_LENGTH=$(yq eval '.commit_lint.header_max_length // 72' "$CONFIG_FILE")
 
-cat > "$PROJECT_ROOT/.commitlintrc.json" << EOF
-{
-  "extends": ["@commitlint/config-conventional"],
-  "rules": {
-    "type-enum": [
-      2,
-      "always",
-      $COMMIT_TYPES
-    ],
-    "subject-case": [2, "never", $SUBJECT_CASE_RULES],
-    "subject-empty": [2, "never"],
-    "subject-full-stop": [2, "never", "."],
-    "header-max-length": [2, "always", $HEADER_MAX_LENGTH]
-  }
-}
-EOF
+# Generate properly formatted commitlint config
+jq -n \
+  --argjson commit_types "$COMMIT_TYPES" \
+  --argjson header_max "$HEADER_MAX_LENGTH" \
+  '{
+    "extends": ["@commitlint/config-conventional"],
+    "rules": {
+      "type-enum": [2, "always", $commit_types],
+      "subject-empty": [2, "never"],
+      "subject-full-stop": [2, "never", "."],
+      "header-max-length": [2, "always", $header_max]
+    }
+  }' > "$PROJECT_ROOT/.commitlintrc.json"
 
 # Generate release-please configuration
 print_status "Generating .release-please-config.json..."
 
 PACKAGE_NAME=$(yq eval '.release.package_name' "$CONFIG_FILE")
 RELEASE_TYPE=$(yq eval '.release.release_type' "$CONFIG_FILE")
-CHANGELOG_SECTIONS=$(yq eval '.commit_types | map({"type": .type, "section": .section, "hidden": .hidden})' "$CONFIG_FILE" -o=json)
-EXTRA_FILES=$(yq eval '.release.extra_files' "$CONFIG_FILE" -o=json)
+CHANGELOG_SECTIONS=$(yq eval '.commit_types | map({"type": .type, "section": .section, "hidden": .hidden})' "$CONFIG_FILE" -o=json -I=0)
+EXTRA_FILES=$(yq eval '.release.extra_files' "$CONFIG_FILE" -o=json -I=0)
 
-cat > "$PROJECT_ROOT/.release-please-config.json" << EOF
-{
-  "release-type": "$RELEASE_TYPE",
-  "packages": {
-    ".": {
-      "package-name": "$PACKAGE_NAME",
-      "changelog-sections": $CHANGELOG_SECTIONS,
-      "extra-files": $EXTRA_FILES
+# Generate properly formatted release-please config
+jq -n \
+  --arg release_type "$RELEASE_TYPE" \
+  --arg package_name "$PACKAGE_NAME" \
+  --argjson changelog_sections "$CHANGELOG_SECTIONS" \
+  --argjson extra_files "$EXTRA_FILES" \
+  '{
+    "release-type": $release_type,
+    "packages": {
+      ".": {
+        "package-name": $package_name,
+        "changelog-sections": $changelog_sections,
+        "extra-files": $extra_files
+      }
     }
-  }
-}
-EOF
+  }' > "$PROJECT_ROOT/.release-please-config.json"
 
 
 

@@ -1,9 +1,9 @@
 module dev-stack
 
-go 1.23.0
+go 1.24
 
 require (
-	github.com/docker/docker v27.4.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
 )

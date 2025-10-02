@@ -1,0 +1,13 @@
+# Nancy ignore file for OSS Index vulnerability scanning
+# Add CVE IDs or OSS Index IDs that should be ignored during scanning
+# Format: one ID per line
+
+# Example entries (remove these when adding real ignores):
+# CVE-2021-12345
+# OSS-INDEX-12345
+
+# Common false positives or accepted risks can be added here
+# Make sure to document why each vulnerability is being ignored
+
+# Temporary ignores for development dependencies
+# (These should be reviewed and removed regularly)

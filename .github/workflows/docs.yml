@@ -35,17 +35,15 @@ jobs:
           node-version: "18"
           cache: "npm"
 
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli
+      - name: Install dependencies
+        run: npm ci
 
       - name: Lint Markdown files
-        run: |
-          markdownlint README.md
-          markdownlint docs/
+        run: npm run lint:md
         continue-on-error: true
 
       - name: Check for broken links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        uses: tcort/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: "yes"
           use-verbose-mode: "yes"
@@ -83,7 +81,7 @@ jobs:
           fi
 
       - name: Upload CLI docs artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cli-docs
           path: docs/cli/
@@ -123,7 +121,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download CLI docs
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: cli-docs
           path: docs/cli/
@@ -132,6 +130,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Setup documentation site generator
         run: |
@@ -242,7 +244,7 @@ jobs:
           mkdocs build --clean --strict
 
       - name: Upload documentation artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: documentation-site
           path: site/
@@ -261,22 +263,22 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Download documentation artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: documentation-site
           path: site/
 
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
       - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site/
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
 
   docs-summary:
     name: Documentation Summary

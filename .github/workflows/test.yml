@@ -50,12 +50,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
 
       - name: Cache Go modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -71,7 +71,9 @@ jobs:
           go mod verify
 
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+        shell: bash
+        run: |
+          go test -v -race -coverprofile=coverage.out ./cmd/... ./internal/...
 
       - name: Generate coverage report
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == needs.get-versions.outputs.go-version
@@ -79,7 +81,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == needs.get-versions.outputs.go-version
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.out
           flags: unittests
@@ -87,7 +89,7 @@ jobs:
 
       - name: Upload coverage reports
         if: matrix.os == 'ubuntu-latest' && matrix.go-version == needs.get-versions.outputs.go-version
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
           path: |
@@ -107,9 +109,8 @@ jobs:
         id: setup-go
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
           args: --timeout=5m
 
   build:
@@ -131,7 +132,7 @@ jobs:
         run: make build-all
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: build/
@@ -154,7 +155,7 @@ jobs:
         id: setup-go
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-artifacts
           path: build/
@@ -164,10 +165,10 @@ jobs:
 
       - name: Run integration tests
         run: |
-          if [ -d "tests" ]; then
-            make test-go-integration
+          if find ./tests -name "*_test.go" 2>/dev/null | grep -q .; then
+            cd tests/integration && go test -v -tags=integration .
           else
-            echo "No integration tests found, skipping..."
+            echo "No Go integration tests found in ./tests/, skipping..."
           fi
 
   validate:

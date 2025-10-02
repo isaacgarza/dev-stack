@@ -45,7 +45,11 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("failed to create service manager: %w", err)
 		}
-		defer manager.Close()
+		defer func() {
+			if closeErr := manager.Close(); closeErr != nil {
+				log.Warn("failed to close manager", "error", closeErr)
+			}
+		}()
 
 		// Display what we're starting
 		if len(args) == 0 {
@@ -93,11 +97,12 @@ Examples:
 				for _, service := range services {
 					status := "❌"
 					if service.State == "running" {
-						if service.Health == "healthy" {
+						switch service.Health {
+						case "healthy":
 							status = "✅"
-						} else if service.Health == "starting" {
+						case "starting":
 							status = "🟡"
-						} else {
+						default:
 							status = "🟢"
 						}
 					}

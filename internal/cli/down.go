@@ -43,7 +43,11 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("failed to create service manager: %w", err)
 		}
-		defer manager.Close()
+		defer func() {
+			if closeErr := manager.Close(); closeErr != nil {
+				log.Warn("failed to close manager", "error", closeErr)
+			}
+		}()
 
 		// Display what we're stopping
 		if len(args) == 0 {

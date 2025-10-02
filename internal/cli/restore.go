@@ -75,9 +75,11 @@ Examples:
 		if !force {
 			fmt.Print("Are you sure you want to restore? This will overwrite existing data. (y/N): ")
 			var confirm string
-			fmt.Scanln(&confirm)
+			if _, err := fmt.Scanln(&confirm); err != nil {
+				return fmt.Errorf("failed to read confirmation: %w", err)
+			}
 			if strings.ToLower(confirm) != "y" && strings.ToLower(confirm) != "yes" {
-				fmt.Println("Restore cancelled")
+				fmt.Println("Restore canceled")
 				return nil
 			}
 		}

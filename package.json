@@ -1,0 +1,35 @@
+{
+  "name": "dev-stack-docs",
+  "version": "1.0.0",
+  "description": "Documentation tooling for dev-stack project",
+  "private": true,
+  "scripts": {
+    "lint:md": "markdownlint --config .markdownlint.json README.md docs/",
+    "lint:links": "markdown-link-check README.md docs/**/*.md",
+    "lint:md:fix": "markdownlint --config .markdownlint.json --fix README.md docs/",
+    "docs:build": "mkdocs build --clean --strict",
+    "docs:serve": "mkdocs serve",
+    "docs:deploy": "mkdocs gh-deploy",
+    "lint:commits": "commitlint --from HEAD~1 --to HEAD --verbose"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.37.0",
+    "markdown-link-check": "^3.11.2",
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3"
+  },
+  "keywords": [
+    "documentation",
+    "markdown",
+    "linting"
+  ],
+  "author": "Isaac Garza",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isaacgarza/dev-stack.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
