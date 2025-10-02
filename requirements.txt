@@ -1,3 +1,0 @@
-pyyaml
-flake8
-pytest

@@ -3,44 +3,32 @@
 #-------------------------------------------------------------#
 #  Single source of truth for dev-stack CLI commands & flags.  #
 #                                                             #
-#  - Used by scripts/generate_docs.py to auto-generate         #
+#  - Used by Go docs command to auto-generate                 #
 #    docs/reference.md                                         #
 #  - Update this file when adding or changing commands         #
-#    in setup.sh or manage.sh                                  #
+#    in the Go CLI                                            #
 #  - Do NOT manually edit docs/reference.md (auto-generated)   #
 ###############################################################
 
-setup:
-  - --init
-  - --services
-  - --project
-  - --cleanup-existing
-  - --connect-existing
-  - --force
-  - --dry-run
-  - --skip-validation
-  - --validate-only
-  - --debug
-  - --config
-  - --list-services
-  - --interactive
-
-manage:
-  - start
-  - stop
-  - restart
-  - info
-  - status
-  - logs
-  - connect
-  - exec
+dev-stack:
   - backup
-  - restore
-  - update
   - cleanup
-  - list-all
-  - cleanup-all
+  - connect
+  - docs
+  - doctor
+  - down
+  - exec
+  - init
+  - logs
   - monitor
+  - restore
   - scale
-  - cp
-  - help
+  - status
+  - up
+  - version
+
+global-flags:
+  - --config
+  - --help
+  - --verbose
+  - --version

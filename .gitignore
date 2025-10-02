@@ -4,6 +4,7 @@ dist/
 bin/
 target/
 out/
+dev-stack
 *.class
 *.jar
 *.war

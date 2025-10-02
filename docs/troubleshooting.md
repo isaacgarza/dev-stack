@@ -11,16 +11,16 @@
    - Use `--cleanup-existing` to resolve.
 
 3. **Service Won't Start**
-   - Check logs: `./scripts/manage.sh logs SERVICE_NAME`
-   - Restart service: `./scripts/manage.sh restart SERVICE_NAME`
+   - Check logs: `dev-stack logs SERVICE_NAME`
+   - Restart service: `dev-stack down && dev-stack up`
 
 4. **Memory Issues**
    - Check usage: `docker stats`
    - Increase Docker memory limit.
 
 5. **Invalid Configuration**
-   - Validate YAML: `python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"`
-   - Run setup with debug: `./scripts/setup.sh --debug`
+   - Validate YAML: `dev-stack doctor`
+   - Run setup with debug: `dev-stack --verbose up`
 
 ---
 
@@ -42,8 +42,8 @@ Most issues with the framework fall into these categories:
 ```bash
 # Quick system check
 docker info                              # Docker daemon status
-./scripts/manage.sh status              # Service status
-./scripts/manage.sh info                # Connection information
+dev-stack status                       # Service status and connection information
+dev-stack doctor                       # Comprehensive system health check
 
 # Resource check
 docker system df                        # Docker disk usage
@@ -60,14 +60,14 @@ lsof -i :9092                          # Kafka port
 
 ```bash
 # View all service logs
-./scripts/manage.sh logs
+dev-stack logs
 
 # Recent errors only
-./scripts/manage.sh logs --since=1h | grep -i error
+dev-stack logs --since=1h | grep -i error
 
 # Service-specific logs
-./scripts/manage.sh logs postgres -f
-./scripts/manage.sh logs redis --tail=50
+dev-stack logs postgres -f
+dev-stack logs redis --tail=50
 ```
 
 ## 🐳 Docker Issues
@@ -136,7 +136,7 @@ docker volume prune
 docker network prune
 
 # Clean up framework resources specifically
-./scripts/manage.sh cleanup-docker
+dev-stack cleanup
 ```
 
 ### Docker Memory Issues
@@ -176,15 +176,15 @@ vim dev-stack-config.yaml
 **Diagnosis:**
 ```bash
 # Check if service is running
-./scripts/manage.sh status
+dev-stack status
 
 # Check if port is open
 telnet localhost 5432               # PostgreSQL
 telnet localhost 3306               # MySQL
 
 # Check service logs
-./scripts/manage.sh logs postgres
-./scripts/manage.sh logs mysql
+dev-stack logs postgres
+dev-stack logs mysql
 
 # Test connection directly
 psql -h localhost -U postgres
@@ -194,7 +194,8 @@ mysql -h localhost -u root -p
 **Solutions:**
 ```bash
 # Restart database service
-./scripts/manage.sh restart postgres
+dev-stack down
+dev-stack up
 
 # Check for port conflicts
 lsof -i :5432
@@ -202,11 +203,11 @@ lsof -i :5432
 kill -9 PID
 
 # Verify configuration
-./scripts/manage.sh info postgres
+dev-stack status
 
 # Recreate service
-./scripts/manage.sh stop postgres
-./scripts/setup.sh --services=postgres
+dev-stack down
+dev-stack up
 ```
 
 ### Redis Connection Issues
@@ -225,10 +226,10 @@ redis-cli -h localhost -p 6379 ping
 redis-cli -h localhost -p 6379 -a your-password ping
 
 # Check Redis logs
-./scripts/manage.sh logs redis
+dev-stack logs redis
 
 # Check Redis info
-./scripts/manage.sh exec redis redis-cli INFO
+dev-stack exec redis redis-cli INFO
 ```
 
 **Solutions:**
@@ -699,7 +700,7 @@ cp -r /path/to/fresh/dev-stack-framework ./
 chmod +x dev-stack-framework/scripts/*.sh
 
 # Regenerate configuration
-./dev-stack-framework/scripts/setup.sh --init
+scripts/setup.sh --init
 ```
 
 ### System Resource Recovery

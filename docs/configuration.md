@@ -488,7 +488,7 @@ cp dev-stack-config.yaml dev-stack-config.dev.yaml
 cp dev-stack-config.yaml dev-stack-config.test.yaml
 
 # Use specific config
-./scripts/setup.sh --config=dev-stack-config.test.yaml
+dev-stack --config=dev-stack-config.test.yaml up
 ```
 
 ### Configuration Validation
@@ -580,10 +580,7 @@ overrides:
 If migrating from the old template system:
 
 ```bash
-# Old way
-./scripts/setup.sh --template=web-api
-
-# New way - create equivalent config
+# Create equivalent config
 cat > dev-stack-config.yaml << EOF
 services:
   enabled:
@@ -602,7 +599,7 @@ When updating the framework:
 cp dev-stack-config.yaml dev-stack-config.yaml.bak
 
 # Generate new sample
-./scripts/setup.sh --init --force
+dev-stack init
 
 # Merge changes manually
 diff dev-stack-config.yaml.bak dev-stack-config.yaml
@@ -679,29 +676,29 @@ python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
 **Service conflicts:**
 ```bash
 # Check for port conflicts
-./scripts/setup.sh --dry-run
+dev-stack doctor
 ```
 
 **Resource warnings:**
 ```bash
-# Skip warnings
-./scripts/setup.sh --skip-validation
+# Run with verbose output for debugging
+dev-stack --verbose up
 ```
 
 **Configuration not found:**
 ```bash
 # Create default configuration
-./scripts/setup.sh --init
+dev-stack init
 ```
 
 ### Debug Mode
 
 ```bash
-# Run setup with debug information
-./scripts/setup.sh --debug
+# Run with verbose debug information
+dev-stack --verbose up
 
-# Validate configuration only
-./scripts/setup.sh --validate-only
+# Validate system and configuration
+dev-stack doctor
 ```
 
 ## 🧭 See Also
