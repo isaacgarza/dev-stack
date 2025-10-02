@@ -9,16 +9,13 @@ LDFLAGS = -ldflags "-X github.com/isaacgarza/dev-stack/internal/cli.version=$(VE
                    -X github.com/isaacgarza/dev-stack/internal/cli.commit=$(COMMIT) \
                    -X github.com/isaacgarza/dev-stack/internal/cli.date=$(BUILD_DATE)"
 
-# Python Configuration (legacy)
-PYTHON ?= python3
-VENV ?= dev-stack-env
-PYTHON_VERSION := $(shell cat .python-version 2>/dev/null || echo "3.11")
+
 
 # Platform detection
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
-.PHONY: help build build-all install clean test test-go test-python lint lint-go lint-python deps deps-go deps-python setup docs
+.PHONY: help build build-all install clean test test-go lint lint-go deps deps-go docs
 
 ## Default target
 all: build
@@ -84,80 +81,18 @@ vet-go: ## Run Go vet
 	@echo "Running go vet..."
 	go vet ./...
 
-## Python targets (legacy support)
-setup: ## Set up Python environment (legacy)
-	@echo "Setting up Python environment with pyenv and virtualenv..."
-	@if ! command -v pyenv >/dev/null 2>&1; then \
-		echo "Error: pyenv is not installed. See https://github.com/pyenv/pyenv"; \
-		exit 1; \
-	fi
-	@if ! pyenv versions >/dev/null 2>&1; then \
-		echo "Error: pyenv-virtualenv is not installed. See https://github.com/pyenv/pyenv-virtualenv"; \
-		exit 1; \
-	fi
-	@if [ ! -f requirements.txt ]; then \
-		echo "Error: requirements.txt not found."; \
-		exit 1; \
-	fi
-	pyenv install -s $(PYTHON_VERSION)
-	pyenv local $(PYTHON_VERSION)
-	pyenv virtualenv $(PYTHON_VERSION) $(VENV) || true
-	@echo "Installing dependencies in dev-stack-env virtualenv..."
-	@echo "To activate the virtual environment, run: pyenv activate $(VENV)"
-	$(HOME)/.pyenv/versions/$(VENV)/bin/pip install --upgrade pip
-	$(HOME)/.pyenv/versions/$(VENV)/bin/pip install -r requirements.txt
 
-deps-python: ## Download Python dependencies (legacy)
-	@echo "Installing Python dependencies..."
-	@if [ -f requirements.txt ]; then \
-		pip install -r requirements.txt; \
-	fi
 
-test-python: ## Run Python tests (legacy)
-	@echo "Running Python framework tests with pytest..."
-	@if ! command -v pytest >/dev/null 2>&1; then \
-		echo "Error: pytest is not installed. Install it with 'pip install pytest'."; \
-		exit 1; \
-	fi
-	@$(HOME)/.pyenv/versions/$(VENV)/bin/python -m pytest tests/ || python -m pytest tests/
-
-lint-python: ## Lint Python scripts (legacy)
-	@echo "Linting Python scripts..."
-	@if ! command -v flake8 >/dev/null 2>&1; then \
-		echo "Error: flake8 is not installed. Install it with 'pip install flake8'."; \
-		exit 1; \
-	fi
-	@flake8 scripts/ > lint.log 2>&1; \
-	if [ $$? -eq 0 ]; then \
-		echo "No lint errors found."; \
-	else \
-		echo "Lint errors found:"; \
-		cat lint.log; \
-		exit 1; \
-	fi
-
-docs: ## Generate documentation from YAML manifests (legacy)
-	@which $(PYTHON) >/dev/null || (echo "$(PYTHON) not found. Run 'make setup' first."; exit 1)
-	@$(PYTHON) -c "import yaml" 2>/dev/null || (echo "pyyaml not installed. Run 'make setup' first."; exit 1)
-	@if [ ! -f scripts/generate_docs.py ]; then \
-		echo "Error: scripts/generate_docs.py not found."; \
-		exit 1; \
-	fi
+docs: build ## Generate documentation from YAML manifests
 	@echo "Generating documentation from YAML manifests..."
-	$(PYTHON) scripts/generate_docs.py
+	./$(BUILD_DIR)/$(BINARY_NAME) docs --verbose
 
 ## Combined targets
-deps: deps-go deps-python ## Download all dependencies
+deps: deps-go ## Download all dependencies
 
-test: test-go ## Run all tests (focusing on Go, Python as fallback)
-	@if [ -f requirements.txt ] && [ -d tests/ ]; then \
-		$(MAKE) test-python; \
-	fi
+test: test-go ## Run all tests
 
-lint: lint-go ## Run all linting (focusing on Go, Python as fallback)
-	@if [ -f requirements.txt ] && [ -d scripts/ ]; then \
-		$(MAKE) lint-python; \
-	fi
+lint: lint-go ## Run all linting
 
 ## Development targets
 dev: build ## Build and run in development mode
@@ -194,7 +129,7 @@ clean: ## Remove build artifacts and generated files
 	rm -rf $(BUILD_DIR)/
 	rm -f coverage.out
 	rm -f lint.log
-	rm -f docs/reference.md docs/services.md
+
 	go clean
 
 clean-all: clean ## Remove all generated files including dependencies
@@ -287,11 +222,10 @@ help: ## Show this help message
 	@echo "  docker-build   - Build Docker image"
 	@echo "  docker-run     - Run Docker container"
 	@echo ""
-	@echo "Legacy Python Targets:"
-	@echo "  setup          - Set up Python environment"
-	@echo "  test-python    - Run Python tests"
-	@echo "  lint-python    - Lint Python scripts"
-	@echo "  docs           - Generate documentation from YAML"
+	@echo "Documentation Targets:"
+	@echo "  docs           - Generate documentation from YAML manifests"
+	@echo ""
+
 	@echo ""
 	@echo "Combined Targets:"
 	@echo "  test           - Run all tests"

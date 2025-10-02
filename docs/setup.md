@@ -202,7 +202,7 @@ dependencies {
 })
 class IntegrationTest {
     // Tests run against framework services
-    // Start framework: ./scripts/setup.sh
+    // Start framework: dev-stack up
 }
 ```
 
@@ -273,7 +273,7 @@ See the [README](../README.md) for the main configuration example and command re
 ### 1. Initialize Configuration
 
 ```bash
-./scripts/setup.sh --init
+dev-stack init
 ```
 
 This creates a sample `dev-stack-config.yaml` file in your project root.
@@ -286,7 +286,7 @@ See the [Configuration Guide](configuration.md) for all options.
 ### 3. Run Setup
 
 ```bash
-./scripts/setup.sh
+dev-stack up
 ```
 
 This will:
@@ -298,8 +298,7 @@ This will:
 ### 4. Verify Installation
 
 ```bash
-./scripts/manage.sh status      # Check service status
-./scripts/manage.sh info        # View connection information
+dev-stack status             # Check service status and connection information
 docker ps                      # See running containers
 ```
 
@@ -316,34 +315,28 @@ The framework automatically detects existing instances from other repositories a
 **First Repository:**
 ```bash
 cd /path/to/repo1
-./dev-stack-framework/scripts/setup.sh
+dev-stack up
 # Services start on standard ports
 ```
 
 **Second Repository (Conflict Detection):**
 ```bash
 cd /path/to/repo2
-./dev-stack-framework/scripts/setup.sh
+dev-stack up
 
-# Framework detects existing instances and prompts:
-# 1) Clean up existing instances and start fresh
-# 2) Connect to existing instances (reuse repo1's services)
-# 3) Cancel setup
-
-# Choose option 2 to reuse services, or 1 to start fresh
+# Framework detects existing instances and may reuse them automatically
+# Use dev-stack cleanup to remove existing instances if needed
 ```
 
 ### Automatic Options
 
 ```bash
-# Auto-cleanup existing and start fresh
-./dev-stack-framework/scripts/setup.sh --cleanup-existing
+# Cleanup existing and start fresh
+dev-stack cleanup
+dev-stack up
 
-# Auto-connect to existing instances
-./dev-stack-framework/scripts/setup.sh --connect-existing
-
-# Force cleanup without prompts
-./dev-stack-framework/scripts/setup.sh --force
+# Check system health before starting
+dev-stack doctor
 ```
 
 ## 🐛 Common Setup Issues
@@ -369,7 +362,7 @@ sudo usermod -aG docker $USER
 # Logout and login again
 
 # Or run with sudo (temporary)
-sudo ./dev-stack-framework/scripts/setup.sh
+sudo dev-stack up
 ```
 
 ### Port Conflicts
@@ -382,7 +375,7 @@ lsof -i :6379
 kill -9 PID
 
 # Or let framework handle it
-./dev-stack-framework/scripts/setup.sh --cleanup-existing
+dev-stack cleanup
 ```
 
 ### Memory Issues
@@ -415,10 +408,10 @@ colima list
 After setup, verify everything works:
 
 - [ ] Docker is running: `docker info`
-- [ ] Framework services start: `./scripts/manage.sh status`
+- [ ] Framework services start: `dev-stack status`
 - [ ] Configuration is valid: No errors during setup
 - [ ] Generated files exist: `docker-compose.generated.yml`, `.env.generated`
-- [ ] Services are accessible: Check ports with `./scripts/manage.sh info`
+- [ ] Services are accessible: Check ports with `dev-stack status`
 - [ ] IDE integration works: Database connections, Redis access
 - [ ] Application connects: Spring Boot can connect to services
 

@@ -5,7 +5,7 @@
 - [ ] Set up Python environment with pyenv (see below)
 - [ ] Install dependencies: `pip install -r requirements.txt`
 - [ ] Edit YAML manifests (`scripts/commands.yaml`, `services/services.yaml`) for changes
-- [ ] Run `python scripts/generate_docs.py` to update docs
+- [ ] Run `dev-stack docs` to update docs
 - [ ] Commit both the manifest and generated docs
 - [ ] Follow the contributing guide and PR template
 
@@ -25,30 +25,13 @@ We welcome contributions from the development community! Whether you're fixing b
 
 ### 🐍 Python Environment Setup (Recommended)
 
-We recommend using [pyenv](https://github.com/pyenv/pyenv) to manage Python versions and virtual environments for isolation.
-The required Python version is specified in the `.python-version` file at the root of the repo.
-
-```bash
-# Install pyenv
-curl https://pyenv.run | bash
-
-# Install required Python version (see .python-version)
-pyenv install 3.11.2
-pyenv local 3.11.2
-
-# (Optional) Create and activate a virtualenv
-pyenv virtualenv 3.11.2 dev-stack-env
-pyenv activate dev-stack-env
-
-# Install dependencies
-pip install -r requirements.txt
-```
+The project is built with Go and requires no additional language dependencies for development.
 
 To auto-generate documentation from YAML manifests, dev-stack uses a Python script and the [PyYAML](https://pyyaml.org/) library.
 
 **Run the Doc Generation Script:**
 ```bash
-python scripts/generate_docs.py
+dev-stack docs
 ```
 
 This will update `docs/reference.md` and `docs/services.md` based on the latest YAML manifests.
@@ -64,16 +47,16 @@ This will update `docs/reference.md` and `docs/services.md` based on the latest 
 - `scripts/commands.yaml`: Lists all available CLI commands and flags for `setup.sh` and `manage.sh`.
 - `services/services.yaml`: Lists all supported services and their configuration options.
 
-Documentation for commands (`docs/reference.md`) and services (`docs/services.md`) is auto-generated from these manifests using the script `scripts/generate_docs.py`.
+Documentation for commands (`docs/reference.md`) and services (`docs/services.md`) is auto-generated from these manifests using the `dev-stack docs` command.
 
-See the top of `scripts/generate_docs.py` for usage instructions.
+See `dev-stack docs --help` for usage instructions.
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Docker and Docker Compose
-- Python 3 (managed via pyenv and virtualenv; see `.python-version`)
+- Go 1.24+ (see `.go-version`)
 - Make (for running project automation tasks)
 - Basic understanding of YAML, Bash scripting, and Docker
 - Familiarity with the framework's architecture and usage
@@ -107,8 +90,8 @@ Follow these steps to set up your environment for contributing:
 
 5. Test your changes:
    ```bash
-   ./dev-stack-framework/scripts/setup.sh --init
-   ./dev-stack-framework/scripts/setup.sh
+   dev-stack init
+   dev-stack up
    ```
 
 ```bash
@@ -124,8 +107,8 @@ cd test-project
 ln -s ../dev-stack-framework-dev dev-stack-framework
 
 # Test your changes
-./dev-stack-framework/scripts/setup.sh --init
-./dev-stack-framework/scripts/setup.sh
+dev-stack init
+dev-stack up
 ```
 
 ## 🏗️ Architecture Overview
@@ -391,17 +374,17 @@ echo "services:
   enabled:
     - my-service" > dev-stack-config.yaml
 
-./dev-stack-framework/scripts/setup.sh
-./dev-stack-framework/scripts/manage.sh status
-./dev-stack-framework/scripts/manage.sh info my-service
+dev-stack up
+dev-stack status
 
 # Test with other services
 echo "services:
   enabled:
     - redis
+    - postgres
     - my-service" > dev-stack-config.yaml
 
-./dev-stack-framework/scripts/setup.sh
+dev-stack up
 ```
 
 ## 🔧 Improving Existing Services
@@ -492,10 +475,10 @@ my:
 **Useful Commands**:
 ```bash
 # Connect to service
-./scripts/manage.sh connect my-service
+dev-stack connect my-service
 
 # View service logs
-./scripts/manage.sh logs my-service
+dev-stack logs my-service
 ```
 ```
 
@@ -521,35 +504,29 @@ my:
 ### Manual Testing
 
 ```bash
-# Test new service
-./scripts/setup.sh --services=my-service --dry-run
-./scripts/setup.sh --services=my-service
-./scripts/manage.sh status
-./scripts/manage.sh info my-service
-./scripts/manage.sh logs my-service
-
-# Test with existing services
-./scripts/setup.sh --services=redis,postgres,my-service
-./scripts/manage.sh restart my-service
+# Test new service (configure in dev-stack-config.yaml first)
+dev-stack up
+dev-stack status
+dev-stack logs my-service
 
 # Test cleanup
-./scripts/manage.sh cleanup
+dev-stack cleanup
 ```
 
 ### Integration Testing
 
 ```bash
 # Test multi-repository scenarios
-cd repo1 && ./scripts/setup.sh
-cd ../repo2 && ./scripts/setup.sh --connect-existing
+cd repo1 && dev-stack up
+cd ../repo2 && dev-stack up
 
 # Test configuration variations
 echo "Different config scenarios" > test-configs.yaml
-./scripts/setup.sh --config=test-configs.yaml
+dev-stack --config=test-configs.yaml up
 
 # Test error scenarios
 echo "Invalid YAML" > broken-config.yaml
-./scripts/setup.sh --config=broken-config.yaml
+dev-stack --config=broken-config.yaml up
 ```
 
 ### Validation Checklist
@@ -709,7 +686,7 @@ See the Contributor Workflow Checklist above for the recommended steps.
 Do not manually edit `docs/reference.md` or `docs/services.md`—these files are always generated from the manifests.
 
 **Tip:**
-You can automate this process with a pre-commit hook or CI workflow. See the script header in `scripts/generate_docs.py` for details.
+You can automate this process with a pre-commit hook or CI workflow using `dev-stack docs`.
 
 
 ## 🏆 Recognition

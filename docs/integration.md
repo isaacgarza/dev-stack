@@ -552,17 +552,17 @@ jobs:
 
       - name: Start Framework Services
         run: |
-          ./dev-stack-framework/scripts/setup.sh --services=postgres,redis --force
+          dev-stack up
 
       - name: Wait for Services
         run: |
-          timeout 60 bash -c 'until ./dev-stack-framework/scripts/manage.sh status; do sleep 2; done'
+          timeout 60 bash -c 'until dev-stack status; do sleep 2; done'
 
       - name: Run Tests
         run: ./gradlew test integrationTest
 
       - name: Cleanup
-        run: ./dev-stack-framework/scripts/manage.sh cleanup
+        run: dev-stack cleanup
 ```
 
 ### Docker Compose for CI
