@@ -226,6 +226,15 @@ func LogError(err error, msg string, args ...any) {
 	GetLogger().Error(msg, allArgs...)
 }
 
+// New creates a new logger with the specified level
+func New(level slog.Level) *slog.Logger {
+	opts := &slog.HandlerOptions{
+		Level: level,
+	}
+	handler := slog.NewTextHandler(os.Stdout, opts)
+	return slog.New(handler)
+}
+
 // NewContextLogger creates a new logger with context fields
 func NewContextLogger(fields map[string]any) *slog.Logger {
 	var args []any
