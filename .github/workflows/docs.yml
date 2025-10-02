@@ -83,7 +83,7 @@ jobs:
           fi
 
       - name: Upload CLI docs artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: cli-docs
           path: docs/cli/
@@ -242,7 +242,7 @@ jobs:
           mkdocs build --clean --strict
 
       - name: Upload documentation artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: documentation-site
           path: site/
