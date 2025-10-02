@@ -1,187 +1,289 @@
-# GitHub Actions CI/CD Pipeline
+# GitHub Actions Workflows
 
-This directory contains the GitHub Actions workflows that automate testing, security scanning, documentation generation, and releases for the dev-stack project.
+This document describes the GitHub Actions workflows that automate testing, security scanning, documentation generation, and releases for the dev-stack project.
 
-## Workflows Overview
+## Overview
 
-### 🧪 Test Workflow (`test.yml`)
+The workflows are designed around the Go-based CLI implementation and support the complete development lifecycle from code validation to release automation.
 
-**Triggers:** Pull requests and pushes to `main` and `develop` branches
+## Workflows
 
-**Features:**
-- **Matrix Testing**: Tests across multiple Go versions and platforms (Ubuntu, macOS, Windows)
-- **Unit Tests**: Runs `go test` with race detection and coverage reporting
-- **Linting**: Uses `golangci-lint` with project-specific configuration
-- **Build Validation**: Builds binaries for current and all supported platforms
-- **Integration Tests**: Runs integration tests when available
-- **Code Quality**: Validates Go modules, formatting, and vet checks
+### 🔄 CI Pipeline (`ci.yml`)
 
-**Artifacts:**
-- Test coverage reports
-- Build artifacts for all platforms
+**Triggers**: Push to `main`/`develop`, Pull Requests
+**Purpose**: Comprehensive continuous integration checks
 
-### 🔒 Security Workflow (`security.yml`)
+#### Jobs
 
-**Triggers:** Pull requests, pushes to main branches, and weekly scheduled runs
+**`ci` (Required Status Check)**
+- **Go Module Validation**: Ensures `go.mod` and `go.sum` are up-to-date
+- **Code Formatting**: Validates `gofmt` compliance
+- **Static Analysis**: Runs `go vet` for code quality
+- **Linting**: Uses `golangci-lint` with 5-minute timeout
+- **Unit Testing**: Executes race-condition-aware tests with coverage
+- **Build Verification**: Compiles Go binary and verifies functionality
+- **Coverage Upload**: Sends test coverage to Codecov
 
-**Security Scans:**
-- **CodeQL Analysis**: GitHub's semantic code analysis for Go
-- **Dependency Scanning**: Uses `govulncheck` and `nancy` for vulnerability detection
-- **Secrets Detection**: Uses Gitleaks to scan for exposed secrets
-- **Go Security**: Uses `gosec` for Go-specific security issues
-- **Container Scanning**: Uses Trivy to scan Docker images for vulnerabilities
-- **License Compliance**: Uses `go-licenses` to check dependency licenses
+**`test-matrix` (Optional)**
+- **Cross-Platform Testing**: Tests on Ubuntu, macOS, Windows
+- **Go Version Matrix**: Tests against Go 1.21 and 1.22
+- **Trigger**: Auto on push, manual via `test-matrix` label
+- **Platform-Specific Builds**: Creates OS-specific binaries for validation
 
-**Outputs:**
-- SARIF reports uploaded to GitHub Security tab
-- License compliance reports
-- Security scan summaries
+**`integration` (Optional)**
+- **Docker-in-Docker**: Tests containerized workflows
+- **Real Environment**: Validates against actual Docker services
+- **Trigger**: Auto on push, manual via `integration` label
+- **Dependency**: Requires `ci` job completion
 
-### 📚 Documentation Workflow (`docs.yml`)
+#### Artifacts
+- Build artifacts stored for 7 days
+- Coverage reports uploaded to Codecov
+- Cross-platform binaries for validation
 
-**Triggers:** Changes to documentation, markdown files, or source code
+### 🛡️ Security Scanning (`security.yml`)
 
-**Features:**
-- **Markdown Linting**: Validates documentation formatting
-- **Link Checking**: Verifies all links in documentation work
-- **CLI Documentation**: Auto-generates CLI help and completion scripts
-- **Example Validation**: Validates code examples in documentation
-- **Site Generation**: Builds documentation site using MkDocs
-- **GitHub Pages**: Deploys documentation to GitHub Pages
+**Triggers**: Schedule (weekly), Manual dispatch, Security PRs
+**Purpose**: Automated security vulnerability detection
 
-**Outputs:**
-- Generated CLI documentation
-- Documentation site deployed to GitHub Pages
+#### Jobs
 
-### 🚀 Release Workflow (`release-please.yml`)
+**`security-scan`**
+- **Dependency Scanning**: Uses GitHub's security advisories
+- **Static Code Analysis**: Runs `gosec` for Go security issues
+- **License Compliance**: Validates dependency licenses
+- **Vulnerability Database**: Checks against known CVEs
+- **SARIF Upload**: Results uploaded to GitHub Security tab
 
-**Triggers:** Pushes to main branch and manual workflow dispatch
+#### Features
+- Weekly automated scans (Sundays at 2 AM UTC)
+- Manual trigger capability for immediate scans
+- Integration with GitHub Security Advisories
+- Detailed security reporting in SARIF format
 
-**Release Process:**
-1. **Release Please**: Uses conventional commits to automatically determine version bumps and generate changelogs
-2. **Build and Release**: When a release is created, triggers `build-release.yml` workflow
-3. **Cross-platform Builds**: Builds binaries for all supported platforms:
-   - Linux (amd64, arm64)
-   - macOS (amd64, arm64)
-   - Windows (amd64)
-4. **Checksum Generation**: Creates SHA256 checksums for all binaries
-5. **GitHub Release**: Creates release with auto-generated notes
-6. **Docker Images**: Builds and pushes multi-arch Docker images to GHCR
-7. **Package Managers**: Placeholder for future Homebrew/Scoop integration
+### ✅ Validation (`validation.yml`)
 
-**Artifacts:**
-- Platform-specific binaries
-- SHA256 checksums
-- Docker images
-- Automated changelogs
+**Triggers**: Pull Requests, Manual dispatch
+**Purpose**: Code quality and standards validation
+
+#### Jobs
+
+**`validate`**
+- **Documentation Sync**: Verifies docs are up-to-date with code
+- **Configuration Validation**: Checks YAML manifests
+- **Link Validation**: Ensures documentation links work
+- **Go Version Consistency**: Validates `.go-version` across configs
+- **License Headers**: Checks for proper license attribution
+
+#### Validation Checks
+- Generated documentation is current (`make docs`)
+- Service and command YAML manifests are valid
+- Internal and external links in documentation
+- Consistent Go version across all configuration files
+- Proper file formatting and structure
+
+### 🚀 Release (`release.yml`)
+
+**Triggers**: Release tags (`v*`), Manual dispatch
+**Purpose**: Automated release and distribution
+
+#### Jobs
+
+**`release`**
+- **Multi-Platform Builds**: Linux, macOS, Windows (AMD64/ARM64)
+- **Binary Packaging**: Creates platform-specific archives
+- **GitHub Release**: Automated release creation with changelog
+- **Asset Upload**: Distributes binaries for all platforms
+- **Checksum Generation**: SHA256 checksums for verification
+
+#### Release Assets
+```
+dev-stack-linux-amd64.tar.gz
+dev-stack-linux-arm64.tar.gz
+dev-stack-darwin-amd64.tar.gz
+dev-stack-darwin-arm64.tar.gz
+dev-stack-windows-amd64.zip
+dev-stack-windows-arm64.zip
+checksums.txt
+```
+
+## Shared Actions
+
+### 📦 Setup Go Version (`.github/actions/setup-go-version`)
+
+**Purpose**: Consistent Go environment setup across workflows
+
+#### Features
+- Reads Go version from `.go-version` file
+- Configures Go cache for dependency optimization
+- Sets up GOPATH and module proxy
+- Ensures consistent environment across all jobs
+
+#### Usage
+```yaml
+- name: Setup Go
+  uses: ./.github/actions/setup-go-version
+  id: setup-go
+```
 
 ## Configuration Files
 
-### Dependabot (`dependabot.yml`)
-- **Go Modules**: Weekly updates for Go dependencies
-- **GitHub Actions**: Weekly updates for workflow actions
-- **Docker**: Weekly updates for base images
+### 🔧 Dependabot (`dependabot.yml`)
 
-### Issue Templates
-- **Bug Reports**: Structured template for reporting issues
-- **Feature Requests**: Template for suggesting new features
+**Purpose**: Automated dependency updates
 
-### PR Template
-- Comprehensive checklist covering code quality, testing, security, and documentation
-- Guidelines for different types of changes
+#### Monitored Dependencies
+- **Go Modules**: Weekly updates for `go.mod`
+- **GitHub Actions**: Monthly updates for workflow actions
+- **Docker**: Weekly updates for container dependencies
 
-## Security Configuration
+#### Configuration
+- Automatic security updates enabled
+- Grouped updates for related dependencies
+- PR limit: 5 open PRs maximum
+- Custom commit message format for consistency
 
-### Code Scanning
-- **CodeQL**: Configured for Go with security-extended queries
-- **Dependency Scanning**: Automated vulnerability detection
-- **Secrets Scanning**: Prevents credential leaks
-- **Container Security**: Scans Docker images for vulnerabilities
+### 🔗 Link Checking (`markdown-link-check.json`)
 
-### Access Control
-- Workflows use least-privilege permissions
-- Secrets are properly scoped and managed
-- Release process requires proper authentication
+**Purpose**: Documentation link validation configuration
+
+#### Settings
+- Timeout: 10 seconds per link
+- Retry attempts: 3
+- Ignore patterns for localhost and placeholders
+- Custom headers for authenticated endpoints
 
 ## Development Workflow
 
-### Local Development
-```bash
-# Run tests locally
-make test-go
+### 🚦 Required Status Checks
 
-# Run linting
-make lint-go
+For branch protection, enable these required checks:
+- `CI / ci` - Core CI pipeline
+- `Validation / validate` - Code quality validation
 
-# Build for current platform
-make build
+### 🏷️ Optional Triggers
 
-# Build for all platforms
-make build-all
+Use PR labels to trigger additional workflows:
+- `test-matrix` - Runs cross-platform testing
+- `integration` - Executes integration tests
+- `security` - Triggers immediate security scan
+
+### 🔄 Workflow Dependencies
+
+```mermaid
+graph TD
+    A[Push/PR] --> B[CI Required]
+    A --> C[Validation]
+    B --> D[Integration Optional]
+    E[Release Tag] --> F[Release Build]
+    G[Schedule] --> H[Security Scan]
 ```
 
-### Pull Request Process
-1. Create feature branch
-2. Make changes with conventional commits
-3. Push branch (triggers test workflow)
-4. Create pull request (triggers full CI pipeline)
-5. Address any failing checks
-6. Merge after approval
+## Local Development
 
-### Release Process
-1. Ensure all changes are merged to `main` using conventional commits
-2. Push to main triggers Release Please to:
-   - Analyze commits for version bump
-   - Create/update release PR with changelog
-3. Merge the release PR to automatically:
-   - Create GitHub release with generated notes
-   - Run tests and build binaries
-   - Build and push Docker images
+### 🛠️ Reproduce CI Locally
 
-## Monitoring and Maintenance
+```bash
+# Run the same checks as CI
+make test              # Unit tests with coverage
+make lint              # Linting and static analysis
+make build             # Build verification
+make docs              # Documentation generation
+```
 
-### Workflow Health
-- All workflows include summary reporting
-- Failed runs are clearly highlighted
-- Artifacts are retained for debugging
+### 🔍 Debug Build Issues
 
-### Dependency Management
-- Dependabot ensures dependencies stay current
-- Security vulnerabilities are automatically detected
-- License compliance is monitored
+```bash
+# Build for specific platform
+GOOS=linux GOARCH=amd64 make build
 
-### Performance
-- Go module caching reduces build times
-- Matrix builds run in parallel
-- Artifacts are efficiently stored and retrieved
+# Verbose build output
+go build -v -x ./cmd/dev-stack
+
+# Check module consistency
+go mod tidy && git diff go.mod go.sum
+```
+
+## Security Considerations
+
+### 🔐 Secrets Management
+
+No secrets are required for basic CI/CD operations. All workflows use:
+- `GITHUB_TOKEN` (automatic)
+- `CODECOV_TOKEN` (optional, for coverage)
+
+### 🛡️ Permissions
+
+Workflows use minimal required permissions:
+- `contents: read` - For repository access
+- `actions: read` - For workflow metadata
+- `security-events: write` - For security scan results
+
+### 🚨 Security Scanning
+
+Weekly automated scans check for:
+- Known vulnerabilities in dependencies
+- Static code analysis security issues
+- License compliance problems
+- Outdated security patches
 
 ## Troubleshooting
 
-### Common Issues
+### ❌ Common CI Failures
 
-**Test Failures:**
-- Check the test workflow logs
-- Ensure code follows Go conventions
-- Verify all dependencies are properly declared
+**Build Failures**
+- Check Go version consistency across files
+- Verify `go mod tidy` has been run
+- Ensure cross-platform compatibility
 
-**Security Scan Failures:**
-- Review the Security tab for detailed findings
-- Update vulnerable dependencies
-- Fix any detected security issues
+**Test Failures**
+- Race condition detection may be flaky
+- Check for platform-specific code issues
+- Verify test isolation and cleanup
 
-**Build Failures:**
-- Ensure code compiles on all target platforms
-- Check for platform-specific dependencies
-- Verify build configuration in Makefile
+**Linting Issues**
+- Run `golangci-lint run` locally
+- Check for Go formatting with `gofmt`
+- Review security issues with `gosec`
 
-**Release Issues:**
-- Ensure tag follows semantic versioning
-- Check that all required workflows pass
-- Verify GitHub token permissions
+### 🔧 Workflow Debugging
 
-### Getting Help
+**Enable Debug Logging**
+```yaml
+env:
+  RUNNER_DEBUG: 1
+  ACTIONS_STEP_DEBUG: 1
+```
 
-1. Check workflow logs in the Actions tab
-2. Review the Security tab for security findings
-3. Check the Issues tab for known problems
-4. Create a new issue using the appropriate template
+**Check Workflow Status**
+- GitHub Actions tab shows real-time status
+- Click on failed jobs for detailed logs
+- Download artifacts for local debugging
+
+## Maintenance
+
+### 📅 Regular Updates
+
+**Monthly Tasks**
+- Review and update action versions
+- Check for new Go versions
+- Update security scanning tools
+- Review workflow performance metrics
+
+**Quarterly Tasks**
+- Audit workflow permissions
+- Review branch protection rules
+- Update documentation for new features
+- Performance optimization review
+
+### 📊 Metrics Monitoring
+
+Track these metrics for workflow health:
+- Average CI runtime (target: <5 minutes)
+- Test success rate (target: >99%)
+- Security scan findings trend
+- Build artifact size growth
+
+---
+
+For project development guide, see [`contributing.md`](contributing.md).
