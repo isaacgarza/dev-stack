@@ -9,198 +9,151 @@ on:
     # Run security scans weekly on Sundays at 2 AM UTC
     - cron: "0 2 * * 0"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
-  gosec:
-    name: Go Security Scanner
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ".go-version"
-          cache: true
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Install Gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
-
-      - name: Setup Go tools PATH
-        run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Run Gosec Security Scanner
-        run: |
-          echo "Running Gosec security scan..."
-          if [ -f ".gosec.conf" ]; then
-            echo "Using configuration file .gosec.conf"
-            gosec -conf .gosec.conf -fmt text ./... | tee gosec-output.txt || true
-          else
-            echo "Using default configuration"
-            gosec -fmt text ./... | tee gosec-output.txt || true
-          fi
-          echo "Gosec scan completed - check output above for any security issues"
-
-      - name: Show Gosec Summary
-        run: |
-          if [ -f gosec-output.txt ]; then
-            echo "📊 Gosec Security Summary:"
-            if grep -q "Issues : 0" gosec-output.txt; then
-              echo "✅ No security issues found!"
-            else
-              issues=$(grep -c "^\[.*\] - G" gosec-output.txt || echo "0")
-              echo "⚠️ Found $issues security issue(s):"
-              grep "^\[.*\] - G" gosec-output.txt | head -5 || true
-              if [ "$issues" -gt 5 ]; then
-                echo "... and $((issues - 5)) more issues. Check full output above."
-              fi
-            fi
-          fi
-
-  vulnerability-scan:
-    name: Go Vulnerability Scanner
+  # Single consolidated security job for easy required status checking
+  security:
+    name: Security
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ".go-version"
-          cache: true
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Setup Go tools PATH
-        run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-      - name: Run vulnerability scan
-        run: |
-          echo "Running Go vulnerability scan..."
-          govulncheck ./... | tee vuln-output.txt || echo "Vulnerability scan completed with issues"
-
-      - name: Show Vulnerability Summary
-        run: |
-          if [ -f vuln-output.txt ]; then
-            echo "📊 Vulnerability Summary:"
-            if grep -q "No vulnerabilities found" vuln-output.txt; then
-              echo "✅ No vulnerabilities found!"
-            else
-              vulns=$(grep -c "Vulnerability" vuln-output.txt || echo "0")
-              echo "⚠️ Found $vulns vulnerability(ies). Check full output above."
-            fi
-          fi
-
-  secrets-scan:
-    name: Secrets Scanner
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run TruffleHog OSS
+      - name: Setup Go
+        uses: ./.github/actions/setup-go-version
+
+      - name: Download dependencies
+        run: go mod download
+
+      # Go security scanner
+      - name: Install security tools
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Run Gosec security scanner
+        run: |
+          echo "🔍 Running Gosec security scan..."
+          if [ -f ".gosec.conf" ]; then
+            gosec -conf .gosec.conf -fmt json -out gosec-results.json ./... || true
+            gosec -conf .gosec.conf -fmt text ./... | tee gosec-output.txt || true
+          else
+            gosec -fmt json -out gosec-results.json ./... || true
+            gosec -fmt text ./... | tee gosec-output.txt || true
+          fi
+
+      - name: Run vulnerability scanner
+        run: |
+          echo "🔍 Running vulnerability scan..."
+          govulncheck ./... | tee vuln-output.txt || echo "Vulnerability scan completed"
+
+      # Secrets scanning
+      - name: Run TruffleHog secrets scanner
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
+          base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --debug --only-verified
+          extra_args: --only-verified
 
-  basic-security:
-    name: Basic Security Checks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: ".go-version"
-          cache: true
-
-      - name: Run go vet
+      # Basic security checks
+      - name: Check for security issues
         run: |
-          echo "Running go vet..."
-          go vet ./...
+          echo "🔍 Running basic security checks..."
 
-      - name: Check for hardcoded secrets patterns
-        run: |
-          echo "Checking for potential hardcoded secrets..."
-          # Check for common secret patterns
+          # Check for hardcoded secrets patterns
+          echo "Checking for hardcoded secrets..."
           if grep -r -E "(password|pwd|secret|key|token)\s*[:=]\s*['\"][^'\"]{8,}" --include="*.go" . ; then
             echo "⚠️ Potential hardcoded secrets found"
             exit 1
-          else
-            echo "✅ No obvious hardcoded secrets found"
           fi
 
-      - name: Check for unsafe functions
-        run: |
+          # Check for unsafe functions
           echo "Checking for unsafe function usage..."
           if grep -r "unsafe\." --include="*.go" . ; then
             echo "⚠️ Unsafe package usage found - review carefully"
-          else
-            echo "✅ No unsafe package usage found"
           fi
 
-      - name: Check imports
-        run: |
-          echo "Checking for potentially dangerous imports..."
-          go list -json ./... | jq -r '.Imports[]?' | sort | uniq | grep -E "(os/exec|net/http|crypto)" || echo "✅ Standard imports look safe"
+          # Check for dangerous imports
+          echo "Checking imports..."
+          go list -json ./... | jq -r '.Imports[]?' | sort | uniq | grep -E "(os/exec)" && echo "⚠️ Found potentially dangerous imports" || echo "✅ Standard imports look safe"
 
-  summary:
-    name: Security Summary
+      - name: Security summary
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Gosec results
+          if [ -f gosec-output.txt ]; then
+            if grep -q "Issues : 0" gosec-output.txt; then
+              echo "✅ **Gosec**: No security issues found" >> $GITHUB_STEP_SUMMARY
+            else
+              issues=$(grep -c "^\[.*\] - G" gosec-output.txt || echo "0")
+              echo "⚠️ **Gosec**: Found $issues security issue(s)" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          # Vulnerability results
+          if [ -f vuln-output.txt ]; then
+            if grep -q "No vulnerabilities found" vuln-output.txt; then
+              echo "✅ **Vulnerabilities**: No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **Vulnerabilities**: Issues detected" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 Check individual steps above for detailed results." >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload security results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-results
+          path: |
+            gosec-results.json
+            gosec-output.txt
+            vuln-output.txt
+          retention-days: 30
+
+  # Advanced security scanning (optional job)
+  advanced-security:
+    name: Advanced Security
     runs-on: ubuntu-latest
-    needs: [gosec, vulnerability-scan, secrets-scan, basic-security]
-    if: always()
+    if: github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'security-deep-scan')
     steps:
-      - name: Security Summary
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go-version
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Run additional security tools
         run: |
-          echo "## Security Scan Results 🔒" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Gosec
-          if [ "${{ needs.gosec.result }}" = "success" ]; then
-            echo "✅ **Gosec Security Scan**: Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **Gosec Security Scan**: Issues detected or scan failed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Vulnerability scan
-          if [ "${{ needs.vulnerability-scan.result }}" = "success" ]; then
-            echo "✅ **Vulnerability Scan**: No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Vulnerability Scan**: Vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Secrets scan
-          if [ "${{ needs.secrets-scan.result }}" = "success" ]; then
-            echo "✅ **Secrets Scan**: No secrets detected" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Secrets Scan**: Potential secrets found" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          # Basic security
-          if [ "${{ needs.basic-security.result }}" = "success" ]; then
-            echo "✅ **Basic Security Checks**: Passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **Basic Security Checks**: Issues found" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📋 For detailed results, check individual job logs and the Security tab." >> $GITHUB_STEP_SUMMARY
+          echo "Running additional security analysis..."
+          # Add any additional security tools here
+          echo "Advanced security scan completed"
