@@ -1,0 +1,238 @@
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run security scans weekly on Sundays at 2 AM UTC
+    - cron: "0 2 * * 0"
+
+env:
+  # Go version is managed centrally in .go-version file
+  GO_VERSION: ""
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["go"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go with centralized version
+        uses: ./.github/actions/setup-go-version
+        id: setup-go
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Build project
+        run: |
+          go mod download
+          make build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{matrix.language}}"
+
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go with centralized version
+        uses: ./.github/actions/setup-go-version
+        id: setup-go
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run Govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+      - name: Run Nancy (OSS Index)
+        run: |
+          go install github.com/sonatypecommunity/nancy@latest
+          go list -json -deps ./... | nancy sleuth
+
+  secrets-scan:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE}}
+
+  gosec:
+    name: Go Security Checker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go with centralized version
+        uses: ./.github/actions/setup-go-version
+        id: setup-go
+
+      - name: Run Gosec Security Scanner
+        uses: securecodewarrior/github-action-gosec@master
+        with:
+          args: "-fmt sarif -out results.sarif ./..."
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: results.sarif
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t dev-stack:test .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "dev-stack:test"
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go with centralized version
+        uses: ./.github/actions/setup-go-version
+        id: setup-go
+
+      - name: Install go-licenses
+        run: go install github.com/google/go-licenses@latest
+
+      - name: Check licenses
+        run: |
+          echo "Checking license compliance..."
+          go-licenses check ./...
+          echo "Generating license report..."
+          go-licenses report ./... > license-report.txt
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v3
+        with:
+          name: license-report
+          path: license-report.txt
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs:
+      [
+        codeql,
+        dependency-scan,
+        secrets-scan,
+        gosec,
+        container-scan,
+        license-check,
+      ]
+    if: always()
+
+    steps:
+      - name: Security scan summary
+        run: |
+          echo "## Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # CodeQL
+          if [ "${{ needs.codeql.result }}" = "success" ]; then
+            echo "✅ **CodeQL Analysis**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **CodeQL Analysis**: Failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Dependency Scan
+          if [ "${{ needs.dependency-scan.result }}" = "success" ]; then
+            echo "✅ **Dependency Scan**: No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Dependency Scan**: Vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Secrets Scan
+          if [ "${{ needs.secrets-scan.result }}" = "success" ]; then
+            echo "✅ **Secrets Scan**: No secrets detected" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Secrets Scan**: Potential secrets found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Gosec
+          if [ "${{ needs.gosec.result }}" = "success" ]; then
+            echo "✅ **Go Security Check**: Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Go Security Check**: Security issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Container Scan
+          if [ "${{ needs.container-scan.result }}" = "success" ]; then
+            echo "✅ **Container Scan**: No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Container Scan**: Check results for details" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # License Check
+          if [ "${{ needs.license-check.result }}" = "success" ]; then
+            echo "✅ **License Check**: Compliant" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **License Check**: Review required" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For detailed results, check the Security tab and individual job logs." >> $GITHUB_STEP_SUMMARY

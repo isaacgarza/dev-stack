@@ -1,0 +1,51 @@
+name: Validate Commits
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  conventional-commits:
+    name: Validate Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Conventional Commits
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: .commitlintrc.json
+
+  config-sync:
+    name: Validate Config Files are Current
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate configuration files are up to date
+        run: |
+          chmod +x scripts/generate-release-configs.sh
+          ./scripts/generate-release-configs.sh
+
+          if git diff --exit-code .commitlintrc.json .release-please-config.json; then
+            echo "✅ Release configuration files are up to date"
+          else
+            echo "❌ Release configuration files are out of date"
+            echo "The following files need to be updated:"
+            git diff --name-only .commitlintrc.json .release-please-config.json
+            echo ""
+            echo "Run 'make generate-release-configs' to update them"
+            exit 1
+          fi

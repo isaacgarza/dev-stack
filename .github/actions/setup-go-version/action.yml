@@ -1,0 +1,60 @@
+name: 'Setup Go Version'
+description: 'Setup Go using the centralized version from .go-version file'
+inputs:
+  cache:
+    description: 'Enable Go module caching'
+    required: false
+    default: 'true'
+  check-latest:
+    description: 'Set this option to true if you want the action to always check for the latest available version that satisfies the version spec'
+    required: false
+    default: 'false'
+outputs:
+  go-version:
+    description: 'The Go version that was installed'
+    value: ${{ steps.get-version.outputs.version }}
+  go-version-file:
+    description: 'The path to the Go version file'
+    value: ${{ steps.get-version.outputs.version-file }}
+  cache-hit:
+    description: 'A boolean value to indicate if a cache was hit'
+    value: ${{ steps.cache.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get Go version
+      id: get-version
+      shell: bash
+      run: |
+        GO_VERSION=$(cat .go-version | tr -d '[:space:]')
+        echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
+        echo "version-file=$(pwd)/.go-version" >> $GITHUB_OUTPUT
+        echo "Found Go version: $GO_VERSION"
+
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ steps.get-version.outputs.version }}
+        check-latest: ${{ inputs.check-latest }}
+
+    - name: Setup Go module cache
+      id: cache
+      if: inputs.cache == 'true'
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ steps.get-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ steps.get-version.outputs.version }}-
+          ${{ runner.os }}-go-
+
+    - name: Verify Go installation
+      shell: bash
+      run: |
+        echo "Go version installed:"
+        go version
+        echo "GOPATH: $(go env GOPATH)"
+        echo "GOROOT: $(go env GOROOT)"

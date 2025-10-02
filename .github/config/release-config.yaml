@@ -1,0 +1,88 @@
+# Central configuration for all release-related settings
+# This is the single source of truth for commit types, changelog sections, and release configuration
+
+commit_types:
+  # User-facing changes (appear in changelog)
+  - type: "feat"
+    section: "Features"
+    description: "A new feature"
+    hidden: false
+
+  - type: "fix"
+    section: "Bug Fixes"
+    description: "A bug fix"
+    hidden: false
+
+  - type: "perf"
+    section: "Performance Improvements"
+    description: "A code change that improves performance"
+    hidden: false
+
+  - type: "deps"
+    section: "Dependencies"
+    description: "Dependency updates"
+    hidden: false
+
+  - type: "revert"
+    section: "Reverts"
+    description: "Reverts a previous commit"
+    hidden: false
+
+  # Internal changes (hidden from changelog by default)
+  - type: "docs"
+    section: "Documentation"
+    description: "Documentation only changes"
+    hidden: true
+
+  - type: "style"
+    section: "Styles"
+    description: "Changes that do not affect the meaning of the code (white-space, formatting, etc)"
+    hidden: true
+
+  - type: "refactor"
+    section: "Code Refactoring"
+    description: "A code change that neither fixes a bug nor adds a feature"
+    hidden: true
+
+  - type: "test"
+    section: "Tests"
+    description: "Adding missing tests or correcting existing tests"
+    hidden: true
+
+  - type: "build"
+    section: "Build System"
+    description: "Changes that affect the build system or external dependencies"
+    hidden: true
+
+  - type: "ci"
+    section: "Continuous Integration"
+    description: "Changes to our CI configuration files and scripts"
+    hidden: true
+
+  - type: "chore"
+    section: "Chores"
+    description: "Other changes that don't modify src or test files"
+    hidden: true
+
+# Release configuration
+release:
+  package_name: "dev-stack"
+  release_type: "go"
+  extra_files:
+    - "internal/cli/version.go"
+
+# Package managers to update
+package_managers:
+  homebrew:
+    enabled: false
+  scoop:
+    enabled: false
+
+# Notification settings (currently disabled)
+notifications:
+  enabled: false
+
+# Release branch configuration
+branches:
+  main: "main"
+  develop: "develop"
