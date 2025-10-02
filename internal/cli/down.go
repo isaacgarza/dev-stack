@@ -1,7 +1,13 @@
 package cli
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
+	"os"
+
+	"dev-stack/internal/core/services"
+	"dev-stack/internal/pkg/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -23,26 +29,55 @@ Examples:
 		removeOrphans, _ := cmd.Flags().GetBool("remove-orphans")
 		timeout, _ := cmd.Flags().GetInt("timeout")
 
+		// Get current working directory
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get current directory: %w", err)
+		}
+
+		// Create logger
+		log := logger.New(slog.LevelInfo)
+
+		// Create service manager
+		manager, err := services.NewManager(log, cwd)
+		if err != nil {
+			return fmt.Errorf("failed to create service manager: %w", err)
+		}
+		defer manager.Close()
+
+		// Display what we're stopping
 		if len(args) == 0 {
-			fmt.Println("Stopping all services...")
+			fmt.Println("⏹️  Stopping all services...")
 		} else {
-			fmt.Printf("Stopping services: %v\n", args)
+			fmt.Printf("⏹️  Stopping services: %v\n", args)
 		}
 
 		if volumes {
-			fmt.Println("Removing volumes...")
+			fmt.Println("🗑️  Removing volumes...")
 		}
 
 		if removeOrphans {
-			fmt.Println("Removing orphaned containers...")
+			fmt.Println("🧹 Removing orphaned containers...")
 		}
 
 		if timeout != 10 {
-			fmt.Printf("Using timeout: %d seconds\n", timeout)
+			fmt.Printf("⏱️  Using timeout: %d seconds\n", timeout)
 		}
 
-		// TODO: Implement service shutdown logic
-		// This will integrate with Docker Compose or similar orchestration
+		// Set up stop options
+		stopOptions := services.StopOptions{
+			Timeout:       timeout,
+			Remove:        true,
+			RemoveVolumes: volumes,
+		}
+
+		// Stop services
+		ctx := context.Background()
+		if err := manager.StopServices(ctx, args, stopOptions); err != nil {
+			return fmt.Errorf("failed to stop services: %w", err)
+		}
+
+		fmt.Println("✅ Services stopped successfully")
 		return nil
 	},
 }
