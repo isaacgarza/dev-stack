@@ -9,8 +9,6 @@ updates:
       time: "09:00"
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 5
-    reviewers:
-      - "isaacgarza"
     assignees:
       - "isaacgarza"
     commit-message:
@@ -36,8 +34,6 @@ updates:
       time: "09:00"
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 3
-    reviewers:
-      - "isaacgarza"
     assignees:
       - "isaacgarza"
     commit-message:
@@ -57,8 +53,6 @@ updates:
       time: "09:00"
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 2
-    reviewers:
-      - "isaacgarza"
     assignees:
       - "isaacgarza"
     commit-message:
@@ -67,3 +61,22 @@ updates:
     labels:
       - "dependencies"
       - "docker"
+
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 3
+    assignees:
+      - "isaacgarza"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "documentation"

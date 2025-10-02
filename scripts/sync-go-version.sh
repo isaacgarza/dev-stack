@@ -38,6 +38,7 @@ Options:
     --help      Show this help message
 
 Files synchronized:
+    - go.mod
     - .golangci.yml
     - Dockerfile (if exists)
     - Any other Go version references
@@ -96,9 +97,9 @@ update_golangci_config() {
     if command -v sed >/dev/null 2>&1; then
         # Use different sed syntax for macOS vs Linux
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' -E "s/(^\s*go:\s*)\"[^\"]+\"(.*)$/\1\"$go_version\"\2/" "$GOLANGCI_CONFIG"
+            sed -i '' -E 's/go: "[^"]+"/go: "'"$go_version"'"/' "$GOLANGCI_CONFIG"
         else
-            sed -i -E "s/(^\s*go:\s*)\"[^\"]+\"(.*)$/\1\"$go_version\"\2/" "$GOLANGCI_CONFIG"
+            sed -i -E 's/go: "[^"]+"/go: "'"$go_version"'"/' "$GOLANGCI_CONFIG"
         fi
         print_status "$GREEN" "✓ Updated .golangci.yml Go version to: $go_version"
     else
@@ -106,6 +107,47 @@ update_golangci_config() {
         return 1
     fi
 }
+
+    # Function to update go.mod
+    update_go_mod() {
+        local go_version=$1
+        local check_only=${2:-false}
+        local go_mod="$PROJECT_ROOT/go.mod"
+
+        if [[ ! -f "$go_mod" ]]; then
+            print_status "$YELLOW" "Warning: go.mod not found, skipping"
+            return 0
+        fi
+
+        # Extract current version from go.mod
+        local current_version=$(grep -E '^go [0-9]+\.[0-9]+' "$go_mod" | sed -E 's/^go ([0-9]+\.[0-9]+).*/\1/' || echo "")
+
+        if [[ -z "$current_version" ]]; then
+            print_status "$YELLOW" "Warning: No go directive found in go.mod"
+            return 0
+        fi
+
+        # Convert go_version to major.minor format for comparison (go.mod typically uses major.minor)
+        local version_major_minor=$(echo "$go_version" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
+
+        if [[ "$current_version" == "$version_major_minor" ]]; then
+            print_status "$GREEN" "✓ go.mod already has correct Go version: $current_version"
+            return 0
+        fi
+
+        if [[ "$check_only" == "true" ]]; then
+            print_status "$RED" "✗ go.mod has wrong Go version: $current_version (expected: $version_major_minor)"
+            return 1
+        fi
+
+        # Update the version
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' -E "s/^go [0-9]+\.[0-9]+.*/go $version_major_minor/" "$go_mod"
+        else
+            sed -i -E "s/^go [0-9]+\.[0-9]+.*/go $version_major_minor/" "$go_mod"
+        fi
+        print_status "$GREEN" "✓ Updated go.mod Go version to: $version_major_minor"
+    }
 
 # Function to update Dockerfile if it exists
 update_dockerfile() {
@@ -156,6 +198,7 @@ check_all_versions() {
     print_status "$BLUE" "Source version: $go_version"
     echo
 
+    update_go_mod "$go_version" true || ((errors++))
     update_golangci_config "$go_version" true || ((errors++))
     update_dockerfile "$go_version" true || ((errors++))
 
@@ -178,6 +221,7 @@ fix_all_versions() {
     print_status "$BLUE" "Target version: $go_version"
     echo
 
+    update_go_mod "$go_version" false
     update_golangci_config "$go_version" false
     update_dockerfile "$go_version" false
 

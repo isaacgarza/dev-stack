@@ -10,6 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Status constants
+const (
+	StatusFail = "FAIL"
+)
+
 // doctorCmd represents the doctor command
 var doctorCmd = &cobra.Command{
 	Use:   "doctor",
@@ -54,7 +59,7 @@ Examples:
 
 		// Return error if any critical checks failed
 		for _, result := range results {
-			if result.Status == "FAIL" && result.Critical {
+			if result.Status == StatusFail && result.Critical {
 				return fmt.Errorf("critical health checks failed")
 			}
 		}
@@ -189,17 +194,18 @@ func displayResults(results []CheckResult, verbose bool) {
 	for _, result := range results {
 		status := result.Status
 		marker := "✓"
-		if result.Status == "WARN" {
+		switch result.Status {
+		case "WARN":
 			marker = "⚠"
 			warnings++
-		} else if result.Status == "FAIL" {
+		case StatusFail:
 			marker = "✗"
 			failed++
-		} else {
+		default:
 			passed++
 		}
 
-		if result.Critical && result.Status == "FAIL" {
+		if result.Critical && result.Status == StatusFail {
 			status += " (CRITICAL)"
 		}
 
@@ -370,7 +376,7 @@ func fixDockerPermissions(verbose bool) error {
 	if runtime.GOOS == "linux" {
 		return fmt.Errorf("please add your user to the docker group: sudo usermod -aG docker $USER")
 	}
-	return fmt.Errorf("Docker permission fix not available for this platform")
+	return fmt.Errorf("docker permission fix not available for this platform")
 }
 
 func fixConfig(verbose bool) error {

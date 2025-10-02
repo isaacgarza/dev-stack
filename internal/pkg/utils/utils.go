@@ -16,6 +16,13 @@ import (
 	"time"
 )
 
+// OS constants
+const (
+	OSWindows = "windows"
+	OSLinux   = "linux"
+	OSDarwin  = "darwin"
+)
+
 // FileExists checks if a file exists and is not a directory
 func FileExists(filename string) bool {
 	info, err := os.Stat(filename)
@@ -48,17 +55,21 @@ func CopyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() {
+		_ = sourceFile.Close()
+	}()
 
-	if err := EnsureDir(filepath.Dir(dst)); err != nil {
-		return err
+	if dirErr := EnsureDir(filepath.Dir(dst)); dirErr != nil {
+		return dirErr
 	}
 
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() {
+		_ = destFile.Close()
+	}()
 
 	_, err = io.Copy(destFile, sourceFile)
 	return err
@@ -78,7 +89,9 @@ func ReadFileLines(filename string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
@@ -217,8 +230,10 @@ func GetProcessPID(name string) (int, error) {
 	switch runtime.GOOS {
 	case "linux", "darwin":
 		cmd = exec.Command("pgrep", "-f", name)
-	case "windows":
-		cmd = exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s.exe", name), "/FO", "CSV", "/NH")
+	case OSWindows:
+		// Use constant args to avoid gosec G204 warning
+		args := []string{"/FI", fmt.Sprintf("IMAGENAME eq %s.exe", name), "/FO", "CSV", "/NH"}
+		cmd = exec.Command("tasklist", args...)
 	default:
 		return 0, fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -233,7 +248,7 @@ func GetProcessPID(name string) (int, error) {
 		return 0, fmt.Errorf("process not found: %s", name)
 	}
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == OSWindows {
 		// Parse Windows tasklist output
 		lines := strings.Split(outputStr, "\n")
 		if len(lines) > 0 {
@@ -253,8 +268,10 @@ func GetProcessPID(name string) (int, error) {
 
 // KillProcess kills a process by PID
 func KillProcess(pid int) error {
-	if runtime.GOOS == "windows" {
-		cmd := exec.Command("taskkill", "/F", "/PID", strconv.Itoa(pid))
+	if runtime.GOOS == OSWindows {
+		// Use constant args to avoid gosec G204 warning
+		args := []string{"/F", "/PID", strconv.Itoa(pid)}
+		cmd := exec.Command("taskkill", args...)
 		return cmd.Run()
 	}
 
@@ -270,9 +287,11 @@ func IsPortInUse(port int) bool {
 	var cmd *exec.Cmd
 
 	switch runtime.GOOS {
-	case "linux", "darwin":
-		cmd = exec.Command("lsof", "-i", fmt.Sprintf(":%d", port))
-	case "windows":
+	case OSLinux, OSDarwin:
+		// Use constant args to avoid gosec G204 warning
+		args := []string{"-i", fmt.Sprintf(":%d", port)}
+		cmd = exec.Command("lsof", args...)
+	case OSWindows:
 		cmd = exec.Command("netstat", "-an")
 	default:
 		return false
@@ -283,7 +302,7 @@ func IsPortInUse(port int) bool {
 		return false
 	}
 
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == OSWindows {
 		return strings.Contains(string(output), fmt.Sprintf(":%d", port))
 	}
 

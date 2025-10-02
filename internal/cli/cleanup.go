@@ -41,9 +41,11 @@ Examples:
 			if !force && !dryRun {
 				fmt.Print("Are you sure? (type 'yes' to confirm): ")
 				var confirm string
-				fmt.Scanln(&confirm)
+				if _, err := fmt.Scanln(&confirm); err != nil {
+					return fmt.Errorf("failed to read confirmation: %w", err)
+				}
 				if confirm != "yes" {
-					fmt.Println("Cleanup cancelled")
+					fmt.Println("Cleanup canceled")
 					return nil
 				}
 			}
@@ -53,18 +55,16 @@ Examples:
 		fmt.Println("🗑️  Removing containers...")
 		if dryRun {
 			fmt.Println("  Would remove project containers")
-		} else {
-			// TODO: Implement container cleanup
 		}
+		// TODO: Implement container cleanup
 
 		// Clean up volumes if requested
 		if volumes || all {
 			fmt.Println("🗑️  Removing volumes...")
 			if dryRun {
 				fmt.Println("  Would remove project volumes")
-			} else {
-				// TODO: Implement volume cleanup
 			}
+			// TODO: Implement volume cleanup
 		}
 
 		// Clean up images if requested
@@ -72,9 +72,8 @@ Examples:
 			fmt.Println("🗑️  Removing images...")
 			if dryRun {
 				fmt.Println("  Would remove project images")
-			} else {
-				// TODO: Implement image cleanup
 			}
+			// TODO: Implement image cleanup
 		}
 
 		// Clean up networks if requested
@@ -82,9 +81,8 @@ Examples:
 			fmt.Println("🗑️  Removing networks...")
 			if dryRun {
 				fmt.Println("  Would remove project networks")
-			} else {
-				// TODO: Implement network cleanup
 			}
+			// TODO: Implement network cleanup
 		}
 
 		if dryRun {

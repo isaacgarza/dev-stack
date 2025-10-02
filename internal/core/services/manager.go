@@ -13,6 +13,17 @@ import (
 	"dev-stack/internal/pkg/types"
 )
 
+// Database service constants
+const (
+	ServicePostgres   = "postgres"
+	ServicePostgreSQL = "postgresql"
+	ServiceMySQL      = "mysql"
+	ServiceRedis      = "redis"
+	ServiceMariaDB    = "mariadb"
+	ServiceMongo      = "mongo"
+	ServiceMongoDB    = "mongodb"
+)
+
 // Manager provides high-level service management operations
 type Manager struct {
 	docker     *docker.Client
@@ -171,7 +182,7 @@ func (m *Manager) ConnectToService(ctx context.Context, serviceName string, opti
 	// Map service names to connection commands
 	var cmd []string
 	switch strings.ToLower(serviceName) {
-	case "postgres", "postgresql", "pg":
+	case ServicePostgres, ServicePostgreSQL, "pg":
 		cmd = []string{"psql"}
 		if options.User != "" {
 			cmd = append(cmd, "-U", options.User)
@@ -182,7 +193,7 @@ func (m *Manager) ConnectToService(ctx context.Context, serviceName string, opti
 			cmd = append(cmd, "-d", options.Database)
 		}
 
-	case "redis":
+	case ServiceRedis:
 		cmd = []string{"redis-cli"}
 		if options.Host != "" {
 			cmd = append(cmd, "-h", options.Host)
@@ -191,7 +202,7 @@ func (m *Manager) ConnectToService(ctx context.Context, serviceName string, opti
 			cmd = append(cmd, "-p", options.Port)
 		}
 
-	case "mysql", "mariadb":
+	case ServiceMySQL, ServiceMariaDB:
 		cmd = []string{"mysql"}
 		if options.User != "" {
 			cmd = append(cmd, "-u", options.User)
@@ -203,7 +214,7 @@ func (m *Manager) ConnectToService(ctx context.Context, serviceName string, opti
 			cmd = append(cmd, options.Database)
 		}
 
-	case "mongo", "mongodb":
+	case ServiceMongo, ServiceMongoDB:
 		cmd = []string{"mongosh"}
 		if options.Database != "" {
 			cmd = append(cmd, options.Database)
@@ -264,13 +275,13 @@ func (m *Manager) BackupService(ctx context.Context, serviceName, backupName str
 	// Create backup based on service type
 	var cmd []string
 	switch strings.ToLower(serviceName) {
-	case "postgres", "postgresql", "pg":
+	case ServicePostgres, ServicePostgreSQL, "pg":
 		cmd = []string{"pg_dump", "-U", "postgres", "-h", "localhost"}
 		if options.Database != "" {
 			cmd = append(cmd, options.Database)
 		}
 
-	case "mysql", "mariadb":
+	case ServiceMySQL, ServiceMariaDB:
 		cmd = []string{"mysqldump", "-u", "root", "-p"}
 		if options.Database != "" {
 			cmd = append(cmd, options.Database)
@@ -278,11 +289,11 @@ func (m *Manager) BackupService(ctx context.Context, serviceName, backupName str
 			cmd = append(cmd, "--all-databases")
 		}
 
-	case "redis":
+	case ServiceRedis:
 		// For Redis, we'll copy the RDB file
 		return m.backupRedis(ctx, projectName, backupPath)
 
-	case "mongodb", "mongo":
+	case ServiceMongoDB, ServiceMongo:
 		cmd = []string{"mongodump", "--out", "/tmp/backup"}
 
 	default:
@@ -321,10 +332,14 @@ func (m *Manager) RestoreService(ctx context.Context, serviceName, backupFile st
 			// Drop and recreate database
 			if options.Database != "" {
 				dropCmd := []string{"dropdb", "-U", "postgres", "--if-exists", options.Database}
-				m.docker.Containers().Exec(ctx, projectName, serviceName, dropCmd, docker.ExecOptions{})
+				if err := m.docker.Containers().Exec(ctx, projectName, serviceName, dropCmd, docker.ExecOptions{}); err != nil {
+					return fmt.Errorf("failed to drop database: %w", err)
+				}
 
 				createCmd := []string{"createdb", "-U", "postgres", options.Database}
-				m.docker.Containers().Exec(ctx, projectName, serviceName, createCmd, docker.ExecOptions{})
+				if err := m.docker.Containers().Exec(ctx, projectName, serviceName, createCmd, docker.ExecOptions{}); err != nil {
+					return fmt.Errorf("failed to create database: %w", err)
+				}
 			}
 		}
 
@@ -336,10 +351,14 @@ func (m *Manager) RestoreService(ctx context.Context, serviceName, backupFile st
 	case "mysql", "mariadb":
 		if options.Clean && options.Database != "" {
 			dropCmd := []string{"mysql", "-u", "root", "-p", "-e", fmt.Sprintf("DROP DATABASE IF EXISTS %s;", options.Database)}
-			m.docker.Containers().Exec(ctx, projectName, serviceName, dropCmd, docker.ExecOptions{})
+			if err := m.docker.Containers().Exec(ctx, projectName, serviceName, dropCmd, docker.ExecOptions{}); err != nil {
+				return fmt.Errorf("failed to drop database: %w", err)
+			}
 
 			createCmd := []string{"mysql", "-u", "root", "-p", "-e", fmt.Sprintf("CREATE DATABASE %s;", options.Database)}
-			m.docker.Containers().Exec(ctx, projectName, serviceName, createCmd, docker.ExecOptions{})
+			if err := m.docker.Containers().Exec(ctx, projectName, serviceName, createCmd, docker.ExecOptions{}); err != nil {
+				return fmt.Errorf("failed to create database: %w", err)
+			}
 		}
 
 		cmd = []string{"mysql", "-u", "root", "-p"}
@@ -353,7 +372,9 @@ func (m *Manager) RestoreService(ctx context.Context, serviceName, backupFile st
 	case "mongodb", "mongo":
 		if options.Clean && options.Database != "" {
 			dropCmd := []string{"mongosh", "--eval", "db.dropDatabase()", options.Database}
-			m.docker.Containers().Exec(ctx, projectName, serviceName, dropCmd, docker.ExecOptions{})
+			if err := m.docker.Containers().Exec(ctx, projectName, serviceName, dropCmd, docker.ExecOptions{}); err != nil {
+				return fmt.Errorf("failed to drop database: %w", err)
+			}
 		}
 
 		cmd = []string{"mongorestore", "/tmp/backup"}
@@ -450,12 +471,12 @@ func (m *Manager) waitForHealthy(ctx context.Context, projectName string, servic
 
 func (m *Manager) backupRedis(ctx context.Context, projectName, backupPath string) error {
 	// TODO: Implement Redis backup by copying RDB file
-	return fmt.Errorf("Redis backup not yet implemented")
+	return fmt.Errorf("redis backup not yet implemented")
 }
 
 func (m *Manager) restoreRedis(ctx context.Context, projectName, backupFile string, clean bool) error {
 	// TODO: Implement Redis restore by copying RDB file and restarting
-	return fmt.Errorf("Redis restore not yet implemented")
+	return fmt.Errorf("redis restore not yet implemented")
 }
 
 func getBackupExtension(serviceName string) string {

@@ -53,24 +53,32 @@ deps-go: ## Download Go dependencies
 
 test-go: deps-go ## Run Go tests
 	@echo "Running Go tests..."
-	go test -v -race -coverprofile=coverage.out ./...
+	go test -v -race -coverprofile=coverage.out $(shell go list ./... | grep -v '/tests/integration')
 
 test-go-integration: build ## Run Go integration tests
 	@echo "Running Go integration tests..."
-	go test -v -tags=integration ./tests/...
+	@if find ./tests -name "*_test.go" 2>/dev/null | grep -q .; then \
+		cd tests/integration && go test -v -tags=integration .; \
+	else \
+		echo "No Go integration tests found in ./tests/ directory, skipping..."; \
+	fi
 
 lint-go: ## Run Go linting
 	@echo "Running Go linting..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
-		echo "Installing golangci-lint..."; \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		echo "Installing golangci-lint v2..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v2.5.0; \
 	fi
 	$(shell go env GOPATH)/bin/golangci-lint run ./...
 
 fmt-go: ## Format Go code
 	@echo "Formatting Go code..."
+	@if [ ! -f $(shell go env GOPATH)/bin/goimports ]; then \
+		echo "Installing goimports..."; \
+		go install golang.org/x/tools/cmd/goimports@latest; \
+	fi
 	go fmt ./...
-	goimports -w .
+	$(shell go env GOPATH)/bin/goimports -w .
 
 vet-go: ## Run Go vet
 	@echo "Running go vet..."

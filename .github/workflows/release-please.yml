@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       force_release:
-        description: 'Force create a release (skip conventional commit analysis)'
+        description: "Force create a release (skip conventional commit analysis)"
         required: false
         default: false
         type: boolean

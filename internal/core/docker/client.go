@@ -20,6 +20,11 @@ import (
 	"dev-stack/internal/pkg/types"
 )
 
+// Container state constants
+const (
+	StateRunning = "running"
+)
+
 // Client represents a Docker client with additional functionality for dev-stack
 type Client struct {
 	cli    *client.Client
@@ -118,12 +123,12 @@ func (cs *ContainerService) List(ctx context.Context, projectName string, servic
 			CreatedAt: time.Unix(c.Created, 0),
 		}
 
-		if c.State == "running" {
+		if c.State == StateRunning {
 			status.StartedAt = &status.CreatedAt
 		}
 
 		// Get container stats for running containers
-		if c.State == "running" {
+		if c.State == StateRunning {
 			stats, err := cs.getContainerStats(ctx, c.ID)
 			if err == nil {
 				status.CPUUsage = stats.CPUUsage
@@ -183,7 +188,7 @@ func (cs *ContainerService) Stop(ctx context.Context, projectName string, servic
 			continue
 		}
 
-		if c.State == "running" {
+		if c.State == StateRunning {
 			timeoutSecs := options.Timeout
 			if err := cs.client.cli.ContainerStop(ctx, c.ID, container.StopOptions{
 				Timeout: &timeoutSecs,
@@ -254,9 +259,13 @@ func (cs *ContainerService) Exec(ctx context.Context, projectName, serviceName s
 
 	// Handle output
 	if options.TTY {
-		io.Copy(os.Stdout, resp.Reader)
+		if _, err := io.Copy(os.Stdout, resp.Reader); err != nil {
+			cs.client.logger.Error("Failed to copy output", "error", err)
+		}
 	} else {
-		stdcopy.StdCopy(os.Stdout, os.Stderr, resp.Reader)
+		if _, err := stdcopy.StdCopy(os.Stdout, os.Stderr, resp.Reader); err != nil {
+			cs.client.logger.Error("Failed to copy output", "error", err)
+		}
 	}
 
 	return nil
@@ -306,11 +315,17 @@ func (cs *ContainerService) Logs(ctx context.Context, projectName string, servic
 
 		// Copy logs to stdout/stderr
 		go func(serviceName string, logs io.ReadCloser) {
-			defer logs.Close()
+			defer func() {
+				if closeErr := logs.Close(); closeErr != nil {
+					cs.client.logger.Error("Failed to close logs", "error", closeErr)
+				}
+			}()
 			if options.Follow {
 				fmt.Printf("==> Following logs for %s <==\n", serviceName)
 			}
-			stdcopy.StdCopy(os.Stdout, os.Stderr, logs)
+			if _, err := stdcopy.StdCopy(os.Stdout, os.Stderr, logs); err != nil {
+				cs.client.logger.Error("Failed to copy logs", "error", err)
+			}
 		}(serviceName, logs)
 	}
 
@@ -426,9 +441,7 @@ func (is *ImageService) List(ctx context.Context, projectName string) ([]string,
 
 	var imageNames []string
 	for _, img := range images {
-		for _, tag := range img.RepoTags {
-			imageNames = append(imageNames, tag)
-		}
+		imageNames = append(imageNames, img.RepoTags...)
 	}
 
 	return imageNames, nil
@@ -489,7 +502,11 @@ func (cs *ContainerService) getContainerStats(ctx context.Context, containerID s
 	if err != nil {
 		return nil, err
 	}
-	defer stats.Body.Close()
+	defer func() {
+		if closeErr := stats.Body.Close(); closeErr != nil {
+			cs.client.logger.Error("Failed to close stats body", "error", closeErr)
+		}
+	}()
 
 	// TODO: Parse stats response and calculate CPU/memory usage
 	// This is a simplified implementation

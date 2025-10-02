@@ -7,6 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Database service constants
+const (
+	ServicePostgres   = "postgres"
+	ServicePostgreSQL = "postgresql"
+	ServiceMySQL      = "mysql"
+	ServiceMongo      = "mongo"
+	ServiceMariaDB    = "mariadb"
+	ServiceRedis      = "redis"
+	ServiceMongoDB    = "mongodb"
+)
+
 // backupCmd represents the backup command
 var backupCmd = &cobra.Command{
 	Use:   "backup <service> [backup-name]",
@@ -97,16 +108,16 @@ func performBackup(service, backupName, outputDir string, compress bool, format 
 	// TODO: Implement actual backup logic based on service type
 	// This will integrate with Docker exec to run backup commands
 	switch service {
-	case "postgres", "postgresql", "pg":
+	case ServicePostgres, ServicePostgreSQL, "pg":
 		fmt.Println("  🐘 Creating PostgreSQL dump...")
 		// Will execute: docker compose exec postgres pg_dump -U postgres -h localhost dbname > backup.sql
-	case "mysql", "mariadb":
+	case ServiceMySQL, ServiceMariaDB:
 		fmt.Println("  🐬 Creating MySQL dump...")
 		// Will execute: docker compose exec mysql mysqldump -u root -p --all-databases > backup.sql
-	case "redis":
+	case ServiceRedis:
 		fmt.Println("  🔴 Creating Redis snapshot...")
 		// Will execute: docker compose exec redis redis-cli BGSAVE and copy dump.rdb
-	case "mongodb", "mongo":
+	case ServiceMongoDB, ServiceMongo:
 		fmt.Println("  🍃 Creating MongoDB dump...")
 		// Will execute: docker compose exec mongodb mongodump --out /backup
 	default:

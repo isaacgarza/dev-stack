@@ -1,27 +1,27 @@
-name: 'Setup Go Version'
-description: 'Setup Go using the centralized version from .go-version file'
+name: "Setup Go Version"
+description: "Setup Go using the centralized version from .go-version file"
 inputs:
   cache:
-    description: 'Enable Go module caching'
+    description: "Enable Go module caching"
     required: false
-    default: 'true'
+    default: "true"
   check-latest:
-    description: 'Set this option to true if you want the action to always check for the latest available version that satisfies the version spec'
+    description: "Set this option to true if you want the action to always check for the latest available version that satisfies the version spec"
     required: false
-    default: 'false'
+    default: "false"
 outputs:
   go-version:
-    description: 'The Go version that was installed'
+    description: "The Go version that was installed"
     value: ${{ steps.get-version.outputs.version }}
   go-version-file:
-    description: 'The path to the Go version file'
+    description: "The path to the Go version file"
     value: ${{ steps.get-version.outputs.version-file }}
   cache-hit:
-    description: 'A boolean value to indicate if a cache was hit'
+    description: "A boolean value to indicate if a cache was hit"
     value: ${{ steps.cache.outputs.cache-hit }}
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Get Go version
       id: get-version
@@ -33,7 +33,7 @@ runs:
         echo "Found Go version: $GO_VERSION"
 
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
         go-version: ${{ steps.get-version.outputs.version }}
         check-latest: ${{ inputs.check-latest }}
@@ -41,13 +41,14 @@ runs:
     - name: Setup Go module cache
       id: cache
       if: inputs.cache == 'true'
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ steps.get-version.outputs.version }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ steps.get-version.outputs.version }}-${{ github.job }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
+          ${{ runner.os }}-go-${{ steps.get-version.outputs.version }}-${{ github.job }}-
           ${{ runner.os }}-go-${{ steps.get-version.outputs.version }}-
           ${{ runner.os }}-go-
 
