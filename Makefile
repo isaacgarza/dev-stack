@@ -1,5 +1,5 @@
 # Go Build Configuration
-GO_VERSION ?= 1.21
+GO_VERSION ?= $(shell ./scripts/get-go-version.sh)
 BINARY_NAME = dev-stack
 BUILD_DIR = build
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -207,6 +207,59 @@ info: ## Show build information
 	@echo "Go Version: $(shell go version)"
 	@echo "Git Status: $(shell git status --porcelain | wc -l) uncommitted changes"
 
+## Version management targets
+sync-version: ## Sync Go version across all config files
+	@echo "Syncing Go version across configuration files..."
+	./scripts/sync-go-version.sh --fix
+
+check-version: ## Check if Go versions are consistent across config files
+	@echo "Checking Go version consistency..."
+	./scripts/sync-go-version.sh --check
+
+show-go-version: ## Show the current Go version from .go-version
+	@echo "Current Go version: $(GO_VERSION)"
+	@echo "Matrix versions for CI: $(shell ./scripts/get-go-version.sh --github-matrix)"
+
+## Release configuration targets
+generate-release-configs: ## Generate all release configuration files from central config
+	@echo "Generating release configuration files..."
+	@./scripts/generate-release-configs.sh
+
+validate-release-configs: ## Validate release configuration files are up to date
+	@echo "Validating release configuration files..."
+	@./scripts/generate-release-configs.sh
+	@if git diff --exit-code .commitlintrc.json .release-please-config.json; then \
+		echo "✅ Release configuration files are up to date"; \
+	else \
+		echo "❌ Release configuration files are out of date"; \
+		echo "Run 'make generate-release-configs' to update them"; \
+		exit 1; \
+	fi
+
+
+
+check-release-deps: ## Check if release dependencies are installed
+	@echo "Checking release dependencies..."
+	@if ! command -v yq >/dev/null 2>&1; then \
+		echo "❌ yq is required but not installed."; \
+		echo "Install with: brew install yq (macOS) or go install github.com/mikefarah/yq/v4@latest"; \
+		exit 1; \
+	fi
+	@if ! command -v jq >/dev/null 2>&1; then \
+		echo "❌ jq is required but not installed."; \
+		echo "Install with: brew install jq (macOS) or apt-get install jq (Ubuntu)"; \
+		exit 1; \
+	fi
+	@echo "✅ All release dependencies are installed"
+
+release-setup: check-release-deps generate-release-configs ## Complete release automation setup
+	@echo "🚀 Release automation setup complete!"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Commit the generated configuration files"
+	@echo "  2. Push to main branch to enable Release Please"
+	@echo "  3. Use conventional commits for automatic releases"
+
 ## Help target
 help: ## Show this help message
 	@echo "dev-stack Makefile"
@@ -244,8 +297,20 @@ help: ## Show this help message
 	@echo "  info           - Show build information"
 	@echo "  help           - Show this help message"
 	@echo ""
+	@echo "Version Management:"
+	@echo "  sync-version   - Sync Go version across all config files"
+	@echo "  check-version  - Check Go version consistency"
+	@echo "  show-go-version - Show current Go version and CI matrix"
+	@echo ""
+	@echo "Release Management:"
+	@echo "  generate-release-configs - Generate release configuration files"
+	@echo "  validate-release-configs - Validate configuration files are current"
+	@echo "  check-release-deps      - Check if release dependencies are installed"
+	@echo "  release-setup           - Complete release automation setup"
+	@echo ""
 	@echo "Usage Examples:"
 	@echo "  make build                    # Build for current platform"
 	@echo "  make build-all               # Build for all platforms"
 	@echo "  make test                    # Run tests"
 	@echo "  make GOOS=linux GOARCH=amd64 build  # Cross-compile"
+	@echo "  make release-setup           # Set up release automation"
