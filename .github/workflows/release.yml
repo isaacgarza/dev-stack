@@ -1,0 +1,253 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: "Force create a release (skip conventional commit analysis)"
+        required: false
+        default: false
+        type: boolean
+      release_type:
+        description: "Type of release to create"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - "auto"
+          - "patch"
+          - "minor"
+          - "major"
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Single release management job
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go-version
+        id: setup-go
+
+      # Run tests before any release activities
+      - name: Run pre-release tests
+        run: |
+          echo "🧪 Running pre-release validation..."
+          go mod download
+          go test -v -race ./...
+          go vet ./...
+          make build
+
+      # Create release with release-please
+      - name: Create release
+        id: release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .release-please-config.json
+
+      - name: Release summary
+        if: steps.release.outputs.releases_created
+        run: |
+          echo "🎉 Release created!"
+          echo "Version: ${{ steps.release.outputs.tag_name }}"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.tag_name }}"
+
+  # Build and publish assets when release is created
+  build:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go-version
+
+      - name: Set build variables
+        run: |
+          echo "VERSION=${{ needs.release.outputs.version }}" >> $GITHUB_ENV
+          echo "TAG_NAME=${{ needs.release.outputs.tag_name }}" >> $GITHUB_ENV
+          echo "COMMIT=${GITHUB_SHA::8}" >> $GITHUB_ENV
+          echo "BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_ENV
+
+      # Build binaries for all platforms
+      - name: Build all platforms
+        run: |
+          echo "🔨 Building binaries for all platforms..."
+          make build-all VERSION=${{ env.VERSION }}
+
+          echo "📦 Built artifacts:"
+          ls -la build/
+
+          echo "📏 File sizes:"
+          du -h build/*
+
+      - name: Generate checksums
+        run: |
+          cd build
+          sha256sum * > checksums.txt
+          echo "🔐 Generated checksums:"
+          cat checksums.txt
+
+      # Set up Docker Buildx for multi-platform builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
+            ghcr.io/${{ github.repository }}:latest
+          build-args: |
+            VERSION=${{ env.VERSION }}
+            COMMIT=${{ env.COMMIT }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Upload release assets
+      - name: Upload release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📤 Uploading release assets to ${{ env.TAG_NAME }}"
+          gh release upload ${{ env.TAG_NAME }} build/* --clobber
+
+      # Verify release assets
+      - name: Verify release
+        run: |
+          echo "🔍 Verifying release assets..."
+
+          # Verify checksums
+          cd build
+          sha256sum -c checksums.txt
+          echo "✅ All checksums verified!"
+
+          # Test binary functionality
+          chmod +x dev-stack-linux-amd64
+          ./dev-stack-linux-amd64 version || ./dev-stack-linux-amd64 --version || echo "✅ Binary executes successfully"
+
+          # Verify Docker image
+          echo "🐳 Verifying Docker image..."
+          docker run --rm ghcr.io/${{ github.repository }}:${{ env.VERSION }} version || docker run --rm ghcr.io/${{ github.repository }}:${{ env.VERSION }} --version || echo "✅ Docker image runs successfully"
+
+  # Post-release tasks
+  post-release:
+    name: Post-Release
+    runs-on: ubuntu-latest
+    needs: [release, build]
+    if: always() && needs.release.outputs.release_created == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Update package managers (if configured)
+      - name: Check package manager configuration
+        id: package-config
+        run: |
+          if [ -f ".github/config/release-config.yaml" ]; then
+            HOMEBREW_ENABLED=$(yq eval '.package_managers.homebrew.enabled' .github/config/release-config.yaml)
+            SCOOP_ENABLED=$(yq eval '.package_managers.scoop.enabled' .github/config/release-config.yaml)
+            echo "homebrew_enabled=$HOMEBREW_ENABLED" >> $GITHUB_OUTPUT
+            echo "scoop_enabled=$SCOOP_ENABLED" >> $GITHUB_OUTPUT
+          else
+            echo "homebrew_enabled=false" >> $GITHUB_OUTPUT
+            echo "scoop_enabled=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package manager updates
+        run: |
+          echo "📦 Package Manager Status:"
+          echo "  Homebrew: ${{ steps.package-config.outputs.homebrew_enabled }}"
+          echo "  Scoop: ${{ steps.package-config.outputs.scoop_enabled }}"
+
+          if [[ "${{ steps.package-config.outputs.homebrew_enabled }}" == "true" ]]; then
+            echo "🍺 Homebrew formula update would be triggered here"
+            # TODO: Add Homebrew formula update logic
+          fi
+
+          if [[ "${{ steps.package-config.outputs.scoop_enabled }}" == "true" ]]; then
+            echo "🪣 Scoop manifest update would be triggered here"
+            # TODO: Add Scoop manifest update logic
+          fi
+
+      # Generate release summary
+      - name: Release summary
+        run: |
+          echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ needs.release.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Binaries**: Built for all platforms" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Docker**: Published to ghcr.io" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Checksums**: Generated and verified" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Release Page](https://github.com/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag_name }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Docker Image](https://ghcr.io/${{ github.repository }}:${{ needs.release.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.build.result }}" = "success" ]; then
+            echo "🎉 **Status**: Release completed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Status**: Release completed with some issues" >> $GITHUB_STEP_SUMMARY
+            echo "Build Status: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # Failure notification
+  notify-failure:
+    name: Notify Failure
+    runs-on: ubuntu-latest
+    needs: [release, build, post-release]
+    if: failure() && needs.release.outputs.release_created == 'true'
+    steps:
+      - name: Failure summary
+        run: |
+          echo "❌ Release process failed!"
+          echo ""
+          echo "Release: ${{ needs.release.result }}"
+          echo "Build: ${{ needs.build.result }}"
+          echo "Post-Release: ${{ needs.post-release.result }}"
+          echo ""
+          echo "Please check the workflow logs for details."

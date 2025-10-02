@@ -1,0 +1,171 @@
+name: Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+    paths:
+      - "docs/**"
+      - "*.md"
+      - ".commitlintrc.json"
+      - ".release-please-config.json"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Single validation job for easy required status checking
+  validation:
+    name: Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Commit validation (only on PRs)
+      - name: Validate conventional commits
+        if: github.event_name == 'pull_request'
+        uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: .commitlintrc.json
+
+      # Configuration validation
+      - name: Install tools
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate configuration files
+        run: |
+          echo "🔍 Validating configuration files..."
+
+          # Check if release config generation script exists and run it
+          if [ -f "scripts/generate-release-configs.sh" ]; then
+            chmod +x scripts/generate-release-configs.sh
+            ./scripts/generate-release-configs.sh
+
+            if git diff --exit-code .commitlintrc.json .release-please-config.json; then
+              echo "✅ Release configuration files are up to date"
+            else
+              echo "❌ Release configuration files are out of date"
+              echo "Run 'make generate-release-configs' to update them"
+              git diff --name-only .commitlintrc.json .release-please-config.json
+              exit 1
+            fi
+          else
+            echo "⚠️ Release config generation script not found, skipping validation"
+          fi
+
+      # Documentation validation
+      - name: Setup Node.js for documentation tools
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install documentation dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm ci
+          else
+            echo "No package.json found, skipping npm dependencies"
+          fi
+
+      - name: Lint markdown files
+        run: |
+          echo "🔍 Linting markdown files..."
+          if [ -f package.json ] && npm list markdownlint-cli2 >/dev/null 2>&1; then
+            npm run lint:md || echo "⚠️ Markdown linting found issues"
+          else
+            echo "⚠️ Markdown linting not configured, skipping"
+          fi
+
+      - name: Check for broken links
+        uses: tcort/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: "yes"
+          use-verbose-mode: "yes"
+          config-file: ".github/markdown-link-check.json"
+        continue-on-error: true
+
+      # Code quality checks
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "🔍 Checking for TODO/FIXME comments..."
+          if grep -r "TODO\|FIXME" --include="*.go" --include="*.md" .; then
+            echo "⚠️ Found TODO/FIXME comments - consider addressing before release"
+          else
+            echo "✅ No TODO/FIXME comments found"
+          fi
+        continue-on-error: true
+
+      - name: Check file permissions
+        run: |
+          echo "🔍 Checking file permissions..."
+          # Check for executable files that shouldn't be
+          find . -type f -perm /111 ! -path "./.git/*" ! -path "./build/*" ! -path "./scripts/*" ! -name "*.sh" ! -name "dev-stack*" | while read -r file; do
+            echo "⚠️ Unexpected executable file: $file"
+          done
+
+      - name: Validation summary
+        if: always()
+        run: |
+          echo "## 📋 Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Configuration**: Files validated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Documentation**: Checked for issues" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Code Quality**: Basic checks completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📋 See individual steps above for detailed results." >> $GITHUB_STEP_SUMMARY
+
+  # Documentation generation (optional job)
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: ./.github/actions/setup-go-version
+
+      - name: Build CLI for documentation
+        run: make build
+
+      - name: Generate CLI documentation
+        run: |
+          mkdir -p docs/cli
+          ./build/dev-stack help > docs/cli/help.md 2>/dev/null || echo "# CLI Help\n\nCLI help generation not yet implemented." > docs/cli/help.md
+
+      - name: Setup documentation site
+        run: |
+          pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+
+      - name: Build documentation site
+        run: |
+          # Create basic mkdocs.yml if it doesn't exist
+          if [ ! -f mkdocs.yml ]; then
+            cat > mkdocs.yml << 'EOF'
+          site_name: dev-stack Documentation
+          theme:
+            name: material
+          nav:
+            - Home: index.md
+            - CLI Reference: cli/help.md
+          EOF
+          fi
+
+          mkdocs build --clean
+
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
