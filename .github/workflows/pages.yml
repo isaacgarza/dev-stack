@@ -35,12 +35,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      HUGO_VERSION: 0.121.0
+      HUGO_VERSION: 0.151.0
     steps:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: "0.121.0"
+          hugo-version: "0.151.0"
           extended: true
 
       - name: Checkout

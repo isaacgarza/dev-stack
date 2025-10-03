@@ -130,8 +130,8 @@ Welcome to dev-stack! A powerful development stack management tool built in Go f
     minMatchCharLength = 0
     keys = ["title", "permalink", "summary", "content"]
 
-  # Analytics (optional)
-  # googleAnalytics = "G-MEASUREMENT_ID"
+  # Analytics (disabled)
+  googleAnalytics = ""
 
 # Taxonomies
 [taxonomies]
@@ -139,8 +139,10 @@ Welcome to dev-stack! A powerful development stack management tool built in Go f
   tag = "tags"
   series = "series"
 
-# Privacy settings
+# Privacy settings (disable analytics)
 [privacy]
+  [privacy.googleAnalytics]
+    disable = true
   [privacy.vimeo]
     disabled = false
     simple = true
