@@ -294,10 +294,10 @@ hugo --verbose
 **Links not working:**
 ```bash
 # Use Hugo shortcodes for internal links
-[Link]({{< ref "/page" >}})
+[Getting Started]({{< ref "/getting-started" >}})
 
 # Not raw markdown links
-[Link](/page/)
+[Getting Started](/getting-started/)
 ```
 
 ### Development Workflow

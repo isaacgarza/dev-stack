@@ -19,7 +19,8 @@ defaultContentLanguage = "en"
 defaultContentLanguageInSubdir = false
 
 # Pagination
-paginate = 10
+[pagination]
+  pagerSize = 10
 
 # Markup settings
 [markup]
@@ -146,7 +147,7 @@ Welcome to dev-stack! A powerful development stack management tool built in Go f
   [privacy.vimeo]
     disabled = false
     simple = true
-  [privacy.twitter]
+  [privacy.x]
     disabled = false
     enableDNT = true
     simple = true

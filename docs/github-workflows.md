@@ -34,7 +34,7 @@ The workflows support the complete development lifecycle from code validation to
 
 ### ✅ Validation (`validation.yml`)
 
-**Triggers**: Pull Requests, Push to `main`/`develop`
+**Triggers**: Pull Requests, Push to `main`/`develop`  
 **Purpose**: Code quality and documentation validation
 
 **Checks:**
@@ -42,6 +42,12 @@ The workflows support the complete development lifecycle from code validation to
 - Configuration file validation
 - Markdown linting
 - Link checking
+- **Hugo validation suite**:
+  - Configuration syntax validation
+  - Content structure verification
+  - Build testing (dry run)
+  - Internal link validation
+  - Frontmatter syntax checking
 - TODO/FIXME detection
 - File permissions
 
@@ -60,6 +66,7 @@ The workflows support the complete development lifecycle from code validation to
 - Hugo Extended v0.151.0+
 - PaperMod theme (git submodule)
 - Content structure validation
+- Valid Hugo configuration
 
 ### 🛡️ Security (`security.yml`)
 
@@ -121,6 +128,12 @@ Control workflow execution:
 make test              # Unit tests with coverage
 make lint              # Linting and static analysis
 make build             # Build verification
+
+# Hugo validation (if working with docs)
+make validate-docs     # Complete Hugo validation suite
+hugo config            # Validate Hugo configuration only
+hugo --gc --minify --destination public-test  # Test build only
+rm -rf public-test     # Clean up
 ```
 
 **Debug specific issues:**
@@ -150,8 +163,11 @@ GOOS=linux GOARCH=amd64 go build ./cmd/dev-stack
 - Verify test isolation
 
 **Pages Deployment:**
+- Run `make validate-docs` before pushing changes
 - Ensure Hugo theme submodule is initialized
 - Check content file frontmatter syntax
+- Validate Hugo configuration with `hugo config`
+- Test build locally with validation workflow
 - Verify GitHub Pages is enabled in repository settings
 
 **Security Scans:**

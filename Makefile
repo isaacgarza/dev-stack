@@ -15,7 +15,7 @@ LDFLAGS = -ldflags "-X github.com/isaacgarza/dev-stack/internal/cli.version=$(VE
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 
-.PHONY: help build build-all install clean test test-go lint lint-go deps deps-go docs
+.PHONY: help build build-all install clean test test-go lint lint-go deps deps-go docs validate-docs
 
 ## Default target
 all: build
@@ -86,6 +86,25 @@ vet-go: ## Run Go vet
 docs: build ## Generate documentation from YAML manifests
 	@echo "Generating documentation from YAML manifests..."
 	./$(BUILD_DIR)/$(BINARY_NAME) docs --verbose
+
+validate-docs: ## Validate Hugo documentation configuration and content
+	@echo "Validating Hugo documentation..."
+	@if [ ! -f "hugo.toml" ]; then \
+		echo "❌ Hugo configuration file (hugo.toml) not found"; \
+		exit 1; \
+	fi
+	@echo "🔍 Checking Hugo configuration..."
+	@hugo config > /dev/null 2>&1 || (echo "❌ Hugo configuration is invalid" && exit 1)
+	@echo "✅ Hugo configuration is valid"
+	@echo "🔍 Testing Hugo build..."
+	@mkdir -p content/cli-reference
+	@if [ ! -f "content/cli-reference/index.md" ]; then \
+		echo '---\ntitle: "CLI Reference"\ndescription: "Complete command reference for dev-stack CLI"\nweight: 30\n---\n\n# CLI Reference\n\nPlaceholder for validation.' > content/cli-reference/index.md; \
+	fi
+	@hugo --gc --minify --destination public-test > /dev/null 2>&1 || (echo "❌ Hugo build failed" && exit 1)
+	@echo "✅ Hugo build successful"
+	@rm -rf public-test
+	@echo "✅ Documentation validation complete"
 
 ## Combined targets
 deps: deps-go ## Download all dependencies
@@ -224,6 +243,7 @@ help: ## Show this help message
 	@echo ""
 	@echo "Documentation Targets:"
 	@echo "  docs           - Generate documentation from YAML manifests"
+	@echo "  validate-docs  - Validate Hugo documentation configuration and content"
 	@echo ""
 
 	@echo ""
