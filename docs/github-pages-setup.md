@@ -47,7 +47,7 @@ content/
 ```
 
 ### Workflow Features
-- Hugo Extended v0.121.0+
+- Hugo Extended v0.151.0+
 - Automatic CLI documentation generation
 - Content validation before build
 - Build error handling with detailed logs
@@ -122,6 +122,17 @@ hugo config
 hugo server --buildDrafts
 ```
 
+**Hugo Version Issues:**
+```bash
+# Check Hugo version
+hugo version
+
+# PaperMod theme requires Hugo v0.146.0+ (using v0.151.0)
+# Update Hugo if needed:
+brew upgrade hugo  # macOS
+sudo snap refresh hugo --channel=extended  # Linux
+```
+
 ### Content Not Updating
 **Causes:**
 - Browser cache (hard refresh: Ctrl+F5)
@@ -188,7 +199,7 @@ title = "dev-stack Documentation"
 - name: Setup Hugo
   uses: peaceiris/actions-hugo@v3
   with:
-    hugo-version: "0.121.0"  # Update as needed
+    hugo-version: "0.151.0"  # Update as needed
 ```
 
 **Theme Updates:**

@@ -57,7 +57,7 @@ The workflows support the complete development lifecycle from code validation to
 4. Deploy to GitHub Pages
 
 **Requirements:**
-- Hugo Extended v0.121.0+
+- Hugo Extended v0.151.0+
 - PaperMod theme (git submodule)
 - Content structure validation
 
