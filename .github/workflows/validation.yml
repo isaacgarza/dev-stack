@@ -156,25 +156,25 @@ jobs:
             echo "✅ CLI help documentation generated successfully"
           else
             cat > content/cli-reference/index.md << 'EOF'
----
-title: "CLI Reference"
-description: "Complete command reference for dev-stack CLI"
-weight: 30
----
+            ---
+            title: "CLI Reference"
+            description: "Complete command reference for dev-stack CLI"
+            weight: 30
+            ---
 
-# CLI Reference
+            # CLI Reference
 
-CLI help generation is not yet implemented.
+            CLI help generation is not yet implemented.
 
-Check back soon or [contribute to the project]({{< ref "/contributing" >}}) to help add this feature!
-EOF
+            Check back soon or [contribute to the project]({{< ref "/contributing" >}}) to help add this feature!
+            EOF
             echo "⚠️ CLI help generation failed, using placeholder"
           fi
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: 'latest'
+          hugo-version: "latest"
           extended: true
 
       - name: Build with Hugo
