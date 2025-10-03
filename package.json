@@ -14,7 +14,7 @@
     "lint:commits": "commitlint --from HEAD~1 --to HEAD --verbose"
   },
   "devDependencies": {
-    "markdownlint-cli": "^0.37.0",
+    "markdownlint-cli": "^0.45.0",
     "markdown-link-check": "^3.11.2",
     "@commitlint/cli": "^18.4.3",
     "@commitlint/config-conventional": "^18.4.3"
