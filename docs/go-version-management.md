@@ -29,7 +29,7 @@ The following files are automatically synchronized with the Go version:
 2. **`go.mod`** - Go module definition
 3. **`.golangci.yml`** - Linting configuration
 4. **`Dockerfile`** - Container build configuration
-5. **`Makefile`** - Build system variables
+5. **`Taskfile.yml`** - Build system variables
 6. **GitHub Actions workflows** - CI/CD pipeline configurations
 
 ## Tools and Scripts
@@ -67,19 +67,19 @@ The `scripts/sync-go-version.sh` script ensures all configuration files use the 
 ./scripts/sync-go-version.sh --help
 ```
 
-### Makefile Integration
+### Taskfile Integration
 
-Convenient make targets are available for version management:
+Convenient task targets are available for version management:
 
 ```bash
 # Show current Go version and CI matrix
-make show-go-version
+task show-go-version
 
 # Check version consistency
-make check-version
+task check-version
 
 # Sync all configuration files
-make sync-version
+task sync-version
 ```
 
 ## GitHub Actions Integration
@@ -135,12 +135,12 @@ To upgrade the Go version across the entire project:
 
 2. **Synchronize all configuration files:**
    ```bash
-   make sync-version
+   task sync-version
    ```
 
 3. **Verify consistency:**
    ```bash
-   make check-version
+   task check-version
    ```
 
 4. **Update dependencies if needed:**
@@ -150,7 +150,7 @@ To upgrade the Go version across the entire project:
 
 5. **Test the changes:**
    ```bash
-   make test
+   task test
    ```
 
 6. **Commit the changes:**
@@ -168,7 +168,7 @@ The version consistency check can be added to pre-commit hooks:
 ```bash
 #!/bin/bash
 # .git/hooks/pre-commit
-make check-version
+task check-version
 ```
 
 ### CI Validation
@@ -177,17 +177,19 @@ GitHub Actions workflows automatically validate version consistency:
 
 ```yaml
 - name: Validate Go version consistency
-  run: make check-version
+  run: task check-version
 ```
 
 ## Configuration Details
 
-### Makefile Integration
+### Taskfile Integration
 
-The Makefile dynamically reads the Go version:
+The Taskfile dynamically reads the Go version:
 
-```makefile
-GO_VERSION ?= $(shell ./scripts/get-go-version.sh)
+```yaml
+vars:
+  GO_VERSION:
+    sh: ./scripts/get-go-version.sh
 ```
 
 This ensures build commands always use the correct version.
@@ -217,10 +219,10 @@ If you see version mismatch errors:
 
 ```bash
 # Check what's out of sync
-make check-version
+task check-version
 
 # Fix automatically
-make sync-version
+task sync-version
 ```
 
 ### Script Permissions
@@ -242,7 +244,7 @@ If GitHub Actions matrix builds fail, verify the matrix generation:
 ## Best Practices
 
 1. **Always use `.go-version`** as the source of truth
-2. **Run `make sync-version`** after changing Go versions
+2. **Run `task sync-version`** after changing Go versions
 3. **Include version checks** in CI pipelines
 4. **Test thoroughly** after Go version upgrades
 5. **Update dependencies** with `go mod tidy` after upgrades

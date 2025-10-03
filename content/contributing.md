@@ -36,18 +36,18 @@ By participating in this project, you agree to abide by our [Code of Conduct](ht
 
 3. **Build the project:**
    ```bash
-   make build
+   task build
    ```
 
 4. **Run tests:**
    ```bash
-   make test
+   task test
    ```
 
 5. **Start development:**
    ```bash
    # Run with hot reload during development
-   make dev
+   task dev
    ```
 
 ## Project Structure
@@ -159,13 +159,13 @@ Use the feature request template and include:
 3. **Test your changes:**
    ```bash
    # Run all tests
-   make test
+   task test
 
    # Run linting
-   make lint
+   task lint
 
    # Run security checks
-   make security
+   task vet
 
    # Test specific functionality
    go test ./internal/...
@@ -296,10 +296,10 @@ Documentation is built with Hugo and located in the `content/` directory.
 
 ```bash
 # Run tests with coverage
-make test-coverage
+task test
 
 # Run integration tests
-make test-integration
+task test-integration
 
 # Run specific test
 go test -run TestSpecificFunction ./internal/...
@@ -321,10 +321,10 @@ go test -run TestSpecificFunction ./internal/...
 
 ```bash
 # Run security checks
-make security
+task vet
 
 # Check for vulnerabilities
-make vuln-check
+task lint
 ```
 
 ## Pull Request Process
@@ -333,13 +333,13 @@ make vuln-check
 
 1. **Ensure tests pass:**
    ```bash
-   make test-all
+   task test
    ```
 
 2. **Check code quality:**
    ```bash
-   make lint
-   make security
+   task lint
+   task vet
    ```
 
 3. **Update documentation:**
@@ -436,18 +436,18 @@ We value all contributions! Contributors will be:
 
 ```bash
 # Development workflow
-make dev          # Build and run with hot reload
-make build        # Build binary
-make test         # Run tests
-make lint         # Run linting
-make clean        # Clean build artifacts
+task dev          # Build and run with hot reload
+task build        # Build binary
+task test         # Run tests
+task lint         # Run linting
+task clean        # Clean build artifacts
 
 # Documentation
-make docs-serve   # Serve documentation locally
-make docs-build   # Build documentation
+task docs         # Generate documentation
+task validate-docs # Validate documentation
 
 # Release
-make release      # Create release build
+task build-all    # Create release builds
 ```
 
 ### Debugging

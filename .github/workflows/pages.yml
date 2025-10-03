@@ -69,9 +69,14 @@ jobs:
           echo "📁 Content files:"
           ls -la content/
 
+      - name: Install Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Build CLI for documentation
         run: |
-          if make build 2>/dev/null; then
+          if task build 2>/dev/null; then
             echo "✅ CLI built successfully"
           else
             echo "⚠️ CLI build failed, continuing without CLI docs"

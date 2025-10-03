@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Package manager integration framework (Homebrew, Scoop)
 
 ### Build System
-- Enhanced Makefile with release management targets
+- Migrated from Makefile to modern Taskfile build system
+- Enhanced build system with intelligent caching and cross-platform support
 - Automated configuration file generation
 - Git hooks setup for conventional commits
 

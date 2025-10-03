@@ -125,12 +125,12 @@ Control workflow execution:
 
 **Reproduce CI locally:**
 ```bash
-make test              # Unit tests with coverage
-make lint              # Linting and static analysis
-make build             # Build verification
+task test              # Unit tests with coverage
+task lint              # Linting and static analysis
+task build             # Build verification
 
 # Hugo validation (if working with docs)
-make validate-docs     # Complete Hugo validation suite
+task validate-docs     # Complete Hugo validation suite
 hugo config            # Validate Hugo configuration only
 hugo --gc --minify --destination public-test  # Test build only
 rm -rf public-test     # Clean up
@@ -163,7 +163,7 @@ GOOS=linux GOARCH=amd64 go build ./cmd/dev-stack
 - Verify test isolation
 
 **Pages Deployment:**
-- Run `make validate-docs` before pushing changes
+- Run `task validate-docs` before pushing changes
 - Ensure Hugo theme submodule is initialized
 - Check content file frontmatter syntax
 - Validate Hugo configuration with `hugo config`

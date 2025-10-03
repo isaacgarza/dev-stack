@@ -25,11 +25,11 @@ Closes #
 
 ### Manual Testing
 - [ ] I tested the changes locally
-- [ ] I verified the build works with `make build`
+- [ ] I verified the build works with `task build`
 - [ ] I ran the binary and confirmed expected behavior
 
 ### Automated Testing
-- [ ] All existing tests pass (`make test-go`)
+- [ ] All existing tests pass (`task test`)
 - [ ] I added new tests for new functionality
 - [ ] Integration tests pass (if applicable)
 
@@ -39,7 +39,7 @@ Closes #
 - [ ] My code follows Go conventions and best practices
 - [ ] I ran `go fmt` to format the code
 - [ ] I ran `go vet` and addressed any issues
-- [ ] I ran `make lint-go` and addressed any linting issues
+- [ ] I ran `task lint` and addressed any linting issues
 - [ ] I added appropriate error handling
 - [ ] I added appropriate logging where needed
 

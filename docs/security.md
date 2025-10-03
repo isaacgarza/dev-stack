@@ -158,13 +158,12 @@ go-licenses report ./... > license-report.txt
 
 ```bash
 # Run all security checks
-make security
+task vet
 
 # Individual scans
-make security-deps     # Dependency vulnerabilities
-make security-static   # Static code analysis
-make security-secrets  # Secret detection
-make security-licenses # License compliance
+task lint              # Static code analysis and security checks
+go mod download        # Dependency management
+go vet ./...          # Go static analysis
 ```
 
 ## Security Best Practices

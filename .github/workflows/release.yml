@@ -51,6 +51,12 @@ jobs:
         uses: ./.github/actions/setup-go-version
         id: setup-go
 
+      # Install Task runner
+      - name: Install Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       # Run tests before any release activities
       - name: Run pre-release tests
         run: |
@@ -58,7 +64,7 @@ jobs:
           go mod download
           go test -v -race ./...
           go vet ./...
-          make build
+          task build
 
       # Create release with release-please
       - name: Create release
@@ -97,11 +103,17 @@ jobs:
           echo "COMMIT=${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_ENV
 
+      # Install Task runner
+      - name: Install Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       # Build binaries for all platforms
       - name: Build all platforms
         run: |
           echo "🔨 Building binaries for all platforms..."
-          make build-all VERSION=${{ env.VERSION }}
+          task build-all
 
           echo "📦 Built artifacts:"
           ls -la build/

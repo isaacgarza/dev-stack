@@ -57,7 +57,7 @@ jobs:
               echo "✅ Release configuration files are up to date"
             else
               echo "❌ Release configuration files are out of date"
-              echo "Run 'make generate-release-configs' to update them"
+              echo "Run 'task generate-release-configs' to update them"
               git diff --name-only .commitlintrc.json .release-please-config.json
               exit 1
             fi

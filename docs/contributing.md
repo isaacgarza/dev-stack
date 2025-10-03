@@ -37,7 +37,7 @@ dev-stack docs
 This will update `docs/reference.md` and `docs/services.md` based on the latest YAML manifests.
 
 **Contributor Workflow Checklist:**
-1. Ensure you have Go 1.21+ installed and the project built (`make build`).
+1. Ensure you have Go 1.21+ installed and the project built (`task build`).
 2. Edit `scripts/commands.yaml` and/or `services/services.yaml` to add or update commands/services.
 3. Run `dev-stack docs` to regenerate documentation from YAML manifests.
 4. Commit both the manifest and the updated docs.
@@ -88,9 +88,9 @@ Follow these steps to set up your environment for contributing:
 
 2. Set up Python environment and install dependencies:
    ```bash
-   make setup
+   task deps
    ```
-   This will use pyenv/virtualenv and requirements.txt.
+   This will download and manage Go dependencies.
 
 3. Create a test project to work with:
    ```bash
@@ -689,10 +689,10 @@ services:
 
 ## 📝 How to Update Commands and Services Documentation
 
-You can use the Makefile to automate documentation generation:
+You can use Taskfile to automate documentation generation:
 
 1. Edit the YAML manifests (`scripts/commands.yaml`, `services/services.yaml`).
-2. Run `make docs` to regenerate documentation.
+2. Run `task docs` to regenerate documentation.
 3. Commit both the manifest and the updated docs.
 
 See the Contributor Workflow Checklist above for the recommended steps.

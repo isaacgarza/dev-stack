@@ -523,24 +523,31 @@ Add to `.vscode/tasks.json`:
 }
 ```
 
-### With Make
+### With Task
 
-Add to `Makefile`:
+Add to `Taskfile.yml`:
 
-```makefile
-.PHONY: dev-up dev-down dev-status
+```yaml
+tasks:
+  dev-up:
+    desc: Start development environment
+    cmds:
+      - dev-stack up
 
-dev-up:
-	dev-stack up
+  dev-down:
+    desc: Stop development environment
+    cmds:
+      - dev-stack down
 
-dev-down:
-	dev-stack down
+  dev-status:
+    desc: Check development environment status
+    cmds:
+      - dev-stack status
 
-dev-status:
-	dev-stack status
-
-dev-logs:
-	dev-stack logs --follow
+  dev-logs:
+    desc: Follow development environment logs
+    cmds:
+      - dev-stack logs --follow
 ```
 
 ### With Git Hooks
