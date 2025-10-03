@@ -53,7 +53,7 @@ git clone https://github.com/isaacgarza/dev-stack.git
 cd dev-stack
 
 # Build the binary
-make build
+task build
 
 # Install to PATH
 sudo cp build/dev-stack /usr/local/bin/

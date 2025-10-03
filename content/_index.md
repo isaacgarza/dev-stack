@@ -38,7 +38,7 @@ sudo mv dev-stack /usr/local/bin/
 ```bash
 git clone https://github.com/isaacgarza/dev-stack.git
 cd dev-stack
-make build
+task build
 sudo cp build/dev-stack /usr/local/bin/
 ```
 

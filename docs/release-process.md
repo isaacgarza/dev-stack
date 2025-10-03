@@ -17,7 +17,7 @@ dev-stack uses a fully automated release process that:
 
 ```bash
 # Install dependencies and generate configuration files
-make release-setup
+task release-setup
 ```
 
 This will:
@@ -180,7 +180,7 @@ package_managers:
 When you modify this file, regenerate the config files:
 
 ```bash
-make generate-release-configs
+task generate-release-configs
 ```
 
 ## Package Managers
@@ -192,7 +192,7 @@ To enable Homebrew releases:
 1. Create a tap repository: `isaacgarza/homebrew-dev-stack`
 2. Enable in config: `package_managers.homebrew.enabled: true`
 3. Add `HOMEBREW_TOKEN` secret to GitHub
-4. Regenerate configs: `make generate-release-configs`
+4. Regenerate configs: `task generate-release-configs`
 
 ### Scoop (Windows)
 
@@ -201,7 +201,7 @@ To enable Scoop releases:
 1. Create a bucket repository: `isaacgarza/scoop-dev-stack`
 2. Enable in config: `package_managers.scoop.enabled: true`
 3. Add `SCOOP_TOKEN` secret to GitHub  
-4. Regenerate configs: `make generate-release-configs`
+4. Regenerate configs: `task generate-release-configs`
 
 ## Troubleshooting
 
@@ -223,7 +223,7 @@ To enable Scoop releases:
 ### Config files out of sync
 
 **Cause**: Modified `.github/config/release-config.yaml` without regenerating
-**Solution**: Run `make generate-release-configs`
+**Solution**: Run `task generate-release-configs`
 
 ## Best Practices
 

@@ -11,6 +11,21 @@
 
 ### Installation
 
+#### Prerequisites
+
+**Install Task (Build Tool)**
+```bash
+# macOS
+brew install go-task/tap/go-task
+
+# Linux/macOS (direct download)
+curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+export PATH="$HOME/.local/bin:$PATH"
+
+# Verify installation
+task --version
+```
+
 #### Option 1: Download Binary (Recommended)
 ```bash
 # Download the latest release for your platform
@@ -23,7 +38,7 @@ sudo mv dev-stack /usr/local/bin/
 ```bash
 git clone https://github.com/isaacgarza/dev-stack.git
 cd dev-stack
-make build
+task build
 sudo cp build/dev-stack /usr/local/bin/
 ```
 
@@ -120,7 +135,7 @@ dev-stack/
 │   └── templates/         # Project templates
 ├── scripts/               # Build and development scripts
 ├── .github/workflows/     # CI/CD pipelines
-├── Makefile              # Build system
+├── Taskfile.yml          # Build system
 └── README.md
 ```
 
@@ -136,37 +151,37 @@ dev-stack/
 ### Build Commands
 ```bash
 # Build for current platform
-make build
+task build
 
 # Build for all platforms
-make build-all
+task build-all
 
 # Run tests
-make test
+task test
 
 # Run linting
-make lint
+task lint
 
 # Install locally
-make install
+task install
 
 # Development mode
-make dev
+task dev
 
 # Watch for changes
-make watch
+task watch
 ```
 
 ### Running Tests
 ```bash
 # Unit tests
-make test-go
+task test
 
 # Integration tests
-make test-go-integration
+task test-integration
 
 # All tests
-make test
+task test
 ```
 
 ## 📚 Configuration
@@ -254,8 +269,8 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes
-4. Run tests: `make test`
-5. Run linting: `make lint`
+4. Run tests: `task test`
+5. Run linting: `task lint`
 6. Commit your changes: `git commit -m 'Add amazing feature'`
 7. Push to the branch: `git push origin feature/amazing-feature`
 8. Open a Pull Request
@@ -275,7 +290,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [x] **Complete Go Migration** - Python-free implementation ✅
 - [x] **Comprehensive CLI** - Full feature parity achieved ✅
 - [x] **Documentation Generation** - Native Go implementation ✅
-- [x] **Mature Build System** - 40+ make targets with release automation ✅
+- [x] **Modern Build System** - Task-based build system with intelligent caching ✅
 - [ ] Plugin system for extensibility
 - [ ] Advanced version management
 - [ ] Team collaboration features

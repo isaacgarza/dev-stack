@@ -66,8 +66,13 @@ jobs:
           name: codecov-umbrella
 
       # Build verification
+      - name: Install Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Build
-        run: make build
+        run: task build
 
       - name: Verify binary
         run: |
@@ -122,8 +127,13 @@ jobs:
       - name: Setup Go
         uses: ./.github/actions/setup-go-version
 
+      - name: Install Task
+        run: |
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Build binary
-        run: make build
+        run: task build
 
       - name: Make binary executable
         run: chmod +x build/dev-stack
