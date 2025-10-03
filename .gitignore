@@ -10,6 +10,11 @@ dev-stack
 *.war
 *.ear
 
+# Documentation build artifacts (Hugo)
+public/
+resources/
+.hugo_build.lock
+
 # Dependencies and node modules
 node_modules/
 .gradle/

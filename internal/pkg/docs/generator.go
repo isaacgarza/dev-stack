@@ -3,6 +3,7 @@ package docs
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -149,7 +150,7 @@ func (g *Generator) createNewDocFile(filePath, generatedContent string) error {
 	}
 
 	// Ensure directory exists
-	dir := strings.TrimSuffix(filePath, "/"+strings.Split(filePath, "/")[len(strings.Split(filePath, "/"))-1])
+	dir := filepath.Dir(filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", dir, err)
 	}

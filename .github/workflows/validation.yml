@@ -123,14 +123,24 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📋 See individual steps above for detailed results." >> $GITHUB_STEP_SUMMARY
 
-  # Documentation generation (optional job)
+  # Documentation generation and deployment
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Setup Go
         uses: ./.github/actions/setup-go-version
@@ -140,32 +150,44 @@ jobs:
 
       - name: Generate CLI documentation
         run: |
-          mkdir -p docs/cli
-          ./build/dev-stack help > docs/cli/help.md 2>/dev/null || echo "# CLI Help\n\nCLI help generation not yet implemented." > docs/cli/help.md
+          mkdir -p content/cli-reference
+          if ./build/dev-stack help > content/cli-reference/index.md 2>&1; then
+            sed -i '1i---\ntitle: "CLI Reference"\ndescription: "Complete command reference for dev-stack CLI"\nweight: 30\n---\n\n# CLI Reference\n' content/cli-reference/index.md
+            echo "✅ CLI help documentation generated successfully"
+          else
+            cat > content/cli-reference/index.md << 'EOF'
+---
+title: "CLI Reference"
+description: "Complete command reference for dev-stack CLI"
+weight: 30
+---
 
-      - name: Setup documentation site
-        run: |
-          pip install mkdocs mkdocs-material mkdocs-mermaid2-plugin
+# CLI Reference
 
-      - name: Build documentation site
-        run: |
-          # Create basic mkdocs.yml if it doesn't exist
-          if [ ! -f mkdocs.yml ]; then
-            cat > mkdocs.yml << 'EOF'
-          site_name: dev-stack Documentation
-          theme:
-            name: material
-          nav:
-            - Home: index.md
-            - CLI Reference: cli/help.md
-          EOF
+CLI help generation is not yet implemented.
+
+Check back soon or [contribute to the project]({{< ref "/contributing" >}}) to help add this feature!
+EOF
+            echo "⚠️ CLI help generation failed, using placeholder"
           fi
 
-          mkdocs build --clean
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build with Hugo
+        run: hugo --minify
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: ./public
 
       - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
+        id: deployment
+        uses: actions/deploy-pages@v2
