@@ -1,0 +1,167 @@
+baseURL = "https://isaacgarza.github.io/dev-stack"
+languageCode = "en-us"
+title = "dev-stack Documentation"
+theme = "PaperMod"
+
+# Site settings
+enableRobotsTXT = true
+enableGitInfo = true
+enableEmoji = true
+hasCJKLanguage = false
+
+# Build settings
+buildDrafts = false
+buildFuture = false
+buildExpired = false
+
+# Content settings
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+
+# Pagination
+paginate = 10
+
+# Markup settings
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+  [markup.highlight]
+    anchorLineNos = false
+    codeFences = true
+    guessSyntax = false
+    hl_Lines = ""
+    lineAnchors = ""
+    lineNoStart = 1
+    lineNos = false
+    lineNumbersInTable = true
+    noClasses = false
+    style = "github"
+    tabWidth = 4
+
+# Menu configuration
+[menu]
+  [[menu.main]]
+    identifier = "getting-started"
+    name = "Getting Started"
+    url = "/getting-started/"
+    weight = 10
+  [[menu.main]]
+    identifier = "usage"
+    name = "Usage"
+    url = "/usage/"
+    weight = 20
+  [[menu.main]]
+    identifier = "cli-reference"
+    name = "CLI Reference"
+    url = "/cli-reference/"
+    weight = 30
+  [[menu.main]]
+    identifier = "services"
+    name = "Services"
+    url = "/services/"
+    weight = 40
+  [[menu.main]]
+    identifier = "contributing"
+    name = "Contributing"
+    url = "/contributing/"
+    weight = 50
+  [[menu.main]]
+    identifier = "github"
+    name = "GitHub"
+    url = "https://github.com/isaacgarza/dev-stack"
+    weight = 60
+
+# Params for PaperMod theme
+[params]
+  env = "production"
+  title = "dev-stack"
+  description = "A powerful development stack management tool built in Go for streamlined local development automation"
+  keywords = ["dev-stack", "go", "docker", "development", "automation", "devops"]
+  author = "Isaac Garza"
+
+  # Theme settings
+  defaultTheme = "auto"
+  disableThemeToggle = false
+  ShowReadingTime = true
+  ShowShareButtons = true
+  ShowPostNavLinks = true
+  ShowBreadCrumbs = true
+  ShowCodeCopyButtons = true
+  ShowWordCount = true
+  ShowRssButtonInSectionTermList = true
+  UseHugoToc = true
+  disableSpecial1stPost = false
+  disableScrollToTop = false
+  comments = false
+  hidemeta = false
+  hideSummary = false
+  showtoc = false
+  tocopen = false
+
+  # Assets
+  assets.disableHLJS = false
+  assets.disableFingerprinting = false
+
+  # Home page settings
+  [params.homeInfoParams]
+    Title = "dev-stack Documentation"
+    Content = """
+Welcome to dev-stack! A powerful development stack management tool built in Go for streamlined local development automation.
+
+🎉 **Migration Complete**: Successfully migrated from Python to pure Go with enhanced performance and no external language dependencies!
+    """
+
+  # Social links
+  [[params.socialIcons]]
+    name = "github"
+    url = "https://github.com/isaacgarza/dev-stack"
+  [[params.socialIcons]]
+    name = "rss"
+    url = "/index.xml"
+
+  # Search
+  [params.fuseOpts]
+    isCaseSensitive = false
+    shouldSort = true
+    location = 0
+    distance = 1000
+    threshold = 0.4
+    minMatchCharLength = 0
+    keys = ["title", "permalink", "summary", "content"]
+
+  # Analytics (optional)
+  # googleAnalytics = "G-MEASUREMENT_ID"
+
+# Taxonomies
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+  series = "series"
+
+# Privacy settings
+[privacy]
+  [privacy.vimeo]
+    disabled = false
+    simple = true
+  [privacy.twitter]
+    disabled = false
+    enableDNT = true
+    simple = true
+  [privacy.instagram]
+    disabled = false
+    simple = true
+  [privacy.youtube]
+    disabled = false
+    privacyEnhanced = true
+
+# Output formats
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
+  page = ["HTML", "RSS"]
+  section = ["HTML", "RSS"]
+
+# Minification
+[minify]
+  disableXML = true
+  minifyOutput = true

@@ -1,15 +1,16 @@
 {
   "name": "dev-stack-docs",
   "version": "1.0.0",
-  "description": "Documentation tooling for dev-stack project",
+  "description": "Documentation tooling for dev-stack project (Hugo-based)",
   "private": true,
   "scripts": {
     "lint:md": "markdownlint --config .markdownlint.json README.md docs/",
     "lint:links": "markdown-link-check README.md docs/**/*.md",
     "lint:md:fix": "markdownlint --config .markdownlint.json --fix README.md docs/",
-    "docs:build": "mkdocs build --clean --strict",
-    "docs:serve": "mkdocs serve",
-    "docs:deploy": "mkdocs gh-deploy",
+    "docs:build": "hugo --minify",
+    "docs:serve": "hugo server --buildDrafts --buildFuture",
+    "docs:clean": "rm -rf public/",
+    "docs:setup": "git submodule update --init --recursive",
     "lint:commits": "commitlint --from HEAD~1 --to HEAD --verbose"
   },
   "devDependencies": {
@@ -21,7 +22,9 @@
   "keywords": [
     "documentation",
     "markdown",
-    "linting"
+    "linting",
+    "hugo",
+    "go"
   ],
   "author": "Isaac Garza",
   "license": "MIT",
