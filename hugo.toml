@@ -1,4 +1,4 @@
-baseURL = "https://isaacgarza.github.io/dev-stack"
+baseURL = "/"
 languageCode = "en-us"
 title = "dev-stack Documentation"
 theme = "PaperMod"

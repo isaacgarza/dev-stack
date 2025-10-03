@@ -1,289 +1,174 @@
 # GitHub Actions Workflows
 
-This document describes the GitHub Actions workflows that automate testing, security scanning, documentation generation, and releases for the dev-stack project.
+This document describes the GitHub Actions workflows that automate testing, validation, documentation, and releases for dev-stack.
 
 ## Overview
 
-The workflows are designed around the Go-based CLI implementation and support the complete development lifecycle from code validation to release automation.
+The workflows support the complete development lifecycle from code validation to release automation:
+
+- **CI**: Core testing and validation
+- **Validation**: Code quality and documentation checks
+- **Pages**: Documentation deployment
+- **Security**: Vulnerability scanning
+- **Release**: Multi-platform binary distribution
 
 ## Workflows
 
 ### 🔄 CI Pipeline (`ci.yml`)
 
 **Triggers**: Push to `main`/`develop`, Pull Requests
-**Purpose**: Comprehensive continuous integration checks
+**Purpose**: Core continuous integration
+**Status**: Required for branch protection
 
-#### Jobs
+**Jobs:**
+- `ci` (required): Go testing, linting, build verification
+- `test-matrix` (optional): Cross-platform testing (triggered by `test-matrix` label)
+- `integration` (optional): Docker integration tests (triggered by `integration` label)
 
-**`ci` (Required Status Check)**
-- **Go Module Validation**: Ensures `go.mod` and `go.sum` are up-to-date
-- **Code Formatting**: Validates `gofmt` compliance
-- **Static Analysis**: Runs `go vet` for code quality
-- **Linting**: Uses `golangci-lint` with 5-minute timeout
-- **Unit Testing**: Executes race-condition-aware tests with coverage
-- **Build Verification**: Compiles Go binary and verifies functionality
-- **Coverage Upload**: Sends test coverage to Codecov
-
-**`test-matrix` (Optional)**
-- **Cross-Platform Testing**: Tests on Ubuntu, macOS, Windows
-- **Go Version Matrix**: Tests against Go 1.21 and 1.22
-- **Trigger**: Auto on push, manual via `test-matrix` label
-- **Platform-Specific Builds**: Creates OS-specific binaries for validation
-
-**`integration` (Optional)**
-- **Docker-in-Docker**: Tests containerized workflows
-- **Real Environment**: Validates against actual Docker services
-- **Trigger**: Auto on push, manual via `integration` label
-- **Dependency**: Requires `ci` job completion
-
-#### Artifacts
-- Build artifacts stored for 7 days
-- Coverage reports uploaded to Codecov
-- Cross-platform binaries for validation
-
-### 🛡️ Security Scanning (`security.yml`)
-
-**Triggers**: Schedule (weekly), Manual dispatch, Security PRs
-**Purpose**: Automated security vulnerability detection
-
-#### Jobs
-
-**`security-scan`**
-- **Dependency Scanning**: Uses GitHub's security advisories
-- **Static Code Analysis**: Runs `gosec` for Go security issues
-- **License Compliance**: Validates dependency licenses
-- **Vulnerability Database**: Checks against known CVEs
-- **SARIF Upload**: Results uploaded to GitHub Security tab
-
-#### Features
-- Weekly automated scans (Sundays at 2 AM UTC)
-- Manual trigger capability for immediate scans
-- Integration with GitHub Security Advisories
-- Detailed security reporting in SARIF format
+**Key Steps:**
+- Go environment setup from `.go-version`
+- Dependency validation (`go mod tidy`)
+- Code quality (`gofmt`, `go vet`, `golangci-lint`)
+- Unit tests with coverage
+- Build verification
 
 ### ✅ Validation (`validation.yml`)
 
-**Triggers**: Pull Requests, Manual dispatch
-**Purpose**: Code quality and standards validation
+**Triggers**: Pull Requests, Push to `main`/`develop`
+**Purpose**: Code quality and documentation validation
 
-#### Jobs
+**Checks:**
+- Conventional commit compliance (PRs only)
+- Configuration file validation
+- Markdown linting
+- Link checking
+- TODO/FIXME detection
+- File permissions
 
-**`validate`**
-- **Documentation Sync**: Verifies docs are up-to-date with code
-- **Configuration Validation**: Checks YAML manifests
-- **Link Validation**: Ensures documentation links work
-- **Go Version Consistency**: Validates `.go-version` across configs
-- **License Headers**: Checks for proper license attribution
+### 📚 Documentation (`pages.yml`)
 
-#### Validation Checks
-- Generated documentation is current (`make docs`)
-- Service and command YAML manifests are valid
-- Internal and external links in documentation
-- Consistent Go version across all configuration files
-- Proper file formatting and structure
+**Triggers**: Push to `main` (content changes), Manual dispatch
+**Purpose**: GitHub Pages deployment
+
+**Process:**
+1. Build dev-stack CLI binary
+2. Generate CLI documentation (or use placeholder)
+3. Hugo site build with PaperMod theme
+4. Deploy to GitHub Pages
+
+**Requirements:**
+- Hugo Extended v0.121.0+
+- PaperMod theme (git submodule)
+- Content structure validation
+
+### 🛡️ Security (`security.yml`)
+
+**Triggers**: Weekly schedule, Manual dispatch
+**Purpose**: Security vulnerability scanning
+
+**Scans:**
+- Dependency vulnerabilities (GitHub advisories)
+- Static code analysis (`gosec`)
+- License compliance
+- SARIF reporting to GitHub Security tab
 
 ### 🚀 Release (`release.yml`)
 
 **Triggers**: Release tags (`v*`), Manual dispatch
-**Purpose**: Automated release and distribution
+**Purpose**: Multi-platform binary distribution
 
-#### Jobs
+**Builds:**
+- Linux (amd64, arm64)
+- macOS (amd64, arm64)
+- Windows (amd64, arm64)
 
-**`release`**
-- **Multi-Platform Builds**: Linux, macOS, Windows (AMD64/ARM64)
-- **Binary Packaging**: Creates platform-specific archives
-- **GitHub Release**: Automated release creation with changelog
-- **Asset Upload**: Distributes binaries for all platforms
-- **Checksum Generation**: SHA256 checksums for verification
+**Outputs:**
+- Platform-specific archives
+- SHA256 checksums
+- GitHub release with changelog
 
-#### Release Assets
-```
-dev-stack-linux-amd64.tar.gz
-dev-stack-linux-arm64.tar.gz
-dev-stack-darwin-amd64.tar.gz
-dev-stack-darwin-arm64.tar.gz
-dev-stack-windows-amd64.zip
-dev-stack-windows-arm64.zip
-checksums.txt
-```
+## Configuration
 
-## Shared Actions
+### Required Status Checks
 
-### 📦 Setup Go Version (`.github/actions/setup-go-version`)
-
-**Purpose**: Consistent Go environment setup across workflows
-
-#### Features
-- Reads Go version from `.go-version` file
-- Configures Go cache for dependency optimization
-- Sets up GOPATH and module proxy
-- Ensures consistent environment across all jobs
-
-#### Usage
-```yaml
-- name: Setup Go
-  uses: ./.github/actions/setup-go-version
-  id: setup-go
-```
-
-## Configuration Files
-
-### 🔧 Dependabot (`dependabot.yml`)
-
-**Purpose**: Automated dependency updates
-
-#### Monitored Dependencies
-- **Go Modules**: Weekly updates for `go.mod`
-- **GitHub Actions**: Monthly updates for workflow actions
-- **Docker**: Weekly updates for container dependencies
-
-#### Configuration
-- Automatic security updates enabled
-- Grouped updates for related dependencies
-- PR limit: 5 open PRs maximum
-- Custom commit message format for consistency
-
-### 🔗 Link Checking (`markdown-link-check.json`)
-
-**Purpose**: Documentation link validation configuration
-
-#### Settings
-- Timeout: 10 seconds per link
-- Retry attempts: 3
-- Ignore patterns for localhost and placeholders
-- Custom headers for authenticated endpoints
-
-## Development Workflow
-
-### 🚦 Required Status Checks
-
-For branch protection, enable these required checks:
+For branch protection:
 - `CI / ci` - Core CI pipeline
-- `Validation / validate` - Code quality validation
+- `Validation / validation` - Quality validation
 
-### 🏷️ Optional Triggers
+### PR Labels
 
-Use PR labels to trigger additional workflows:
-- `test-matrix` - Runs cross-platform testing
-- `integration` - Executes integration tests
-- `security` - Triggers immediate security scan
+Control workflow execution:
+- `test-matrix` - Cross-platform testing
+- `integration` - Integration tests
+- `skip-ci` - Skip CI for docs-only changes
 
-### 🔄 Workflow Dependencies
+### Shared Components
 
-```mermaid
-graph TD
-    A[Push/PR] --> B[CI Required]
-    A --> C[Validation]
-    B --> D[Integration Optional]
-    E[Release Tag] --> F[Release Build]
-    G[Schedule] --> H[Security Scan]
-```
+**Setup Go Action** (`.github/actions/setup-go-version`):
+- Reads Go version from `.go-version`
+- Configures caching for dependencies
+- Used across all Go-based workflows
+
+**Dependabot** (`dependabot.yml`):
+- Weekly Go module updates
+- Monthly GitHub Actions updates
+- Automatic security patches
 
 ## Local Development
 
-### 🛠️ Reproduce CI Locally
-
+**Reproduce CI locally:**
 ```bash
-# Run the same checks as CI
 make test              # Unit tests with coverage
 make lint              # Linting and static analysis
 make build             # Build verification
-make docs              # Documentation generation
 ```
 
-### 🔍 Debug Build Issues
-
+**Debug specific issues:**
 ```bash
-# Build for specific platform
-GOOS=linux GOARCH=amd64 make build
+# Check formatting
+gofmt -l .
 
-# Verbose build output
-go build -v -x ./cmd/dev-stack
+# Run linter
+golangci-lint run
 
-# Check module consistency
-go mod tidy && git diff go.mod go.sum
+# Test specific platform
+GOOS=linux GOARCH=amd64 go build ./cmd/dev-stack
 ```
-
-## Security Considerations
-
-### 🔐 Secrets Management
-
-No secrets are required for basic CI/CD operations. All workflows use:
-- `GITHUB_TOKEN` (automatic)
-- `CODECOV_TOKEN` (optional, for coverage)
-
-### 🛡️ Permissions
-
-Workflows use minimal required permissions:
-- `contents: read` - For repository access
-- `actions: read` - For workflow metadata
-- `security-events: write` - For security scan results
-
-### 🚨 Security Scanning
-
-Weekly automated scans check for:
-- Known vulnerabilities in dependencies
-- Static code analysis security issues
-- License compliance problems
-- Outdated security patches
 
 ## Troubleshooting
 
-### ❌ Common CI Failures
+### Common Issues
 
-**Build Failures**
-- Check Go version consistency across files
-- Verify `go mod tidy` has been run
-- Ensure cross-platform compatibility
+**Build Failures:**
+- Check Go version consistency in `.go-version`
+- Run `go mod tidy` to fix dependencies
+- Verify code formatting with `gofmt`
 
-**Test Failures**
-- Race condition detection may be flaky
-- Check for platform-specific code issues
-- Verify test isolation and cleanup
+**Test Failures:**
+- Check for race conditions with `go test -race`
+- Ensure proper test cleanup
+- Verify test isolation
 
-**Linting Issues**
-- Run `golangci-lint run` locally
-- Check for Go formatting with `gofmt`
-- Review security issues with `gosec`
+**Pages Deployment:**
+- Ensure Hugo theme submodule is initialized
+- Check content file frontmatter syntax
+- Verify GitHub Pages is enabled in repository settings
 
-### 🔧 Workflow Debugging
+**Security Scans:**
+- Review findings in GitHub Security tab
+- Update vulnerable dependencies
+- Check `go.mod` for outdated packages
 
-**Enable Debug Logging**
+### Debug Mode
+
+Enable detailed logging:
 ```yaml
 env:
   RUNNER_DEBUG: 1
   ACTIONS_STEP_DEBUG: 1
 ```
 
-**Check Workflow Status**
-- GitHub Actions tab shows real-time status
-- Click on failed jobs for detailed logs
-- Download artifacts for local debugging
-
-## Maintenance
-
-### 📅 Regular Updates
-
-**Monthly Tasks**
-- Review and update action versions
-- Check for new Go versions
-- Update security scanning tools
-- Review workflow performance metrics
-
-**Quarterly Tasks**
-- Audit workflow permissions
-- Review branch protection rules
-- Update documentation for new features
-- Performance optimization review
-
-### 📊 Metrics Monitoring
-
-Track these metrics for workflow health:
-- Average CI runtime (target: <5 minutes)
-- Test success rate (target: >99%)
-- Security scan findings trend
-- Build artifact size growth
-
 ---
 
-For project development guide, see [`contributing.md`](contributing.md).
+For development setup, see [`setup.md`](setup.md).
+For contributing guidelines, see [`contributing.md`](contributing.md).
