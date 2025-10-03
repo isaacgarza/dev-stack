@@ -7,6 +7,9 @@ on:
     branches: [main, develop]
     paths:
       - "docs/**"
+      - "content/**"
+      - "hugo.toml"
+      - "themes/**"
       - "*.md"
       - ".commitlintrc.json"
       - ".release-please-config.json"
@@ -25,6 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
       # Commit validation (only on PRs)
       - name: Validate conventional commits
@@ -93,6 +97,160 @@ jobs:
           config-file: ".github/markdown-link-check.json"
         continue-on-error: true
 
+      # Hugo validation
+      - name: Setup Hugo for validation
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: "0.151.0"
+          extended: true
+
+      - name: Validate Hugo configuration
+        run: |
+          echo "🔍 Validating Hugo configuration..."
+
+          # Check if Hugo config exists
+          if [ ! -f "hugo.toml" ]; then
+            echo "❌ Hugo configuration file (hugo.toml) not found"
+            exit 1
+          fi
+
+          # Validate Hugo config syntax
+          if ! hugo config > /dev/null 2>&1; then
+            echo "❌ Hugo configuration is invalid"
+            hugo config
+            exit 1
+          fi
+
+          echo "✅ Hugo configuration is valid"
+
+      - name: Validate Hugo content structure
+        run: |
+          echo "🔍 Validating Hugo content structure..."
+
+          # Check required content files
+          REQUIRED_FILES=(
+            "content/_index.md"
+            "content/getting-started.md"
+            "content/usage.md"
+            "content/services.md"
+            "content/contributing.md"
+          )
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Required content file missing: $file"
+              exit 1
+            fi
+          done
+
+          # Check CLI reference structure
+          if [ ! -d "content/cli-reference" ]; then
+            echo "⚠️ CLI reference directory not found, will be created during build"
+          fi
+
+          # Validate frontmatter in content files
+          echo "🔍 Checking frontmatter syntax..."
+          for file in content/*.md content/*/*.md; do
+            if [ -f "$file" ]; then
+              # Check if file has frontmatter
+              if ! head -n 1 "$file" | grep -q "^---$"; then
+                echo "❌ Missing frontmatter in: $file"
+                exit 1
+              fi
+
+              # Basic frontmatter validation
+              if ! hugo list all --source . >/dev/null 2>&1; then
+                echo "❌ Invalid frontmatter detected in content files"
+                exit 1
+              fi
+            fi
+          done
+
+          echo "✅ Content structure is valid"
+
+      - name: Test Hugo build (dry run)
+        run: |
+          echo "🔍 Testing Hugo build..."
+
+          # Create temporary CLI reference if it doesn't exist
+          if [ ! -f "content/cli-reference/index.md" ]; then
+            mkdir -p content/cli-reference
+            cat > content/cli-reference/index.md << 'EOF'
+          ---
+          title: "CLI Reference"
+          description: "Complete command reference for dev-stack CLI"
+          weight: 30
+          ---
+
+          # CLI Reference
+
+          This page will be automatically generated during deployment.
+          EOF
+          fi
+
+          # Test Hugo build without deploying
+          if hugo --gc --minify --destination public-test; then
+            echo "✅ Hugo build test successful"
+
+            # Check build output
+            echo "📊 Build statistics:"
+            echo "- HTML files: $(find public-test -name "*.html" | wc -l)"
+            echo "- CSS files: $(find public-test -name "*.css" | wc -l)"
+            echo "- JS files: $(find public-test -name "*.js" | wc -l)"
+
+            # Clean up test build
+            rm -rf public-test
+          else
+            echo "❌ Hugo build test failed"
+            exit 1
+          fi
+
+      - name: Validate Hugo internal links
+        run: |
+          echo "🔍 Validating Hugo internal links..."
+
+          # Check for Hugo ref shortcodes that might be broken
+          if grep -r "{{< ref.*>}}" content/ 2>/dev/null; then
+            echo "Found Hugo ref shortcodes, validating..."
+
+            # Build site to test internal links
+            mkdir -p content/cli-reference
+            if [ ! -f "content/cli-reference/index.md" ]; then
+              cat > content/cli-reference/index.md << 'EOF'
+          ---
+          title: "CLI Reference"
+          description: "Complete command reference for dev-stack CLI"
+          weight: 30
+          ---
+
+          # CLI Reference
+
+          Placeholder for validation.
+          EOF
+            fi
+
+            # Test build with link validation
+            if hugo --gc --destination public-link-test 2>&1 | tee hugo-build.log; then
+              # Check for REF_NOT_FOUND errors
+              if grep -q "REF_NOT_FOUND" hugo-build.log; then
+                echo "❌ Broken internal links found:"
+                grep "REF_NOT_FOUND" hugo-build.log
+                rm -rf public-link-test hugo-build.log
+                exit 1
+              fi
+              echo "✅ All internal links are valid"
+            else
+              echo "❌ Hugo build failed during link validation"
+              cat hugo-build.log
+              rm -rf public-link-test hugo-build.log
+              exit 1
+            fi
+
+            rm -rf public-link-test hugo-build.log
+          else
+            echo "✅ No Hugo ref shortcodes found"
+          fi
+
       # Code quality checks
       - name: Check for TODO/FIXME comments
         run: |
@@ -119,6 +277,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Configuration**: Files validated" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Documentation**: Checked for issues" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Hugo**: Site configuration and content validated" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Code Quality**: Basic checks completed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📋 See individual steps above for detailed results." >> $GITHUB_STEP_SUMMARY

@@ -78,6 +78,21 @@ hugo --gc --minify
 ls -la public/
 ```
 
+### Validate Before Push
+```bash
+# Validate Hugo configuration
+hugo config
+
+# Test build with validation
+hugo --gc --minify --destination public-test
+
+# Check for internal link issues
+hugo list all
+
+# Clean up test build
+rm -rf public-test
+```
+
 ## Troubleshooting
 
 ### Site Not Deploying
