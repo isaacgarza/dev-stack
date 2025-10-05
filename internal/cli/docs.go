@@ -5,9 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"dev-stack/internal/pkg/docs"
-	"dev-stack/internal/pkg/logger"
 	"log/slog"
+
+	"github.com/isaacgarza/dev-stack/internal/pkg/docs"
+	"github.com/isaacgarza/dev-stack/internal/pkg/logger"
 
 	"github.com/spf13/cobra"
 )

@@ -1,4 +1,4 @@
-module dev-stack
+module github.com/isaacgarza/dev-stack
 
 go 1.24
 

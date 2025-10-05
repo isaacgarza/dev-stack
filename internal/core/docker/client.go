@@ -17,7 +17,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 
-	"dev-stack/internal/pkg/types"
+	"github.com/isaacgarza/dev-stack/internal/pkg/types"
 )
 
 // Container state constants

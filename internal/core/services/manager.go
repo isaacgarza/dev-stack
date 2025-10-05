@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"dev-stack/internal/core/docker"
-	"dev-stack/internal/pkg/types"
+	"github.com/isaacgarza/dev-stack/internal/core/docker"
+	"github.com/isaacgarza/dev-stack/internal/pkg/types"
 )
 
 // Database service constants
