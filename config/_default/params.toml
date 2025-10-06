@@ -1,0 +1,78 @@
+# Hugo
+title = "dev-stack Documentation"
+description = "A powerful development stack management tool built in Go for streamlined local development automation"
+
+# mainSections
+mainSections = ["docs"]
+
+[social]
+  github = "isaacgarza/dev-stack"
+
+# Doks (@thulite/doks-core)
+[doks]
+  # Color mode
+  colorMode = "auto" # auto (default), light or dark
+  colorModeToggler = true # true (default) or false (this setting is only relevant when colorMode = auto)
+
+  # Navbar
+  navbarSticky = true # true (default) or false
+  containerBreakpoint = "lg" # "", "sm", "md", "lg" (default), "xl", "xxl", or "fluid"
+
+  ## Button
+  navBarButton = true # false (default) or true
+  navBarButtonUrl = "/docs/getting-started/"
+  navBarButtonText = "Get started"
+
+  # FlexSearch
+  flexSearch = true # true (default) or false
+  searchExclKinds = [] # list of page kinds to exclude from search indexing (e.g. ["home", "taxonomy", "term"])
+  searchExclTypes = [] # list of content types to exclude from search indexing (e.g. ["blog", "docs", "legal", "contributors", "categories"])
+  showSearch = [] # [] (all pages, default) or homepage (optionally) and list of sections (e.g. ["homepage", "blog", "guides"])
+  indexSummary = false
+
+  ## Search results
+  showDate = false # false (default) or true
+  showSummary = true # true (default) or false
+  searchLimit = 99 # 0 (no limit, default) or natural number
+
+  # Global alert
+  alert = false # false (default) or true
+  alertDismissable = true # true (default) or false
+
+  # Bootstrap
+  bootstrapJavascript = false # false (default) or true
+
+  # Nav
+  sectionNav = ["docs"] # ["docs"] (default) or list of sections (e.g. ["docs", "guides"])
+  toTopButton = true # false (default) or true
+  breadcrumbTrail = true # false (default) or true
+  headlineHash = true # true (default) or false
+  scrollSpy = true # true (default) or false
+
+  # Multilingual
+  multilingualMode = false # false (default) or true
+  showMissingLanguages = true # whether or not to show untranslated languages in the language menu; true (default) or false
+
+  # Versioning
+  docsVersioning = false # false (default) or true
+  docsVersion = "1.0"
+
+  # UX
+  headerBar = false # true (default) or false
+  backgroundDots = true # true (default) or false
+
+  # Homepage
+  sectionFooter = false # false (default) or true
+
+  # Blog
+  relatedPosts = false # false (default) or true
+  imageList = true # true (default) or false
+  imageSingle = true # true (default) or false
+
+  # Repository
+  editPage = true # false (default) or true
+  lastMod = true # false (default) or true
+  repoHost = "GitHub" # GitHub (default), Gitea, GitLab, Bitbucket, or BitbucketServer
+  docsRepo = "https://github.com/isaacgarza/dev-stack"
+  docsRepoBranch = "main" # main (default), master, or <branch name>
+  docsRepoSubPath = "" # "" (none, default) or <sub path>

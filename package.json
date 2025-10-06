@@ -7,17 +7,29 @@
     "lint:md": "markdownlint --config .markdownlint.json README.md docs/",
     "lint:links": "markdown-link-check README.md docs/**/*.md",
     "lint:md:fix": "markdownlint --config .markdownlint.json --fix README.md docs/",
-    "docs:build": "hugo --minify",
-    "docs:serve": "hugo server --buildDrafts --buildFuture",
+    "docs:build": "hugo --minify --gc",
+    "docs:serve": "hugo server --disableFastRender --noHTTPCache",
+    "docs:dev": "hugo server --buildDrafts --buildFuture --disableFastRender",
     "docs:clean": "rm -rf public/",
     "docs:setup": "git submodule update --init --recursive",
-    "lint:commits": "commitlint --from HEAD~1 --to HEAD --verbose"
+    "lint:commits": "commitlint --from HEAD~1 --to HEAD --verbose",
+    "format": "prettier **/** -w -c"
+  },
+  "dependencies": {
+    "@thulite/doks-core": "^1.8.3",
+    "@thulite/images": "^3.3.1",
+    "@thulite/inline-svg": "^1.2.0",
+    "@thulite/seo": "^2.4.1",
+    "@tabler/icons": "^3.34.1",
+    "thulite": "^2.6.3"
   },
   "devDependencies": {
     "markdownlint-cli": "^0.37.0",
     "markdown-link-check": "^3.11.2",
     "@commitlint/cli": "^18.4.3",
-    "@commitlint/config-conventional": "^18.4.3"
+    "@commitlint/config-conventional": "^18.4.3",
+    "prettier": "^3.6.2",
+    "vite": "^7.0.6"
   },
   "keywords": [
     "documentation",
