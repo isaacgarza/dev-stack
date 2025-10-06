@@ -27,7 +27,7 @@
     "markdownlint-cli": "^0.37.0",
     "markdown-link-check": "^3.11.2",
     "@commitlint/cli": "^18.4.3",
-    "@commitlint/config-conventional": "^18.4.3",
+    "@commitlint/config-conventional": "^20.0.0",
     "prettier": "^3.6.2",
     "vite": "^7.0.6"
   },
