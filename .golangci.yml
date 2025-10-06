@@ -1,5 +1,6 @@
 # golangci-lint configuration for dev-stack
 # Minimal configuration for golangci-lint v2.x
+# Binary version: v2.4.0 (keep in sync with Taskfile.yml GOLANGCI_LINT_VERSION)
 
 version: "2"
 
