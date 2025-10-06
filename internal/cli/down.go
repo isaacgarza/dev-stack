@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"os"
 
-	"dev-stack/internal/core/services"
-	"dev-stack/internal/pkg/logger"
+	"github.com/isaacgarza/dev-stack/internal/core/services"
+	"github.com/isaacgarza/dev-stack/internal/pkg/logger"
 
 	"github.com/spf13/cobra"
 )
