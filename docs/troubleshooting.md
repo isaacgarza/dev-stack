@@ -1,3 +1,15 @@
+---
+title: "Troubleshooting"
+description: "Common issues and solutions for dev-stack problems"
+lead: "Quick solutions to the most common dev-stack issues and problems"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 70
+toc: true
+
+---
+
 # Troubleshooting Guide
 
 ## 🚨 Top 5 Issues (Quick Reference)

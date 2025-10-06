@@ -1,3 +1,15 @@
+---
+title: "Usage & Management"
+description: "Daily usage patterns, service management commands, and common workflows for dev-stack"
+lead: "Learn how to effectively use dev-stack for your daily development workflow"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 20
+toc: true
+
+---
+
 # Usage & Management Guide (dev-stack)
 
 This guide covers daily usage patterns, service management commands, and common workflows for **dev-stack**.

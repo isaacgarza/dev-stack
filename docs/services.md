@@ -1,7 +1,46 @@
+---
+title: "Services"
+description: "Available services and configuration options for dev-stack"
+lead: "Explore all the services you can use with dev-stack and how to configure them"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 30
+toc: true
+
+---
+
 <!-- AUTO-GENERATED-START -->
 # Services Guide (dev-stack)
 
 This section is auto-generated from `services/services.yaml`.
+
+## postgres
+
+Relational database (PostgreSQL) for structured data.
+
+**Options:**
+- `port`
+- `database`
+- `username`
+- `password`
+- `memory_limit`
+- `shared_preload_libraries`
+- `log_statement`
+- `log_duration`
+- `shared_buffers`
+- `effective_cache_size`
+- `work_mem`
+
+**Examples:**
+- `psql -h localhost -U postgres -c "SELECT version();"`
+- `spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev`
+
+**Usage Notes:** Ideal for structured data and transactional workloads. Use overrides to set custom database/user.
+
+**Links:**
+- [https://www.postgresql.org/docs/](https://www.postgresql.org/docs/)
+- [https://spring.io/projects/spring-data-jpa](https://spring.io/projects/spring-data-jpa)
 
 ## mysql
 
@@ -138,31 +177,4 @@ In-memory data store for caching and session storage.
 **Links:**
 - [https://redis.io/documentation](https://redis.io/documentation)
 - [https://spring.io/projects/spring-data-redis](https://spring.io/projects/spring-data-redis)
-
-## postgres
-
-Relational database (PostgreSQL) for structured data.
-
-**Options:**
-- `port`
-- `database`
-- `username`
-- `password`
-- `memory_limit`
-- `shared_preload_libraries`
-- `log_statement`
-- `log_duration`
-- `shared_buffers`
-- `effective_cache_size`
-- `work_mem`
-
-**Examples:**
-- `psql -h localhost -U postgres -c "SELECT version();"`
-- `spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev`
-
-**Usage Notes:** Ideal for structured data and transactional workloads. Use overrides to set custom database/user.
-
-**Links:**
-- [https://www.postgresql.org/docs/](https://www.postgresql.org/docs/)
-- [https://spring.io/projects/spring-data-jpa](https://spring.io/projects/spring-data-jpa)
 <!-- AUTO-GENERATED-END -->

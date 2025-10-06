@@ -1,3 +1,15 @@
+---
+title: "Contributing"
+description: "How to contribute to dev-stack development and documentation"
+lead: "Join the dev-stack community and help make it better for everyone"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 60
+toc: true
+
+---
+
 # Contributing Guide
 
 ## 📝 Quick Contributor Checklist

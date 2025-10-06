@@ -1,8 +1,6 @@
 # dev-stack
 > A powerful development stack management tool built in Go for streamlined local development automation.
 
-> **🎉 Migration Complete**: dev-stack has successfully migrated from Python to a pure Go implementation with enhanced performance, comprehensive CLI features, and no external language dependencies.
-
 ## Overview
 
 **dev-stack** is a modern CLI tool that helps you quickly set up, manage, and tear down development environments with consistent configurations across your team. Built in Go for performance and reliability, it provides a unified interface for managing Docker-based development stacks.
@@ -225,7 +223,7 @@ dev-stack seamlessly integrates with Docker and Docker Compose:
 dev-stack provides project scaffolding templates for different application types. All templates are managed by the Go-based CLI:
 
 - **go**: Go application with Docker
-- **node**: Node.js application with Docker  
+- **node**: Node.js application with Docker
 - **python**: Python application with Docker
 - **fullstack**: Multi-service full-stack application
 
@@ -300,5 +298,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-> **Built with ❤️ by the dev-stack team**  
+> **Built with ❤️ by the dev-stack team**
 > Making local development environments simple, consistent, and powerful.

@@ -9,7 +9,7 @@
 
 ## content
 [[mounts]]
-  source = "content"
+  source = "docs"
   target = "content"
 
 ## data

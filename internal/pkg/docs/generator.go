@@ -2,6 +2,7 @@ package docs
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -262,4 +263,179 @@ func (g *Generator) GenerateServicesGuideOnly() error {
 	}
 
 	return g.updateAutoGenSection(g.options.ServicesMDPath, content)
+}
+
+// SyncToHugo synchronizes docs folder content to Hugo content directory
+func (g *Generator) SyncToHugo() (*HugoSyncResult, error) {
+	result := &HugoSyncResult{
+		FilesCopied:  make([]string, 0),
+		FilesUpdated: make([]string, 0),
+		FilesSkipped: make([]string, 0),
+		Errors:       make([]error, 0),
+		SyncedAt:     time.Now(),
+	}
+
+	if !g.options.EnableHugoSync {
+		if g.options.Verbose {
+			fmt.Println("Hugo sync is disabled")
+		}
+		return result, nil
+	}
+
+	// Ensure Hugo content directory exists
+	if err := os.MkdirAll(g.options.HugoContentDir, 0755); err != nil {
+		result.Errors = append(result.Errors, fmt.Errorf("failed to create Hugo content directory: %w", err))
+		return result, err
+	}
+
+	// Walk through docs source directory
+	err := filepath.Walk(g.options.DocsSourceDir, func(srcPath string, info os.FileInfo, err error) error {
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Errorf("error walking path %s: %w", srcPath, err))
+			return nil // Continue walking
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Only sync markdown files
+		if filepath.Ext(srcPath) != ".md" {
+			result.FilesSkipped = append(result.FilesSkipped, srcPath)
+			return nil
+		}
+
+		// Calculate relative path from docs source
+		relPath, err := filepath.Rel(g.options.DocsSourceDir, srcPath)
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Errorf("failed to get relative path for %s: %w", srcPath, err))
+			return nil
+		}
+
+		// Destination path in Hugo content directory
+		destPath := filepath.Join(g.options.HugoContentDir, relPath)
+
+		// Ensure destination directory exists
+		destDir := filepath.Dir(destPath)
+		if err := os.MkdirAll(destDir, 0755); err != nil {
+			result.Errors = append(result.Errors, fmt.Errorf("failed to create directory %s: %w", destDir, err))
+			return nil
+		}
+
+		// Check if file needs updating
+		needsUpdate, err := g.needsUpdate(srcPath, destPath)
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Errorf("failed to check if %s needs update: %w", destPath, err))
+			return nil
+		}
+
+		if !needsUpdate {
+			result.FilesSkipped = append(result.FilesSkipped, relPath)
+			if g.options.Verbose {
+				fmt.Printf("Skipping %s (up to date)\n", relPath)
+			}
+			return nil
+		}
+
+		// Copy/update file
+		if g.options.DryRun {
+			if g.options.Verbose {
+				fmt.Printf("Would sync %s -> %s\n", srcPath, destPath)
+			}
+			result.FilesUpdated = append(result.FilesUpdated, relPath)
+			return nil
+		}
+
+		if err := g.copyFile(srcPath, destPath); err != nil {
+			result.Errors = append(result.Errors, fmt.Errorf("failed to copy %s to %s: %w", srcPath, destPath, err))
+			return nil
+		}
+
+		// Check if this was a new file or update
+		if _, err := os.Stat(destPath); err == nil {
+			result.FilesUpdated = append(result.FilesUpdated, relPath)
+		} else {
+			result.FilesCopied = append(result.FilesCopied, relPath)
+		}
+
+		if g.options.Verbose {
+			fmt.Printf("Synced %s -> %s\n", srcPath, destPath)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		result.Errors = append(result.Errors, fmt.Errorf("failed to walk docs directory: %w", err))
+	}
+
+	return result, nil
+}
+
+// needsUpdate checks if source file is newer than destination file
+func (g *Generator) needsUpdate(srcPath, destPath string) (bool, error) {
+	destInfo, err := os.Stat(destPath)
+	if os.IsNotExist(err) {
+		return true, nil // Destination doesn't exist, needs update
+	}
+	if err != nil {
+		return false, err
+	}
+
+	srcInfo, err := os.Stat(srcPath)
+	if err != nil {
+		return false, err
+	}
+
+	// Compare modification times
+	return srcInfo.ModTime().After(destInfo.ModTime()), nil
+}
+
+// copyFile copies a file from src to dst
+func (g *Generator) copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	// Copy file permissions
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	return os.Chmod(dst, srcInfo.Mode())
+}
+
+// GenerateAllWithHugo generates all documentation and optionally syncs to Hugo
+func (g *Generator) GenerateAllWithHugo() (*GenerationResult, *HugoSyncResult, error) {
+	// Generate documentation first
+	docResult, err := g.GenerateAll()
+	if err != nil {
+		return docResult, nil, err
+	}
+
+	// Sync to Hugo if enabled
+	var hugoResult *HugoSyncResult
+	if g.options.EnableHugoSync {
+		hugoResult, err = g.SyncToHugo()
+		if err != nil {
+			return docResult, hugoResult, fmt.Errorf("Hugo sync failed: %w", err)
+		}
+	}
+
+	return docResult, hugoResult, nil
 }

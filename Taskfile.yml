@@ -124,11 +124,39 @@ tasks:
       - go vet ./...
 
   docs:
-    desc: Generate documentation from YAML manifests
+    desc: Generate documentation and sync to Hugo content directory
     deps: [build]
     cmds:
-      - echo "Generating documentation from YAML manifests..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
+      - echo "Generating documentation and syncing to Hugo..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --hugo-dir docs
+
+  docs-dry-run:
+    desc: Preview documentation changes without writing files
+    deps: [build]
+    cmds:
+      - echo "Previewing documentation changes..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --dry-run --hugo-dir docs
+
+  hugo-build:
+    desc: Build Hugo documentation site
+    deps: [docs]
+    cmds:
+      - echo "Building Hugo documentation site..."
+      - npm run docs:build
+
+  hugo-serve:
+    desc: Serve Hugo documentation site locally
+    deps: [docs]
+    cmds:
+      - echo "Starting Hugo development server..."
+      - npm run docs:dev
+
+  hugo-clean:
+    desc: Clean Hugo build artifacts
+    cmds:
+      - echo "Cleaning Hugo build artifacts..."
+      - npm run docs:clean
+      - rm -rf public/
 
   validate-docs:
     desc: Validate Hugo documentation configuration and content
@@ -273,7 +301,11 @@ tasks:
       - echo "  vet            - Run Go vet"
       - echo ""
       - echo "Documentation:"
-      - echo "  docs           - Generate documentation from YAML manifests"
+      - echo "  docs           - Generate docs and sync to Hugo content"
+      - echo "  docs-dry-run   - Preview documentation changes (dry-run)"
+      - echo "  hugo-build     - Build Hugo documentation site"
+      - echo "  hugo-serve     - Serve Hugo site locally for development"
+      - echo "  hugo-clean     - Clean Hugo build artifacts"
       - echo "  validate-docs  - Validate Hugo documentation"
       - echo ""
       - echo "Docker Tasks:"

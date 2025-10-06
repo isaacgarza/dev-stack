@@ -27,6 +27,11 @@ type GenerationOptions struct {
 	ReferenceMDPath string
 	ServicesMDPath  string
 
+	// Hugo integration paths
+	HugoContentDir string
+	DocsSourceDir  string
+	EnableHugoSync bool
+
 	// Generation settings
 	Verbose bool
 	DryRun  bool
@@ -61,6 +66,15 @@ type AutoGenSection struct {
 	Content     string
 }
 
+// HugoSyncResult represents the result of Hugo content synchronization
+type HugoSyncResult struct {
+	FilesCopied  []string
+	FilesUpdated []string
+	FilesSkipped []string
+	Errors       []error
+	SyncedAt     time.Time
+}
+
 // DefaultGenerationOptions returns the default options for documentation generation
 func DefaultGenerationOptions() *GenerationOptions {
 	return &GenerationOptions{
@@ -68,6 +82,9 @@ func DefaultGenerationOptions() *GenerationOptions {
 		ServicesYAMLPath: "services/services.yaml",
 		ReferenceMDPath:  "docs/reference.md",
 		ServicesMDPath:   "docs/services.md",
+		HugoContentDir:   "content",
+		DocsSourceDir:    "docs",
+		EnableHugoSync:   true,
 		Verbose:          false,
 		DryRun:           false,
 	}

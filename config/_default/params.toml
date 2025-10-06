@@ -1,5 +1,5 @@
 # Hugo
-title = "dev-stack Documentation"
+title = "dev-stack"
 description = "A powerful development stack management tool built in Go for streamlined local development automation"
 
 # mainSections
@@ -20,7 +20,7 @@ mainSections = ["docs"]
 
   ## Button
   navBarButton = true # false (default) or true
-  navBarButtonUrl = "/docs/getting-started/"
+  navBarButtonUrl = "/setup/"
   navBarButtonText = "Get started"
 
   # FlexSearch
