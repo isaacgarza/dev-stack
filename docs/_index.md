@@ -1,6 +1,7 @@
 ---
 title: "dev-stack"
 description: "A powerful development stack management tool built in Go for streamlined local development automation"
+lead: "Streamline your local development with powerful CLI tools and automated service management"
 date: 2024-01-01T00:00:00+00:00
 lastmod: 2024-01-01T00:00:00+00:00
 draft: false
@@ -43,8 +44,6 @@ dev-stack up
 - **Service Management**: Databases, message queues, monitoring tools
 - **Health Monitoring**: Built-in health checks and status monitoring
 - **Docker Integration**: Seamless container management
-
-
 
 ## Documentation
 

@@ -26,6 +26,67 @@ This guide covers everything you need to get **dev-stack** up and running on you
 > For a quick start, main configuration example, and command reference, see the [README](../README.md).
 > For troubleshooting and advanced help, see [Troubleshooting Guide](troubleshooting.md).
 
+## 📦 dev-stack CLI Installation
+
+Choose your preferred installation method:
+
+### Method 1: Download Binary (Recommended)
+
+**macOS and Linux:**
+```bash
+# Download the latest release for your platform
+curl -L -o dev-stack "https://github.com/isaacgarza/dev-stack/releases/latest/download/dev-stack-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
+chmod +x dev-stack
+sudo mv dev-stack /usr/local/bin/
+```
+
+**Windows (PowerShell):**
+```powershell
+# Download and install dev-stack for Windows
+Invoke-WebRequest -Uri "https://github.com/isaacgarza/dev-stack/releases/latest/download/dev-stack-windows-amd64.exe" -OutFile "dev-stack.exe"
+# Move to a directory in your PATH
+```
+
+### Method 2: Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/isaacgarza/dev-stack.git
+cd dev-stack
+
+# Build using Task (recommended)
+task build
+sudo cp build/dev-stack /usr/local/bin/
+
+# Or build with Go directly
+go build -o dev-stack ./cmd/dev-stack
+sudo mv dev-stack /usr/local/bin/
+```
+
+### Method 3: Go Install
+
+```bash
+# Install directly with Go (requires Go 1.21+)
+go install github.com/isaacgarza/dev-stack/cmd/dev-stack@latest
+```
+
+### Verify Installation
+
+```bash
+# Check version and basic functionality
+dev-stack --version
+dev-stack --help
+
+# Run system health check
+dev-stack doctor
+```
+
+### CLI Requirements
+
+- **Go**: 1.21+ (only for building from source)
+- **Docker**: Required for most dev-stack operations
+- **Git**: For cloning repositories and version management
+
 ## 📋 Prerequisites
 
 Before using this framework, you need Docker installed and running. Here are the recommended setups for different environments.
@@ -426,6 +487,19 @@ After setup, verify everything works:
 - [ ] Services are accessible: Check ports with `dev-stack status`
 - [ ] IDE integration works: Database connections, Redis access
 - [ ] Application connects: Spring Boot can connect to services
+
+## 🎯 What's Next?
+
+Now that you have dev-stack installed and configured:
+
+1. **[Learn basic usage patterns](usage.md)** - Common workflows and daily commands
+2. **[Explore available services](services.md)** - Add databases, monitoring, and more
+3. **[Configure your stack](configuration.md)** - Customize settings for your needs
+4. **[Integration examples](integration.md)** - Connect your applications
+
+**Quick start:** Run `dev-stack init` to create your first project, then `dev-stack up` to start services.
+
+**Need help?** Check the [Troubleshooting Guide](troubleshooting.md) or run `dev-stack doctor`.
 
 ## 🗂️ See Also
 

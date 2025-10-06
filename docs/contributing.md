@@ -27,6 +27,48 @@ This guide explains how to contribute to the Local Development Framework, includ
 
 We welcome contributions from the development community! Whether you're fixing bugs, adding new services, improving documentation, or enhancing existing features, your contributions help make the framework better for everyone.
 
+## 🤝 Community & Support
+
+### GitHub Repository
+
+- **Main Repository**: [isaacgarza/dev-stack](https://github.com/isaacgarza/dev-stack)
+- **Issues**: [Report bugs and request features](https://github.com/isaacgarza/dev-stack/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/isaacgarza/dev-stack/discussions)
+- **Releases**: [Latest versions and changelog](https://github.com/isaacgarza/dev-stack/releases)
+
+### Getting Help
+
+**Before opening an issue:**
+1. Check the [Troubleshooting Guide](troubleshooting.md)
+2. Review [existing issues](https://github.com/isaacgarza/dev-stack/issues)
+3. Search [discussions](https://github.com/isaacgarza/dev-stack/discussions)
+
+**For support requests:**
+- Use [GitHub Discussions](https://github.com/isaacgarza/dev-stack/discussions) for questions
+- Check the [CLI Reference](reference.md) for command help
+- Run `dev-stack doctor` for system diagnostics
+
+**For bug reports:**
+- Use [GitHub Issues](https://github.com/isaacgarza/dev-stack/issues)
+- Include system information (`dev-stack --version`, OS, Docker version)
+- Provide steps to reproduce the issue
+- Include relevant logs and error messages
+
+### Contributing Options
+
+**Ways to contribute:**
+- 🐛 **Bug fixes**: Fix issues and improve reliability
+- ✨ **New features**: Add new services, commands, or functionality  
+- 📚 **Documentation**: Improve guides, examples, and reference materials
+- 🧪 **Testing**: Add tests, report bugs, validate on different platforms
+- 💡 **Ideas**: Share suggestions in discussions
+
+**Quick contributions:**
+- Fix typos in documentation
+- Add examples to existing guides
+- Report unclear documentation
+- Test new releases and report issues
+
 ---
 
 ## 📚 Automated Documentation & YAML Manifests

@@ -10,10 +10,104 @@ toc: true
 
 ---
 
+## Service Management Overview
+
+dev-stack makes it easy to manage common development services with simple commands and consistent configurations.
+
+### Managing Services
+
+**Add services to your stack:**
+```bash
+# Add individual services
+dev-stack service add redis
+dev-stack service add postgres
+
+# Add monitoring stack
+dev-stack service add prometheus grafana
+
+# Add message queue with UI
+dev-stack service add kafka
+```
+
+**Remove or modify services:**
+```bash
+# Remove a service
+dev-stack service remove redis
+
+# List available services
+dev-stack service list
+
+# View service configuration
+dev-stack service config postgres
+```
+
+### Common Service Combinations
+
+**Database Stack:**
+- PostgreSQL + Redis + Adminer
+
+**Monitoring Stack:**
+- Prometheus + Grafana + Jaeger
+
+**Message Queue Stack:**
+- Kafka + Kafka UI + Schema Registry
+
+**AWS Local Development:**
+- LocalStack + DynamoDB + S3
+
+### Health Monitoring
+
+Built-in health checks ensure your services are running correctly:
+
+```bash
+# Check overall system health
+dev-stack doctor
+
+# Monitor service status in real-time
+dev-stack status --watch
+
+# View detailed service logs
+dev-stack logs <service-name>
+
+# Check specific service health
+dev-stack health postgres
+```
+
+**Health check features:**
+- **Automatic service discovery**: Detects running containers
+- **Connection validation**: Tests database connections, API endpoints
+- **Resource monitoring**: CPU, memory, disk usage per service
+- **Dependency checking**: Verifies service startup order
+
+### Service Categories
+
+The following sections detail all available services organized by category:
+
 <!-- AUTO-GENERATED-START -->
 # Services Guide (dev-stack)
 
 This section is auto-generated from `services/services.yaml`.
+
+## redis
+
+In-memory data store for caching and session storage.
+
+**Options:**
+- `port`
+- `password`
+- `memory_limit`
+- `persistence`
+- `config`
+
+**Examples:**
+- `redis-cli -h localhost -p 6379 ping`
+- `spring.data.redis.host=localhost`
+
+**Usage Notes:** Use Redis for caching, session storage, and pub/sub. Set a password for production-like security.
+
+**Links:**
+- [https://redis.io/documentation](https://redis.io/documentation)
+- [https://spring.io/projects/spring-data-redis](https://spring.io/projects/spring-data-redis)
 
 ## postgres
 
@@ -156,25 +250,20 @@ Event streaming platform for messaging and pub/sub.
 **Links:**
 - [https://kafka.apache.org/documentation/](https://kafka.apache.org/documentation/)
 - [https://docs.spring.io/spring-kafka/docs/current/reference/html/](https://docs.spring.io/spring-kafka/docs/current/reference/html/)
-
-## redis
-
-In-memory data store for caching and session storage.
-
-**Options:**
-- `port`
-- `password`
-- `memory_limit`
-- `persistence`
-- `config`
-
-**Examples:**
-- `redis-cli -h localhost -p 6379 ping`
-- `spring.data.redis.host=localhost`
-
-**Usage Notes:** Use Redis for caching, session storage, and pub/sub. Set a password for production-like security.
-
-**Links:**
-- [https://redis.io/documentation](https://redis.io/documentation)
-- [https://spring.io/projects/spring-data-redis](https://spring.io/projects/spring-data-redis)
 <!-- AUTO-GENERATED-END -->
+
+## 🎯 What's Next?
+
+Now that you understand service management, take your setup further:
+
+1. **[Advanced configuration](configuration.md)** - Fine-tune service settings, environment variables, and overrides
+2. **[Application integration](integration.md)** - Connect your apps to these services with code examples
+3. **[Production considerations](troubleshooting.md#performance-optimization)** - Optimize for performance and reliability
+4. **[Contributing new services](contributing.md)** - Add services that aren't available yet
+
+**Advanced service management:**
+- Create service profiles for different environments
+- Set up service dependencies and startup ordering
+- Configure custom health checks and monitoring
+
+**Need a service that's not listed?** Check the [Contributing Guide](contributing.md) to learn how to add new services.

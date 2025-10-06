@@ -1,0 +1,712 @@
+// ===============================================
+// dev-stack Custom SCSS Styles - Purple Theme
+// ===============================================
+// This file contains custom styles that work with the Doks theme
+// to implement purple color scheme and forced dark backgrounds.
+
+// Import custom variables
+@import "variables-custom";
+
+// ===============================================
+// GLOBAL OVERRIDES
+// ===============================================
+
+// Ensure proper theme compatibility
+html, body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Purple theme links for both light and dark modes
+a {
+  color: $link-color !important;
+  transition: $transition-fast;
+
+  &:hover {
+    color: $link-hover-color !important;
+  }
+}
+
+// Dark mode link colors
+[data-bs-theme="dark"] {
+  a {
+    color: $link-color-dark !important;
+
+    &:hover {
+      color: $link-hover-color-dark !important;
+    }
+  }
+}
+
+// ===============================================
+// NAVIGATION - Light for light mode, dark for dark mode
+// ===============================================
+
+.navbar {
+  background: $navbar-bg !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid $border-color;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-brand {
+  color: $navbar-brand-color !important;
+  font-weight: 600;
+
+  &:hover {
+    color: $navbar-brand-color !important;
+  }
+}
+
+.nav-link {
+  color: $navbar-nav-link-color !important;
+  transition: $transition-fast;
+
+  &:hover {
+    color: $navbar-nav-link-hover-color !important;
+  }
+}
+
+// Dark mode navbar
+[data-bs-theme="dark"] {
+  .navbar {
+    background: $navbar-bg-dark !important;
+    border-bottom: 1px solid $border-color-dark;
+  }
+
+  .navbar-brand {
+    color: $navbar-brand-color-dark !important;
+
+    &:hover {
+      color: $navbar-brand-color-dark !important;
+    }
+  }
+
+  .nav-link {
+    color: $navbar-nav-link-color-dark !important;
+
+    &:hover {
+      color: $navbar-nav-link-hover-color-dark !important;
+    }
+  }
+}
+
+// ===============================================
+// HERO SECTION - Light for light mode, dark for dark mode
+// ===============================================
+
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  background: $hero-bg !important;
+  color: $hero-color !important;
+  transition: background 0.3s ease;
+
+  h1, .display-4 {
+    color: $hero-heading-color !important;
+  }
+
+  .lead {
+    color: $hero-lead-color !important;
+  }
+
+  p {
+    color: $hero-lead-color !important;
+  }
+
+  // Purple gradient overlay for light mode
+  &::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+      circle at 30% 20%,
+      rgba(186, 148, 209, 0.08) 0%,
+      transparent 50%
+    );
+    pointer-events: none;
+  }
+}
+
+// Dark mode hero
+[data-bs-theme="dark"] {
+  .hero-section {
+    background: $hero-bg-dark !important;
+    color: $hero-color-dark !important;
+
+    h1, .display-4 {
+      color: $hero-heading-color-dark !important;
+    }
+
+    .lead {
+      color: $hero-lead-color-dark !important;
+    }
+
+    p {
+      color: $hero-lead-color-dark !important;
+    }
+
+    &::before {
+      background: radial-gradient(
+        circle at 30% 20%,
+        rgba(195, 179, 218, 0.2) 0%,
+        transparent 50%
+      );
+    }
+  }
+}
+
+// ===============================================
+// SIDEBAR/TOC - Light for light mode, dark for dark mode
+// ===============================================
+
+.docs-toc {
+  background: $docs-toc-bg !important;
+  border: 1px solid $docs-toc-border !important;
+  border-radius: $border-radius-md;
+  padding: 1.5rem;
+  transition: background-color 0.3s ease;
+
+  h3 {
+    color: $docs-toc-heading-color !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    border-top: none !important;
+  }
+
+  a {
+    color: $docs-toc-link-color !important;
+    text-decoration: none;
+    padding: 0.25rem 0;
+    display: block;
+    transition: $transition-fast;
+
+    &:hover {
+      color: $docs-toc-link-hover-color !important;
+      padding-left: 0.5rem;
+    }
+  }
+}
+
+// Position sidebar from window edge for larger screens and give content more room
+@media (min-width: 1200px) {
+  .docs-toc {
+    position: fixed !important;
+    right: 2rem !important;
+    top: 12% !important;
+    bottom: 6rem !important;
+    transform: translateY(0) !important;
+    width: 280px !important;
+    max-height: calc(100vh - 12% - 6rem) !important;
+    scroll-behavior: smooth !important;
+    overflow-y: auto !important;
+    z-index: 900 !important;
+    margin: 0 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  // Expand main content to use the full available width
+  .docs-content.col-xl-9 {
+    flex: 0 0 100% !important;
+    max-width: calc(100% - 320px) !important;
+    padding-right: 2rem !important;
+  }
+}
+
+// Fix ScrollSpy by ensuring proper target and active states
+.docs-toc {
+  // Ensure ScrollSpy can target this element properly
+  #toc {
+    position: static !important;
+  }
+
+  // Style active links for better visibility
+  a.active,
+  li.active > a {
+    color: $primary-700 !important;
+    font-weight: 600 !important;
+    border-left: 3px solid $primary-700 !important;
+    padding-left: 0.75rem !important;
+    background-color: rgba(186, 148, 209, 0.1) !important;
+    margin-left: -0.75rem !important;
+    border-radius: 0 $border-radius-sm $border-radius-sm 0 !important;
+    transition: all 0.2s ease !important;
+  }
+
+  // Smooth scrolling for all TOC links
+  a {
+    transition: all 0.2s ease !important;
+  }
+}
+
+// Disable fixed positioning on very short screens to prevent overlap
+@media (min-width: 1200px) and (max-height: 700px) {
+  .docs-toc {
+    position: static !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-height: none !important;
+    z-index: auto !important;
+    margin: 2rem 0 !important;
+    box-shadow: none !important;
+  }
+
+  .docs-content.col-xl-9 {
+    flex: 0 0 75% !important;
+    max-width: 75% !important;
+    padding-right: 1rem !important;
+  }
+}
+
+// Better border spacing for mobile TOC
+.toc-mobile {
+  margin-top: 3rem !important;
+  margin-bottom: 3rem !important;
+  padding-top: 1.5rem !important;
+  padding-bottom: 1rem !important;
+  border-top: 2px solid $border-color !important;
+  border-bottom: 1px solid $border-color !important;
+
+  .page-links h3 {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  details {
+    border: none !important;
+  }
+
+  summary {
+    font-weight: 600 !important;
+    color: $docs-toc-heading-color !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
+// Dark mode sidebar
+[data-bs-theme="dark"] {
+  .docs-toc {
+    background: $docs-toc-bg-dark !important;
+    border: 1px solid $docs-toc-border-dark !important;
+
+    h3 {
+      color: $docs-toc-heading-color-dark !important;
+    }
+
+    a {
+      color: $docs-toc-link-color-dark !important;
+
+      &:hover {
+        color: $docs-toc-link-hover-color-dark !important;
+        padding-left: 0.5rem;
+      }
+    }
+  }
+}
+
+// Dark mode mobile TOC
+[data-bs-theme="dark"] {
+  .toc-mobile {
+    border-top-color: $border-color-dark !important;
+    border-bottom-color: $border-color-dark !important;
+
+    summary {
+      color: $docs-toc-heading-color-dark !important;
+    }
+  }
+
+  .docs-toc {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+
+    a.active,
+    li.active > a {
+      color: $primary-400 !important;
+      border-left-color: $primary-400 !important;
+      background-color: rgba(195, 179, 218, 0.15) !important;
+    }
+  }
+}
+
+// Ensure footer stays above sidebar
+.footer {
+  z-index: 1000 !important;
+}
+
+
+
+// ===============================================
+// BUTTONS
+// ===============================================
+
+.btn-primary {
+  background: $primary-700;
+  border: 2px solid $primary-700;
+  color: #ffffff !important;
+  transition: $transition-normal;
+  font-size: $btn-font-size;
+  padding: $btn-padding-y $btn-padding-x;
+  min-width: $btn-min-width;
+  white-space: nowrap;
+
+  svg {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+
+  &:hover {
+    background: $primary-800;
+    border: 2px solid $primary-800;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px $shadow-color-medium;
+
+    svg {
+      color: #ffffff !important;
+      fill: #ffffff !important;
+      stroke: #ffffff !important;
+    }
+  }
+
+  &:focus,
+  &:active {
+    color: #ffffff !important;
+
+    svg {
+      color: #ffffff !important;
+      fill: #ffffff !important;
+      stroke: #ffffff !important;
+    }
+  }
+}
+
+.btn-outline-secondary {
+  border: 2px solid $primary-300;
+  color: $primary-700;
+  transition: $transition-normal;
+  font-size: $btn-font-size;
+  padding: $btn-padding-y $btn-padding-x;
+  min-width: $btn-min-width;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: $primary-100;
+    border: 2px solid $primary-300;
+    color: $primary-600;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px $shadow-color;
+  }
+}
+
+// Dark mode buttons
+[data-bs-theme="dark"] {
+  .btn-primary {
+    background: $primary-600;
+    border: 2px solid $primary-600;
+    color: #ffffff !important;
+
+    svg {
+      color: #ffffff !important;
+      fill: #ffffff !important;
+      stroke: #ffffff !important;
+    }
+
+    &:hover {
+      background: $primary-500;
+      border: 2px solid $primary-500;
+      color: #ffffff !important;
+
+      svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+      }
+    }
+
+    &:focus,
+    &:active {
+      color: #ffffff !important;
+
+      svg {
+        color: #ffffff !important;
+        fill: #ffffff !important;
+        stroke: #ffffff !important;
+      }
+    }
+  }
+
+  .btn-outline-secondary {
+    border: 2px solid $primary-600;
+    color: $primary-400;
+
+    &:hover {
+      background-color: $primary-900;
+      border: 2px solid $primary-600;
+      color: #ffffff;
+    }
+  }
+}
+
+// ===============================================
+// HERO SECTION BUTTON IMPROVEMENTS
+// ===============================================
+
+// Button container styling for hero section
+.hero-section {
+  .btn-container {
+    gap: 1.25rem;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      gap: 1rem;
+    }
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+
+      .btn {
+        width: 100%;
+        max-width: 200px;
+      }
+    }
+  }
+
+  // Ensure both buttons have consistent appearance
+  .btn-primary,
+  .btn-outline-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+}
+
+// Ensure buttons stay consistent
+.btn {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+// ===============================================
+// CARDS & COMPONENTS
+// ===============================================
+
+.card {
+  background: $card-bg;
+  border: 1px solid $card-border-color;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 2px 4px $shadow-color;
+  transition: $transition-normal;
+
+  &:hover {
+    box-shadow: 0 4px 15px $shadow-color-medium;
+    transform: translateY(-2px);
+  }
+}
+
+// Dark mode cards
+[data-bs-theme="dark"] {
+  .card {
+    background: $card-bg-dark;
+    border: 1px solid $card-border-color-dark;
+    box-shadow: 0 2px 4px $shadow-color-dark;
+
+    &:hover {
+      box-shadow: 0 4px 15px $shadow-color-medium-dark;
+    }
+  }
+}
+
+// ===============================================
+// CONTENT AREA
+// ===============================================
+
+.docs-content h1 {
+  border-bottom: 2px solid $border-color;
+  padding-bottom: 0.5rem;
+}
+
+.docs-content h2 {
+  margin-top: 2rem;
+}
+
+// Code blocks
+.highlight {
+  border-radius: $border-radius-md;
+  box-shadow: 0 2px 4px $shadow-color;
+  border: 1px solid $border-color;
+}
+
+// Blockquotes
+blockquote {
+  border-left: 4px solid $primary-300;
+  background: $bg-tertiary;
+  padding: 1rem 1.5rem;
+  border-radius: 0 $border-radius-md $border-radius-md 0;
+}
+
+// Dark mode content
+[data-bs-theme="dark"] {
+  .docs-content h1 {
+    border-bottom-color: $border-color-dark;
+  }
+
+  .highlight {
+    border-color: $border-color-dark;
+    box-shadow: 0 2px 4px $shadow-color-dark;
+  }
+
+  blockquote {
+    border-left-color: $primary-600;
+    background: $bg-tertiary-dark;
+  }
+}
+
+// ===============================================
+// FORMS
+// ===============================================
+
+.form-control {
+  background: $input-bg;
+  border: 1px solid $input-border-color;
+  transition: $transition-fast;
+
+  &:focus {
+    border-color: $input-focus-border-color;
+    box-shadow: 0 0 0 0.2rem rgba(186, 148, 209, 0.25);
+  }
+}
+
+// Dark mode forms
+[data-bs-theme="dark"] {
+  .form-control {
+    background: $input-bg-dark;
+    border-color: $input-border-color-dark;
+    color: $body-color-dark;
+
+    &:focus {
+      border-color: $input-focus-border-color-dark;
+      box-shadow: 0 0 0 0.2rem rgba(195, 179, 218, 0.25);
+    }
+  }
+}
+
+// ===============================================
+// FOOTER
+// ===============================================
+
+.footer {
+  background: $footer-bg;
+  border-top: 1px solid $border-color;
+  color: $footer-color;
+
+  a {
+    color: $footer-link-color !important;
+
+    &:hover {
+      color: $footer-link-hover-color !important;
+    }
+  }
+}
+
+// Dark mode footer
+[data-bs-theme="dark"] {
+  .footer {
+    background: $footer-bg-dark;
+    border-top-color: $border-color-dark;
+    color: $footer-color-dark;
+
+    a {
+      color: $footer-link-color-dark !important;
+
+      &:hover {
+        color: $footer-link-hover-color-dark !important;
+      }
+    }
+  }
+}
+
+// ===============================================
+// RESPONSIVE DESIGN
+// ===============================================
+
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 2rem 1rem !important;
+  }
+
+  .display-4 {
+    font-size: 2rem !important;
+  }
+
+  .lead.fs-4 {
+    font-size: 1.1rem !important;
+  }
+
+  // Ensure buttons stack nicely on mobile
+  .btn {
+    font-size: $btn-font-size-sm;
+    padding: $btn-padding-y-sm $btn-padding-x-sm;
+    min-width: $btn-min-width-sm;
+  }
+}
+
+// ===============================================
+// ANIMATIONS
+// ===============================================
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-section > * {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+// ===============================================
+// UTILITY CLASSES
+// ===============================================
+
+.text-purple {
+  color: $primary-700 !important;
+}
+
+.bg-purple-light {
+  background-color: $primary-100 !important;
+}
+
+.border-purple {
+  border-color: $primary-300 !important;
+}
+
+.shadow-purple {
+  box-shadow: 0 2px 4px $shadow-color !important;
+}
+
+.rounded-purple {
+  border-radius: $border-radius-md !important;
+}
