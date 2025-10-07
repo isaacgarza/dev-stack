@@ -77,7 +77,7 @@ type ServiceStatus struct {
 // ValidateServices validates service names against available services
 func (b *BaseCommand) ValidateServices(serviceNames []string) error {
 	// Load services.yaml to get available services
-	servicesFile := filepath.Join(b.ProjectDir, "services", "services.yaml")
+	servicesFile := filepath.Join(b.ProjectDir, "internal/config/services", "services.yaml")
 	if _, err := os.Stat(servicesFile); os.IsNotExist(err) {
 		return fmt.Errorf("services.yaml not found at %s. Please ensure you're in a dev-stack project directory", servicesFile)
 	}

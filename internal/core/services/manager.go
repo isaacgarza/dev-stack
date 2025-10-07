@@ -488,7 +488,7 @@ func (m *Manager) getProjectName() string {
 
 func (m *Manager) validateServices(serviceNames []string) error {
 	// Load services.yaml to validate service names
-	servicesYAMLPath := "services/services.yaml"
+	servicesYAMLPath := "internal/config/services/services.yaml"
 	data, err := os.ReadFile(servicesYAMLPath)
 	if err != nil {
 		// If services.yaml doesn't exist, just check for empty names

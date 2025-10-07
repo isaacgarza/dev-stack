@@ -301,7 +301,7 @@ func (r *ServiceRegistry) resolveConfigPath() (string, error) {
 	if r.configPath == "" {
 		// Try default locations
 		candidates := []string{
-			"services/services.yaml",
+			"internal/config/services/services.yaml",
 			"config/services.yaml",
 			".dev-stack/services.yaml",
 		}

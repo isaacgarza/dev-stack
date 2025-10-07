@@ -221,8 +221,8 @@ type ProfileReference struct {
 // DefaultGenerationOptions returns the default options for documentation generation
 func DefaultGenerationOptions() *GenerationOptions {
 	return &GenerationOptions{
-		CommandsYAMLPath: "scripts/commands.yaml",
-		ServicesYAMLPath: "services/services.yaml",
+		CommandsYAMLPath: "internal/config/commands.yaml",
+		ServicesYAMLPath: "internal/config/services/services.yaml",
 		ReferenceMDPath:  "docs-site/content/reference.md",
 		ServicesMDPath:   "docs-site/content/services.md",
 		HugoContentDir:   "docs-site/content",

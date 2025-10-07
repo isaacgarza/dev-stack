@@ -19,7 +19,7 @@ Thank you for your interest in contributing to dev-stack! This guide will help y
 - [ ] Install dependencies: `task setup`
 - [ ] Build the project: `task build`
 - [ ] Run tests: `task test`
-- [ ] Edit YAML manifests (`scripts/commands.yaml`, `services/services.yaml`) for changes
+- [ ] Edit YAML manifests (`scripts/commands.yaml`, `internal/config/services/services.yaml`) for changes
 - [ ] Run `dev-stack docs` to update documentation
 - [ ] Commit both the manifest and generated docs
 - [ ] Follow the contributing guide and PR template
@@ -75,7 +75,7 @@ This will update `docs-site/content/reference.md` and `docs-site/content/service
 
 **Contributor Workflow Checklist:**
 1. Ensure you have Go 1.21+ installed and the project built (`task build`).
-2. Edit `scripts/commands.yaml` and/or `services/services.yaml` to add or update commands/services.
+2. Edit `scripts/commands.yaml` and/or `internal/config/services/services.yaml` to add or update commands/services.
 3. Run `dev-stack docs` to regenerate documentation from YAML manifests.
 4. Commit both the manifest and the updated docs.
 5. Never manually edit auto-generated docs (`docs-site/content/reference.md`, `docs-site/content/services.md`).
@@ -260,7 +260,7 @@ networks:
 
 ### Step 4: Update Framework Configuration
 
-Add your service to `services/services.yaml`:
+Add your service to `internal/config/services/services.yaml`:
 
 ```yaml
 services:

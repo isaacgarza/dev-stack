@@ -212,7 +212,7 @@ func DefaultComposeOptions() ComposeOptions {
 func DefaultRegistryOptions() RegistryOptions {
 	return RegistryOptions{
 		ServicesPath: "services",
-		ManifestPath: "services/services.yaml",
+		ManifestPath: "internal/config/services/services.yaml",
 		AutoReload:   false,
 		Validate:     true,
 	}

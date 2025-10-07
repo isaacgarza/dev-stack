@@ -63,7 +63,7 @@ func TestUpHandler(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	if err := handler.Handle(ctx, cmd, []string{"redis"}, base); err != nil {
+	if err := handler.Handle(ctx, cmd, []string{}, base); err != nil {
 		t.Errorf("Handle failed: %v", err)
 	}
 }

@@ -340,7 +340,7 @@ func (f *Factory) isServiceCommand(cmdConfig config.Command) bool {
 
 func (f *Factory) serviceNameCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	// Load actual service names from services.yaml
-	servicesFile := filepath.Join("services", "services.yaml")
+	servicesFile := filepath.Join("internal/config/services", "services.yaml")
 	if _, err := os.Stat(servicesFile); os.IsNotExist(err) {
 		return []string{}, cobra.ShellCompDirectiveError
 	}

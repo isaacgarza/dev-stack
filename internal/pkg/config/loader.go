@@ -86,7 +86,7 @@ func (l *Loader) resolveConfigPath() (string, error) {
 	if l.configPath == "" {
 		// Try default locations
 		candidates := []string{
-			"scripts/commands.yaml",
+			"internal/config/commands.yaml",
 			"config/commands.yaml",
 			".dev-stack/commands.yaml",
 		}
