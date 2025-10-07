@@ -79,7 +79,8 @@ tasks:
         fi
 
   lint:
-    desc: Run Go linting with basic tools
+    desc: Run Go linting (vet + fmt check + golangci-lint)
+    deps: [deps]
     cmds:
       - echo "Running Go linting with basic tools..."
       - echo "Running go vet..."
@@ -92,10 +93,6 @@ tasks:
           exit 1
         fi
       - echo "✅ Basic linting passed"
-
-  lint-advanced:
-    desc: Run advanced linting with golangci-lint (optional)
-    cmds:
       - echo "Running advanced Go linting..."
       - |
         if ! command -v golangci-lint >/dev/null 2>&1; then
@@ -124,11 +121,46 @@ tasks:
       - go vet ./...
 
   docs:
-    desc: Generate documentation from YAML manifests
+    desc: Generate documentation only (no Hugo sync)
     deps: [build]
     cmds:
-      - echo "Generating documentation from YAML manifests..."
+      - echo "Generating documentation..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --no-hugo-sync --verbose
+
+  docs-hugo:
+    desc: Generate documentation and sync to Hugo content directory
+    deps: [build]
+    cmds:
+      - echo "Generating documentation and syncing to Hugo..."
       - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
+
+  docs-dry-run:
+    desc: Preview documentation changes without writing files
+    deps: [build]
+    cmds:
+      - echo "Previewing documentation changes..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --dry-run --hugo-dir docs
+
+  hugo-build:
+    desc: Build Hugo documentation site
+    deps: [docs-hugo]
+    cmds:
+      - echo "Building Hugo documentation site..."
+      - npm run docs:build
+
+  hugo-serve:
+    desc: Serve Hugo documentation site locally
+    deps: [docs-hugo]
+    cmds:
+      - echo "Starting Hugo development server..."
+      - npm run docs:dev
+
+  hugo-clean:
+    desc: Clean Hugo build artifacts
+    cmds:
+      - echo "Cleaning Hugo build artifacts..."
+      - npm run docs:clean
+      - rm -rf public/
 
   validate-docs:
     desc: Validate Hugo documentation configuration and content
@@ -267,13 +299,17 @@ tasks:
       - echo "Testing & Quality:"
       - echo "  test           - Run all tests"
       - echo "  test-integration - Run integration tests"
-      - echo "  lint           - Run basic Go linting (vet + fmt check)"
-      - echo "  lint-advanced  - Run advanced linting with golangci-lint (optional)"
+      - echo "  lint           - Run basic Go linting (vet + fmt check + golangci-lint)"
       - echo "  fmt            - Format Go code"
       - echo "  vet            - Run Go vet"
       - echo ""
       - echo "Documentation:"
-      - echo "  docs           - Generate documentation from YAML manifests"
+      - echo "  docs           - Generate documentation only (no Hugo sync)"
+      - echo "  docs-hugo      - Generate docs and sync to Hugo content"
+      - echo "  docs-dry-run   - Preview documentation changes (dry-run)"
+      - echo "  hugo-build     - Build Hugo documentation site"
+      - echo "  hugo-serve     - Serve Hugo site locally for development"
+      - echo "  hugo-clean     - Clean Hugo build artifacts"
       - echo "  validate-docs  - Validate Hugo documentation"
       - echo ""
       - echo "Docker Tasks:"

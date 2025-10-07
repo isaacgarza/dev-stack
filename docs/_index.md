@@ -1,3 +1,14 @@
+---
+title: "dev-stack"
+description: "A powerful development stack management tool built in Go for streamlined local development automation"
+lead: "Streamline your local development with powerful CLI tools and automated service management"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 50
+toc: true
+---
+
 # dev-stack
 
 A powerful development stack management tool built in Go for streamlined local development automation
@@ -36,22 +47,22 @@ dev-stack up
 
 ## Documentation
 
-- **[Setup & Installation](docs/setup.md)**
-- **[Usage Guide](docs/usage.md)**
-- **[Services Guide](docs/services.md)**
-- **[Configuration](docs/configuration.md)**
-- **[CLI Reference](docs/reference.md)**
-- **[Contributing](CONTRIBUTING.md)**
+- **[Setup & Installation]({{< relref "setup" >}})**
+- **[Usage Guide]({{< relref "usage" >}})**
+- **[Services Guide]({{< relref "services" >}})**
+- **[Configuration]({{< relref "configuration" >}})**
+- **[CLI Reference]({{< relref "reference" >}})**
+- **[Contributing]({{< relref "contributing" >}})**
 
 ## Get Started
 
-1. **[Complete installation guide](docs/setup.md)**
-2. **[Learn basic usage](docs/usage.md)**
-3. **[Explore available services](docs/services.md)**
+1. **[Complete installation guide]({{< relref "setup" >}})**
+2. **[Learn basic usage]({{< relref "usage" >}})**
+3. **[Explore available services]({{< relref "services" >}})**
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide]({{< relref "contributing" >}}) for details.
 
 ## License
 
@@ -59,7 +70,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [Documentation](docs/)
+- 📖 [Documentation]({{< relref "/" >}})
 - 🐛 [Issues](https://github.com/isaacgarza/dev-stack/issues)
 - 💬 [Discussions](https://github.com/isaacgarza/dev-stack/discussions)
 

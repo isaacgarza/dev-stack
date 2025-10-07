@@ -1,24 +1,47 @@
+# Main navigation menu
 [[main]]
-  name = "Docs"
-  url = "/docs/getting-started/"
+  name = "Setup"
+  url = "/setup/"
   weight = 10
 
 [[main]]
-  name = "CLI Reference"
-  url = "/docs/cli-reference/"
+  name = "Usage"
+  url = "/usage/"
   weight = 20
 
 [[main]]
   name = "Services"
-  url = "/docs/services/"
+  url = "/services/"
   weight = 30
 
 [[main]]
-  name = "Contributing"
-  url = "/docs/contributing/"
+  name = "Configuration"
+  url = "/configuration/"
   weight = 40
 
+[[main]]
+  name = "CLI Reference"
+  url = "/reference/"
+  weight = 50
+
+[[main]]
+  name = "Contributing"
+  url = "/contributing/"
+  weight = 60
+
+[[main]]
+  name = "Troubleshooting"
+  url = "/troubleshooting/"
+  weight = 70
+
+# Social menu for footer
 [[social]]
   name = "GitHub"
   url = "https://github.com/isaacgarza/dev-stack"
+  weight = 10
+
+# Footer menu
+[[footer]]
+  name = "Privacy Policy"
+  url = "/privacy/"
   weight = 10

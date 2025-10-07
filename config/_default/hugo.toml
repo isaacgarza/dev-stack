@@ -1,7 +1,10 @@
-title = "dev-stack Documentation"
+title = "dev-stack"
 baseURL = "/"
 languageCode = "en-US"
 theme = "doks"
+
+# Content directory - use docs folder instead of content
+contentDir = "docs"
 
 # Site settings
 enableRobotsTXT = true

@@ -1,3 +1,15 @@
+---
+title: "Configuration"
+description: "Complete configuration guide for dev-stack with examples and best practices"
+lead: "Learn how to configure dev-stack for your development environment"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 40
+toc: true
+
+---
+
 # Configuration Guide (dev-stack)
 
 > For troubleshooting configuration issues, see [Troubleshooting Guide](troubleshooting.md).

@@ -1,0 +1,148 @@
+// ===============================================
+// dev-stack Custom SCSS Variables - Purple Theme
+// ===============================================
+// This file overrides Doks theme variables with our purple color palette
+// based on #BA94D1 and provides darker backgrounds for specific components.
+
+// Primary Purple Color Palette (based on #BA94D1)
+$primary-50: #faf9fc;
+$primary-100: #f3f1f8;
+$primary-200: #e7e3f0;
+$primary-300: #d5cde5;
+$primary-400: #c3b3da;
+$primary-500: #ba94d1;
+$primary-600: #a574be;
+$primary-700: #8e5ca3;
+$primary-800: #744a85;
+$primary-900: #5c3969;
+
+// Override Bootstrap/Doks primary colors
+$primary: $primary-500;
+$primary-dark: $primary-700;
+
+// Link colors
+$link-color: $primary-500;
+$link-color-dark: $primary-400;
+$link-hover-color: $primary-600;
+$link-hover-color-dark: $primary-300;
+
+// Body colors for light mode
+$body-bg: #ffffff;
+$body-color: #1f2937;
+
+// Body colors for dark mode
+$body-bg-dark: #0f0e13;
+$body-color-dark: #f9fafb;
+
+// Text colors
+$text-muted: #6b7280;
+$text-muted-dark: #9ca3af;
+
+// Border colors
+$border-color: #e7e3f0;
+$border-color-dark: #2d2440;
+
+// Background colors for components
+$bg-secondary: #faf9fc;
+$bg-secondary-dark: #1a1722;
+$bg-tertiary: #f3f1f8;
+$bg-tertiary-dark: #252030;
+
+// Card colors
+$card-bg: #ffffff;
+$card-bg-dark: #2d2440;
+$card-border-color: #e7e3f0;
+$card-border-color-dark: #3a3050;
+
+// Form colors
+$input-bg: #ffffff;
+$input-bg-dark: #252030;
+$input-border-color: #d5cde5;
+$input-border-color-dark: #3a3050;
+$input-focus-border-color: $primary-500;
+$input-focus-border-color-dark: $primary-400;
+
+// Navbar - Light background for light mode, dark for dark mode
+$navbar-bg: rgba(243, 241, 248, 0.95);
+$navbar-bg-dark: rgba(15, 14, 19, 0.98);
+$navbar-brand-color: $primary-700;
+$navbar-brand-color-dark: #ffffff;
+$navbar-nav-link-color: $primary-600;
+$navbar-nav-link-color-dark: #e5e7eb;
+$navbar-nav-link-hover-color: $primary-500;
+$navbar-nav-link-hover-color-dark: $primary-400;
+
+// Sidebar/TOC - Light background for light mode, dark for dark mode
+$docs-toc-bg: #f3f1f8;
+$docs-toc-bg-dark: #1a1722;
+$docs-toc-border: #e7e3f0;
+$docs-toc-border-dark: #2d2440;
+$docs-toc-heading-color: $primary-700;
+$docs-toc-heading-color-dark: #f9fafb;
+$docs-toc-link-color: $primary-600;
+$docs-toc-link-color-dark: #c3b3da;
+$docs-toc-link-hover-color: $primary-800;
+$docs-toc-link-hover-color-dark: #e7e3f0;
+
+// Hero section - Light background for light mode, dark for dark mode
+$hero-bg: linear-gradient(135deg, $primary-100 0%, $primary-50 50%, #ffffff 100%);
+$hero-bg-dark: linear-gradient(135deg, #1a1722 0%, #252030 50%, #2d2440 100%);
+$hero-color: $primary-800;
+$hero-color-dark: #f9fafb;
+$hero-heading-color: $primary-900;
+$hero-heading-color-dark: #f9fafb;
+$hero-lead-color: $primary-700;
+$hero-lead-color-dark: #e5e7eb;
+
+// Button colors
+$btn-primary-bg: $primary-700;
+$btn-primary-border: 2px solid $primary-700;
+$btn-primary-color: #ffffff;
+$btn-primary-hover-bg: $primary-800;
+$btn-primary-hover-border: 2px solid $primary-800;
+$btn-primary-hover-color: #ffffff;
+
+// Button sizing
+$btn-font-size: 0.9rem;
+$btn-font-size-sm: 0.85rem;
+$btn-padding-y: 0.5rem;
+$btn-padding-x: 1.5rem;
+$btn-padding-y-sm: 0.4rem;
+$btn-padding-x-sm: 1.2rem;
+$btn-min-width: 140px;
+$btn-min-width-sm: 120px;
+
+// Footer colors
+$footer-bg: $bg-secondary;
+$footer-bg-dark: $bg-secondary-dark;
+$footer-color: #4b5563;
+$footer-color-dark: #e5e7eb;
+$footer-link-color: $primary-700;
+$footer-link-color-dark: $primary-400;
+$footer-link-hover-color: $primary-600;
+$footer-link-hover-color-dark: $primary-300;
+
+// Code block colors
+$code-bg: $bg-tertiary;
+$code-bg-dark: $bg-tertiary-dark;
+$code-color: $body-color;
+$code-color-dark: $body-color-dark;
+$code-border: $border-color;
+$code-border-dark: $border-color-dark;
+
+// Shadow colors with purple tint
+$shadow-color: rgba(165, 116, 190, 0.1);
+$shadow-color-medium: rgba(165, 116, 190, 0.15);
+$shadow-color-strong: rgba(165, 116, 190, 0.2);
+$shadow-color-dark: rgba(0, 0, 0, 0.4);
+$shadow-color-medium-dark: rgba(0, 0, 0, 0.5);
+$shadow-color-strong-dark: rgba(0, 0, 0, 0.6);
+
+// Transitions
+$transition-fast: all 0.2s ease;
+$transition-normal: all 0.3s ease;
+
+// Border radius
+$border-radius: 8px;
+$border-radius-md: 12px;
+$border-radius-lg: 16px;

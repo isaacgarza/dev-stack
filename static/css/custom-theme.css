@@ -1,0 +1,82 @@
+/* ===============================================
+   dev-stack Custom Theme - Minimal CSS Override
+   ===============================================
+
+   This file provides minimal CSS overrides while the
+   main styling is handled by SCSS files in assets/scss/
+*/
+
+/* Force purple theme colors immediately */
+:root {
+  --bs-primary: #ba94d1;
+  --bs-link-color: #ba94d1;
+  --bs-link-hover-color: #a574be;
+}
+
+/* Minimal overrides - SCSS handles the main styling */
+
+/* Force white text and icons on primary buttons - Ultra specific selectors */
+.hero-section .btn-primary,
+.hero-section .btn-primary:link,
+.hero-section .btn-primary:visited,
+.hero-section .btn-primary:hover,
+.hero-section .btn-primary:focus,
+.hero-section .btn-primary:active,
+.btn-primary.btn-lg,
+.btn-primary.btn-lg:hover,
+.btn-primary.btn-lg:focus,
+.btn-primary.btn-lg:active,
+.btn.btn-primary,
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+/* Force white SVG icons in primary buttons */
+.hero-section .btn-primary svg,
+.hero-section .btn-primary:hover svg,
+.hero-section .btn-primary:focus svg,
+.hero-section .btn-primary:active svg,
+.btn-primary.btn-lg svg,
+.btn-primary.btn-lg:hover svg,
+.btn-primary.btn-lg:focus svg,
+.btn-primary.btn-lg:active svg,
+.btn.btn-primary svg,
+.btn.btn-primary:hover svg,
+.btn.btn-primary:focus svg,
+.btn.btn-primary:active svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* Ensure Bootstrap doesn't override */
+a.btn-primary,
+a.btn-primary:link,
+a.btn-primary:visited,
+a.btn-primary:hover,
+a.btn-primary:focus,
+a.btn-primary:active {
+  color: #ffffff !important;
+}
+
+a.btn-primary svg,
+a.btn-primary:hover svg,
+a.btn-primary:focus svg,
+a.btn-primary:active svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Purple links everywhere */
+a {
+  color: #ba94d1 !important;
+}
+
+a:hover {
+  color: #a574be !important;
+}
