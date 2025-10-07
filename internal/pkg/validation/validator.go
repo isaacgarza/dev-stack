@@ -407,7 +407,7 @@ func (v *Validator) validateCategoryBalance(result *ValidationResult) {
 
 	commandCounts := make([]int, 0, len(v.config.Categories))
 	for _, category := range v.config.Categories {
-		commandCounts = append(commandCounts, len(category.Commands))
+		_ = append(commandCounts, len(category.Commands))
 	}
 
 	// Check for categories with too many commands
@@ -549,7 +549,7 @@ func isValidVersionFormat(version string) bool {
 func isValidCommandName(name string) bool {
 	// Commands should be lowercase with optional hyphens
 	for _, r := range name {
-		if !((r >= 'a' && r <= 'z') || r == '-' || (r >= '0' && r <= '9')) {
+		if (r < 'a' || r > 'z') && r != '-' && (r < '0' || r > '9') {
 			return false
 		}
 	}
@@ -559,7 +559,7 @@ func isValidCommandName(name string) bool {
 func isValidCategoryName(name string) bool {
 	// Categories should be lowercase
 	for _, r := range name {
-		if !((r >= 'a' && r <= 'z') || r == '_') {
+		if (r < 'a' || r > 'z') && r != '_' {
 			return false
 		}
 	}

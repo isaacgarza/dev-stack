@@ -355,8 +355,8 @@ func (cs *ContainerService) Logs(ctx context.Context, projectName string, servic
 		}(serviceName, logs)
 	}
 
+	// Block indefinitely when following logs
 	if options.Follow {
-		// Block indefinitely when following logs
 		select {}
 	}
 
@@ -386,16 +386,12 @@ func (vs *VolumeService) List(ctx context.Context, projectName string) ([]string
 }
 
 // Remove removes volumes for the project
-func (vs *VolumeService) Remove(ctx context.Context, projectName string, volumeNames []string) error {
-	if len(volumeNames) == 0 {
-		// Get all project volumes
-		allVolumes, err := vs.List(ctx, projectName)
-		if err != nil {
-			return err
-		}
-		volumeNames = allVolumes
+func (vs *VolumeService) Remove(ctx context.Context, projectName string) error {
+	// Get all project volumes
+	volumeNames, err := vs.List(ctx, projectName)
+	if err != nil {
+		return err
 	}
-
 	for _, volumeName := range volumeNames {
 		if err := vs.client.cli.VolumeRemove(ctx, volumeName, false); err != nil {
 			vs.client.logger.Error("Failed to remove volume", "volume", volumeName, "error", err)
@@ -430,16 +426,12 @@ func (ns *NetworkService) List(ctx context.Context, projectName string) ([]strin
 }
 
 // Remove removes networks for the project
-func (ns *NetworkService) Remove(ctx context.Context, projectName string, networkNames []string) error {
-	if len(networkNames) == 0 {
-		// Get all project networks
-		allNetworks, err := ns.List(ctx, projectName)
-		if err != nil {
-			return err
-		}
-		networkNames = allNetworks
+func (ns *NetworkService) Remove(ctx context.Context, projectName string) error {
+	// Get all project networks
+	networkNames, err := ns.List(ctx, projectName)
+	if err != nil {
+		return err
 	}
-
 	for _, networkName := range networkNames {
 		if err := ns.client.cli.NetworkRemove(ctx, networkName); err != nil {
 			ns.client.logger.Error("Failed to remove network", "network", networkName, "error", err)
@@ -474,16 +466,12 @@ func (is *ImageService) List(ctx context.Context, projectName string) ([]string,
 }
 
 // Remove removes images for the project
-func (is *ImageService) Remove(ctx context.Context, projectName string, imageNames []string) error {
-	if len(imageNames) == 0 {
-		// Get all project images
-		allImages, err := is.List(ctx, projectName)
-		if err != nil {
-			return err
-		}
-		imageNames = allImages
+func (is *ImageService) Remove(ctx context.Context, projectName string) error {
+	// Get all project images
+	imageNames, err := is.List(ctx, projectName)
+	if err != nil {
+		return err
 	}
-
 	for _, imageName := range imageNames {
 		if _, err := is.client.cli.ImageRemove(ctx, imageName, image.RemoveOptions{
 			Force: true,

@@ -211,7 +211,8 @@ func (m *Manager) ConnectToService(ctx context.Context, serviceName string, opti
 		} else {
 			cmd = append(cmd, "-u", "root")
 		}
-		cmd = append(cmd, "-p") // Prompt for password
+		// Prompt for password
+		cmd = append(cmd, "-p")
 		if options.Database != "" {
 			cmd = append(cmd, options.Database)
 		}
@@ -258,8 +259,8 @@ func (m *Manager) ScaleService(ctx context.Context, serviceName string, replicas
 
 	// For now, implement basic scaling by stopping and starting services
 	// In a full implementation, this would use docker-compose scale or docker service scale
+	// Scale to 0 means stop the service
 	if replicas == 0 {
-		// Scale to 0 means stop the service
 		stopOptions := StopOptions{
 			Timeout:       int(options.Timeout.Seconds()),
 			Remove:        true,
@@ -451,21 +452,21 @@ func (m *Manager) CleanupResources(ctx context.Context, options CleanupOptions) 
 
 	// Remove volumes if requested
 	if options.RemoveVolumes {
-		if err := m.docker.Volumes().Remove(ctx, projectName, []string{}); err != nil {
+		if err := m.docker.Volumes().Remove(ctx, projectName); err != nil {
 			m.logger.Error("Failed to remove volumes", "error", err)
 		}
 	}
 
 	// Remove images if requested
 	if options.RemoveImages {
-		if err := m.docker.Images().Remove(ctx, projectName, []string{}); err != nil {
+		if err := m.docker.Images().Remove(ctx, projectName); err != nil {
 			m.logger.Error("Failed to remove images", "error", err)
 		}
 	}
 
 	// Remove networks if requested
 	if options.RemoveNetworks {
-		if err := m.docker.Networks().Remove(ctx, projectName, []string{}); err != nil {
+		if err := m.docker.Networks().Remove(ctx, projectName); err != nil {
 			m.logger.Error("Failed to remove networks", "error", err)
 		}
 	}
@@ -680,7 +681,11 @@ func (m *Manager) isPortInUse(port int) bool {
 	if err != nil {
 		return false
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			m.logger.Warn("failed to close connection", "error", err)
+		}
+	}()
 	return true
 }
 

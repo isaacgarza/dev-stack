@@ -535,16 +535,14 @@ func (c *ConfigLoader) mergeServiceOverrides(base, override ServiceOverride) Ser
 // validateServiceOverride validates a service override configuration
 func (c *ConfigLoader) validateServiceOverride(serviceName string, override ServiceOverride) error {
 	// Validate environment variables
-	for key, value := range override.Environment {
+	for key := range override.Environment {
 		if key == "" {
 			return fmt.Errorf("empty environment variable key")
 		}
 		if strings.Contains(key, " ") {
 			return fmt.Errorf("environment variable key '%s' contains spaces", key)
 		}
-		if value == "" {
-			// Warning, not error - empty values might be intentional
-		}
+		// Warning, not error - empty values might be intentional
 	}
 
 	// Validate port mappings
@@ -584,10 +582,10 @@ func isValidProjectName(name string) bool {
 
 	// Check for valid characters (alphanumeric, hyphens, underscores)
 	for _, char := range name {
-		if !((char >= 'a' && char <= 'z') ||
-			(char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			char == '-' || char == '_') {
+		if (char < 'a' || char > 'z') &&
+			(char < 'A' || char > 'Z') &&
+			(char < '0' || char > '9') &&
+			char != '-' && char != '_' {
 			return false
 		}
 	}
