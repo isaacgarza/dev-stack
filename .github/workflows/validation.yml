@@ -108,9 +108,10 @@ jobs:
         run: |
           echo "🔍 Validating Hugo configuration..."
 
-          # Check if Hugo config exists
-          if [ ! -f "hugo.toml" ]; then
-            echo "❌ Hugo configuration file (hugo.toml) not found"
+          # Check if Hugo config exists (either location)
+          if [ ! -f "hugo.toml" ] && [ ! -f "config/_default/hugo.toml" ]; then
+            echo "❌ Hugo configuration file not found"
+            echo "Expected: hugo.toml or config/_default/hugo.toml"
             exit 1
           fi
 
@@ -129,11 +130,13 @@ jobs:
 
           # Check required content files
           REQUIRED_FILES=(
-            "content/_index.md"
-            "content/getting-started.md"
-            "content/usage.md"
-            "content/services.md"
-            "content/contributing.md"
+            "docs/_index.md"
+            "docs/setup.md"
+            "docs/usage.md"
+            "docs/services.md"
+            "docs/configuration.md"
+            "docs/contributing.md"
+            "docs/troubleshooting.md"
           )
 
           for file in "${REQUIRED_FILES[@]}"; do
@@ -144,27 +147,38 @@ jobs:
           done
 
           # Check CLI reference structure
-          if [ ! -d "content/cli-reference" ]; then
+          if [ ! -d "docs/cli-reference" ]; then
             echo "⚠️ CLI reference directory not found, will be created during build"
           fi
 
-          # Validate frontmatter in content files
+          # Validate frontmatter in main content files (only files that should be Hugo pages)
           echo "🔍 Checking frontmatter syntax..."
-          for file in content/*.md content/*/*.md; do
+          FRONTMATTER_FILES=(
+            "docs/_index.md"
+            "docs/setup.md"
+            "docs/usage.md"
+            "docs/services.md"
+            "docs/configuration.md"
+            "docs/contributing.md"
+            "docs/troubleshooting.md"
+            "docs/reference.md"
+          )
+
+          for file in "${FRONTMATTER_FILES[@]}"; do
             if [ -f "$file" ]; then
               # Check if file has frontmatter
               if ! head -n 1 "$file" | grep -q "^---$"; then
                 echo "❌ Missing frontmatter in: $file"
                 exit 1
               fi
-
-              # Basic frontmatter validation
-              if ! hugo list all --source . >/dev/null 2>&1; then
-                echo "❌ Invalid frontmatter detected in content files"
-                exit 1
-              fi
             fi
           done
+
+          # Basic frontmatter validation
+          if ! hugo list all --source . >/dev/null 2>&1; then
+            echo "❌ Invalid frontmatter detected in content files"
+            exit 1
+          fi
 
           echo "✅ Content structure is valid"
 
@@ -173,9 +187,9 @@ jobs:
           echo "🔍 Testing Hugo build..."
 
           # Create temporary CLI reference if it doesn't exist
-          if [ ! -f "content/cli-reference/index.md" ]; then
-            mkdir -p content/cli-reference
-            cat > content/cli-reference/index.md << 'EOF'
+          if [ ! -f "docs/cli-reference/index.md" ]; then
+            mkdir -p docs/cli-reference
+            cat > docs/cli-reference/index.md << 'EOF'
           ---
           title: "CLI Reference"
           description: "Complete command reference for dev-stack CLI"
@@ -210,13 +224,13 @@ jobs:
           echo "🔍 Validating Hugo internal links..."
 
           # Check for Hugo ref shortcodes that might be broken
-          if grep -r "{{< ref.*>}}" content/ 2>/dev/null; then
+          if grep -r "{{< ref.*>}}" docs/ 2>/dev/null; then
             echo "Found Hugo ref shortcodes, validating..."
 
             # Build site to test internal links
-            mkdir -p content/cli-reference
-            if [ ! -f "content/cli-reference/index.md" ]; then
-              cat > content/cli-reference/index.md << 'EOF'
+            mkdir -p docs/cli-reference
+            if [ ! -f "docs/cli-reference/index.md" ]; then
+              cat > docs/cli-reference/index.md << 'EOF'
           ---
           title: "CLI Reference"
           description: "Complete command reference for dev-stack CLI"

@@ -15,6 +15,7 @@ public/
 resources/
 .hugo_build.lock
 content/
+hugo_stats.json
 
 # Dependencies and node modules
 node_modules/
