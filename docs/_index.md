@@ -42,6 +42,7 @@ dev-stack up
 
 - **Project Templates**: Go, Node.js, Python, and full-stack setups
 - **Service Management**: Databases, message queues, monitoring tools
+- **Version Management**: Multi-version support with automatic switching
 - **Health Monitoring**: Built-in health checks and status monitoring
 - **Docker Integration**: Seamless container management
 
@@ -49,6 +50,7 @@ dev-stack up
 
 - **[Setup & Installation]({{< relref "setup" >}})**
 - **[Usage Guide]({{< relref "usage" >}})**
+- **[Version Management]({{< relref "version-management" >}})**
 - **[Services Guide]({{< relref "services" >}})**
 - **[Configuration]({{< relref "configuration" >}})**
 - **[CLI Reference]({{< relref "reference" >}})**
