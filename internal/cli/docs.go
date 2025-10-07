@@ -30,8 +30,8 @@ var docsCmd = &cobra.Command{
 	Long: `Generate documentation from YAML manifests.
 
 This command generates documentation files from the YAML manifests:
-- Commands reference from scripts/commands.yaml -> docs/reference.md
-- Services guide from services/services.yaml -> docs/services.md
+- Commands reference from scripts/commands.yaml -> docs-site/content/reference.md
+- Services guide from services/services.yaml -> docs-site/content/services.md
 
 The generated documentation replaces content between AUTO-GENERATED markers
 in existing files, or creates new files if they don't exist.
@@ -58,7 +58,7 @@ func init() {
 	docsCmd.Flags().BoolVar(&docsServicesOnly, "services-only", false, "Generate only services guide documentation")
 	docsCmd.Flags().BoolVar(&docsHugoSync, "hugo-sync", false, "Force Hugo sync (enabled by default)")
 	docsCmd.Flags().BoolVar(&docsNoHugoSync, "no-hugo-sync", false, "Disable Hugo content synchronization")
-	docsCmd.Flags().StringVar(&docsHugoDir, "hugo-dir", "content", "Hugo content directory path")
+	docsCmd.Flags().StringVar(&docsHugoDir, "hugo-dir", "docs-site/content", "Hugo content directory path")
 }
 
 func runDocsGeneration(cmd *cobra.Command, args []string) error {
@@ -191,6 +191,7 @@ func generateAllDocs(generator *docs.Generator, options *docs.GenerationOptions,
 		fmt.Printf("   • Command reference: %t\n", result.CommandsGenerated)
 		fmt.Printf("   • Services guide: %t\n", result.ServicesGenerated)
 		fmt.Printf("   • README synced: %t\n", result.ReadmeSynced)
+		fmt.Printf("   • Contributing synced: %t\n", result.ContributingSynced)
 		fmt.Printf("   • Files updated: %d\n", len(result.FilesUpdated))
 
 		if docsVerbose {
@@ -228,6 +229,7 @@ func generateAllDocs(generator *docs.Generator, options *docs.GenerationOptions,
 		fmt.Printf("   • Would generate command reference: %t\n", result.CommandsGenerated)
 		fmt.Printf("   • Would generate services guide: %t\n", result.ServicesGenerated)
 		fmt.Printf("   • Would sync README: %t\n", result.ReadmeSynced)
+		fmt.Printf("   • Would sync Contributing: %t\n", result.ContributingSynced)
 		fmt.Printf("   • Would update files: %d\n", len(result.FilesUpdated))
 
 		if hugoResult != nil {

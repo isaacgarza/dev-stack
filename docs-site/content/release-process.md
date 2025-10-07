@@ -33,7 +33,7 @@ Use conventional commits for all changes:
 git commit -m "feat: add service discovery integration"
 git commit -m "feat(auth): implement OAuth2 flow"
 
-# Bug fixes  
+# Bug fixes
 git commit -m "fix: resolve timeout issue in Docker startup"
 git commit -m "fix(cli): handle missing config file gracefully"
 
@@ -118,7 +118,7 @@ instead of ~/.dev-stack/. Run 'dev-stack migrate-config' to update."
 git commit -m "feat: add service health monitoring
 
 - Add health check endpoints for all services
-- Implement automatic restart on failure  
+- Implement automatic restart on failure
 - Add monitoring dashboard integration
 
 Closes #123"
@@ -200,7 +200,7 @@ To enable Scoop releases:
 
 1. Create a bucket repository: `isaacgarza/scoop-dev-stack`
 2. Enable in config: `package_managers.scoop.enabled: true`
-3. Add `SCOOP_TOKEN` secret to GitHub  
+3. Add `SCOOP_TOKEN` secret to GitHub
 4. Regenerate configs: `task generate-release-configs`
 
 ## Troubleshooting

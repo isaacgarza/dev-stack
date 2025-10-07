@@ -42,29 +42,27 @@ dev-stack up
 
 - **Project Templates**: Go, Node.js, Python, and full-stack setups
 - **Service Management**: Databases, message queues, monitoring tools
-- **Version Management**: Multi-version support with automatic switching
 - **Health Monitoring**: Built-in health checks and status monitoring
 - **Docker Integration**: Seamless container management
 
 ## Documentation
 
-- **[Setup & Installation]({{< relref "setup" >}})**
-- **[Usage Guide]({{< relref "usage" >}})**
-- **[Version Management]({{< relref "version-management" >}})**
-- **[Services Guide]({{< relref "services" >}})**
-- **[Configuration]({{< relref "configuration" >}})**
-- **[CLI Reference]({{< relref "reference" >}})**
-- **[Contributing]({{< relref "contributing" >}})**
+- **[Setup & Installation](docs-site/content/setup.md)**
+- **[Usage Guide](docs-site/content/usage.md)**
+- **[Services Guide](docs-site/content/services.md)**
+- **[Configuration](docs-site/content/configuration.md)**
+- **[CLI Reference](docs-site/content/reference.md)**
+- **[Contributing](docs-site/content/contributing.md)**
 
 ## Get Started
 
-1. **[Complete installation guide]({{< relref "setup" >}})**
-2. **[Learn basic usage]({{< relref "usage" >}})**
-3. **[Explore available services]({{< relref "services" >}})**
+1. **[Complete installation guide](docs-site/content/setup.md)**
+2. **[Learn basic usage](docs-site/content/usage.md)**
+3. **[Explore available services](docs-site/content/services.md)**
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide]({{< relref "contributing" >}}) for details.
+We welcome contributions! Please see our [Contributing Guide](docs-site/content/contributing.md) for details.
 
 ## License
 
@@ -72,11 +70,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [Documentation]({{< relref "/" >}})
+- 📖 [Documentation](docs-site/)
 - 🐛 [Issues](https://github.com/isaacgarza/dev-stack/issues)
 - 💬 [Discussions](https://github.com/isaacgarza/dev-stack/discussions)
 
 ---
 
-> **Built with ❤️ by the dev-stack team**  
+> **Built with ❤️ by the dev-stack team**
 > Making local development environments simple, consistent, and powerful.

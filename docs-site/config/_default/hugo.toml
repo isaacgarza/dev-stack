@@ -3,8 +3,8 @@ baseURL = "/"
 languageCode = "en-US"
 theme = "doks"
 
-# Content directory - use docs folder instead of content
-contentDir = "docs"
+# Content directory - use content folder
+contentDir = "content"
 
 # Site settings
 enableRobotsTXT = true

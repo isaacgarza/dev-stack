@@ -11,11 +11,11 @@ dev-stack
 *.ear
 
 # Documentation build artifacts (Hugo)
-public/
-resources/
-.hugo_build.lock
-content/
-hugo_stats.json
+docs-site/public/
+docs-site/resources/
+docs-site/.hugo_build.lock
+docs-site/node_modules/
+docs-site/hugo_stats.json
 
 # Dependencies and node modules
 node_modules/

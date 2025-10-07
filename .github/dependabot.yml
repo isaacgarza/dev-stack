@@ -64,7 +64,7 @@ updates:
 
   # npm dependencies
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/docs-site"
     schedule:
       interval: "weekly"
       day: "monday"

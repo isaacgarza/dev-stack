@@ -34,7 +34,7 @@ The workflows support the complete development lifecycle from code validation to
 
 ### ✅ Validation (`validation.yml`)
 
-**Triggers**: Pull Requests, Push to `main`/`develop`  
+**Triggers**: Pull Requests, Push to `main`/`develop`
 **Purpose**: Code quality and documentation validation
 
 **Checks:**

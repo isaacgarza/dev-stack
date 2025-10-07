@@ -39,12 +39,13 @@ type GenerationOptions struct {
 
 // GenerationResult represents the result of documentation generation
 type GenerationResult struct {
-	CommandsGenerated bool
-	ServicesGenerated bool
-	ReadmeSynced      bool
-	FilesUpdated      []string
-	Errors            []error
-	GeneratedAt       time.Time
+	CommandsGenerated  bool
+	ServicesGenerated  bool
+	ReadmeSynced       bool
+	ContributingSynced bool
+	FilesUpdated       []string
+	Errors             []error
+	GeneratedAt        time.Time
 }
 
 // DocumentSection represents a section in a markdown document
@@ -81,10 +82,10 @@ func DefaultGenerationOptions() *GenerationOptions {
 	return &GenerationOptions{
 		CommandsYAMLPath: "scripts/commands.yaml",
 		ServicesYAMLPath: "services/services.yaml",
-		ReferenceMDPath:  "docs/reference.md",
-		ServicesMDPath:   "docs/services.md",
-		HugoContentDir:   "content",
-		DocsSourceDir:    "docs",
+		ReferenceMDPath:  "docs-site/content/reference.md",
+		ServicesMDPath:   "docs-site/content/services.md",
+		HugoContentDir:   "docs-site/content",
+		DocsSourceDir:    "docs-site/content",
 		EnableHugoSync:   true,
 		Verbose:          false,
 		DryRun:           false,

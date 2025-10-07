@@ -6,10 +6,7 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "docs/**"
-      - "content/**"
-      - "hugo.toml"
-      - "themes/**"
+      - "docs-site/**"
       - "*.md"
       - ".commitlintrc.json"
       - ".release-please-config.json"
@@ -74,8 +71,8 @@ jobs:
 
       - name: Install documentation dependencies
         run: |
-          if [ -f package.json ]; then
-            npm ci
+          if [ -f docs-site/package.json ]; then
+            cd docs-site && npm ci
           else
             echo "No package.json found, skipping npm dependencies"
           fi
@@ -83,8 +80,8 @@ jobs:
       - name: Lint markdown files
         run: |
           echo "🔍 Linting markdown files..."
-          if [ -f package.json ] && npm list markdownlint-cli2 >/dev/null 2>&1; then
-            npm run lint:md || echo "⚠️ Markdown linting found issues"
+          if [ -f docs-site/package.json ]; then
+            cd docs-site && npm run lint:md || echo "⚠️ Markdown linting found issues"
           else
             echo "⚠️ Markdown linting not configured, skipping"
           fi
@@ -108,14 +105,15 @@ jobs:
         run: |
           echo "🔍 Validating Hugo configuration..."
 
-          # Check if Hugo config exists (either location)
-          if [ ! -f "hugo.toml" ] && [ ! -f "config/_default/hugo.toml" ]; then
+          # Check if Hugo config exists in docs-site
+          if [ ! -f "docs-site/config/_default/hugo.toml" ]; then
             echo "❌ Hugo configuration file not found"
-            echo "Expected: hugo.toml or config/_default/hugo.toml"
+            echo "Expected: docs-site/config/_default/hugo.toml"
             exit 1
           fi
 
           # Validate Hugo config syntax
+          cd docs-site
           if ! hugo config > /dev/null 2>&1; then
             echo "❌ Hugo configuration is invalid"
             hugo config
@@ -130,13 +128,13 @@ jobs:
 
           # Check required content files
           REQUIRED_FILES=(
-            "docs/_index.md"
-            "docs/setup.md"
-            "docs/usage.md"
-            "docs/services.md"
-            "docs/configuration.md"
-            "docs/contributing.md"
-            "docs/troubleshooting.md"
+            "docs-site/content/_index.md"
+            "docs-site/content/setup.md"
+            "docs-site/content/usage.md"
+            "docs-site/content/services.md"
+            "docs-site/content/configuration.md"
+            "docs-site/content/contributing.md"
+            "docs-site/content/troubleshooting.md"
           )
 
           for file in "${REQUIRED_FILES[@]}"; do
@@ -147,21 +145,21 @@ jobs:
           done
 
           # Check CLI reference structure
-          if [ ! -d "docs/cli-reference" ]; then
+          if [ ! -d "docs-site/content/cli-reference" ]; then
             echo "⚠️ CLI reference directory not found, will be created during build"
           fi
 
           # Validate frontmatter in main content files (only files that should be Hugo pages)
           echo "🔍 Checking frontmatter syntax..."
           FRONTMATTER_FILES=(
-            "docs/_index.md"
-            "docs/setup.md"
-            "docs/usage.md"
-            "docs/services.md"
-            "docs/configuration.md"
-            "docs/contributing.md"
-            "docs/troubleshooting.md"
-            "docs/reference.md"
+            "docs-site/content/_index.md"
+            "docs-site/content/setup.md"
+            "docs-site/content/usage.md"
+            "docs-site/content/services.md"
+            "docs-site/content/configuration.md"
+            "docs-site/content/contributing.md"
+            "docs-site/content/troubleshooting.md"
+            "docs-site/content/reference.md"
           )
 
           for file in "${FRONTMATTER_FILES[@]}"; do
@@ -175,6 +173,7 @@ jobs:
           done
 
           # Basic frontmatter validation
+          cd docs-site
           if ! hugo list all --source . >/dev/null 2>&1; then
             echo "❌ Invalid frontmatter detected in content files"
             exit 1
@@ -187,9 +186,9 @@ jobs:
           echo "🔍 Testing Hugo build..."
 
           # Create temporary CLI reference if it doesn't exist
-          if [ ! -f "docs/cli-reference/index.md" ]; then
-            mkdir -p docs/cli-reference
-            cat > docs/cli-reference/index.md << 'EOF'
+          if [ ! -f "docs-site/content/cli-reference/index.md" ]; then
+            mkdir -p docs-site/content/cli-reference
+            cat > docs-site/content/cli-reference/index.md << 'EOF'
           ---
           title: "CLI Reference"
           description: "Complete command reference for dev-stack CLI"
@@ -203,6 +202,7 @@ jobs:
           fi
 
           # Test Hugo build without deploying
+          cd docs-site
           if hugo --gc --minify --destination public-test; then
             echo "✅ Hugo build test successful"
 
@@ -224,13 +224,13 @@ jobs:
           echo "🔍 Validating Hugo internal links..."
 
           # Check for Hugo ref shortcodes that might be broken
-          if grep -r "{{< ref.*>}}" docs/ 2>/dev/null; then
+          if grep -r "{{< ref.*>}}" docs-site/content/ 2>/dev/null; then
             echo "Found Hugo ref shortcodes, validating..."
 
             # Build site to test internal links
-            mkdir -p docs/cli-reference
-            if [ ! -f "docs/cli-reference/index.md" ]; then
-              cat > docs/cli-reference/index.md << 'EOF'
+            mkdir -p docs-site/content/cli-reference
+            if [ ! -f "docs-site/content/cli-reference/index.md" ]; then
+              cat > docs-site/content/cli-reference/index.md << 'EOF'
           ---
           title: "CLI Reference"
           description: "Complete command reference for dev-stack CLI"
@@ -244,6 +244,7 @@ jobs:
             fi
 
             # Test build with link validation
+            cd docs-site
             if hugo --gc --destination public-link-test 2>&1 | tee hugo-build.log; then
               # Check for REF_NOT_FOUND errors
               if grep -q "REF_NOT_FOUND" hugo-build.log; then

@@ -19,7 +19,7 @@ The dev-stack project implements multiple layers of security scanning and monito
 The security workflow (`.github/workflows/security.yml`) runs automatically on:
 
 - Push to `main` or `develop` branches
-- Pull requests to `main` or `develop` branches  
+- Pull requests to `main` or `develop` branches
 - Weekly schedule (Sundays at 2 AM UTC)
 
 ### Scan Types
