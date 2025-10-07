@@ -9,9 +9,9 @@ weight: 50
 toc: true
 ---
 
-# Welcome to dev-stack
+# dev-stack
 
-A powerful CLI tool built in Go that helps you quickly set up, manage, and tear down development environments with consistent configurations across your team.
+A powerful development stack management tool built in Go for streamlined local development automation
 
 ## What is dev-stack?
 
@@ -59,3 +59,22 @@ dev-stack up
 1. **[Complete installation guide]({{< relref "setup" >}})**
 2. **[Learn basic usage]({{< relref "usage" >}})**
 3. **[Explore available services]({{< relref "services" >}})**
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide]({{< relref "contributing" >}}) for details.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- 📖 [Documentation]({{< relref "/" >}})
+- 🐛 [Issues](https://github.com/isaacgarza/dev-stack/issues)
+- 💬 [Discussions](https://github.com/isaacgarza/dev-stack/discussions)
+
+---
+
+> **Built with ❤️ by the dev-stack team**  
+> Making local development environments simple, consistent, and powerful.

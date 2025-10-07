@@ -190,6 +190,7 @@ func generateAllDocs(generator *docs.Generator, options *docs.GenerationOptions,
 		fmt.Println("✅ Documentation generation completed successfully")
 		fmt.Printf("   • Command reference: %t\n", result.CommandsGenerated)
 		fmt.Printf("   • Services guide: %t\n", result.ServicesGenerated)
+		fmt.Printf("   • README synced: %t\n", result.ReadmeSynced)
 		fmt.Printf("   • Files updated: %d\n", len(result.FilesUpdated))
 
 		if docsVerbose {
@@ -226,6 +227,7 @@ func generateAllDocs(generator *docs.Generator, options *docs.GenerationOptions,
 		fmt.Println("✅ Documentation generation validated (dry-run)")
 		fmt.Printf("   • Would generate command reference: %t\n", result.CommandsGenerated)
 		fmt.Printf("   • Would generate services guide: %t\n", result.ServicesGenerated)
+		fmt.Printf("   • Would sync README: %t\n", result.ReadmeSynced)
 		fmt.Printf("   • Would update files: %d\n", len(result.FilesUpdated))
 
 		if hugoResult != nil {

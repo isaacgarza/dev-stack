@@ -41,6 +41,7 @@ type GenerationOptions struct {
 type GenerationResult struct {
 	CommandsGenerated bool
 	ServicesGenerated bool
+	ReadmeSynced      bool
 	FilesUpdated      []string
 	Errors            []error
 	GeneratedAt       time.Time

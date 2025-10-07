@@ -124,11 +124,18 @@ tasks:
       - go vet ./...
 
   docs:
+    desc: Generate documentation only (no Hugo sync)
+    deps: [build]
+    cmds:
+      - echo "Generating documentation..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --no-hugo-sync --verbose
+
+  docs-hugo:
     desc: Generate documentation and sync to Hugo content directory
     deps: [build]
     cmds:
       - echo "Generating documentation and syncing to Hugo..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --hugo-dir docs
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
 
   docs-dry-run:
     desc: Preview documentation changes without writing files
@@ -139,14 +146,14 @@ tasks:
 
   hugo-build:
     desc: Build Hugo documentation site
-    deps: [docs]
+    deps: [docs-hugo]
     cmds:
       - echo "Building Hugo documentation site..."
       - npm run docs:build
 
   hugo-serve:
     desc: Serve Hugo documentation site locally
-    deps: [docs]
+    deps: [docs-hugo]
     cmds:
       - echo "Starting Hugo development server..."
       - npm run docs:dev
@@ -301,7 +308,8 @@ tasks:
       - echo "  vet            - Run Go vet"
       - echo ""
       - echo "Documentation:"
-      - echo "  docs           - Generate docs and sync to Hugo content"
+      - echo "  docs           - Generate documentation only (no Hugo sync)"
+      - echo "  docs-hugo      - Generate docs and sync to Hugo content"
       - echo "  docs-dry-run   - Preview documentation changes (dry-run)"
       - echo "  hugo-build     - Build Hugo documentation site"
       - echo "  hugo-serve     - Serve Hugo site locally for development"

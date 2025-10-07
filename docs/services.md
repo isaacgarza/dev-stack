@@ -88,26 +88,99 @@ The following sections detail all available services organized by category:
 
 This section is auto-generated from `services/services.yaml`.
 
-## redis
+## jaeger
 
-In-memory data store for caching and session storage.
+Distributed tracing system for observability.
+
+**Options:**
+- `ui_port`
+- `otlp_grpc_port`
+- `otlp_http_port`
+- `memory_limit`
+- `sampling_strategy`
+
+**Examples:**
+- `curl http://localhost:16686`
+- `spring.sleuth.enabled=true`
+
+**Usage Notes:** Use Jaeger to trace requests across microservices. Access the UI at the configured port.
+
+**Links:**
+- [https://www.jaegertracing.io/docs/](https://www.jaegertracing.io/docs/)
+- [https://docs.spring.io/spring-cloud-sleuth/docs/current/reference/html/](https://docs.spring.io/spring-cloud-sleuth/docs/current/reference/html/)
+
+## kafka
+
+Event streaming platform for messaging and pub/sub.
 
 **Options:**
 - `port`
-- `password`
+- `ui_port`
+- `zookeeper_port`
 - `memory_limit`
-- `persistence`
-- `config`
+- `auto_create_topics`
+- `num_partitions`
+- `replication_factor`
+- `topics`
 
 **Examples:**
-- `redis-cli -h localhost -p 6379 ping`
-- `spring.data.redis.host=localhost`
+- `kafka-topics --bootstrap-server localhost:9092 --list`
+- `spring.kafka.bootstrap-servers=localhost:9092`
 
-**Usage Notes:** Use Redis for caching, session storage, and pub/sub. Set a password for production-like security.
+**Usage Notes:** Use Kafka for event-driven architectures. Configure topics and partitions as needed.
 
 **Links:**
-- [https://redis.io/documentation](https://redis.io/documentation)
-- [https://spring.io/projects/spring-data-redis](https://spring.io/projects/spring-data-redis)
+- [https://kafka.apache.org/documentation/](https://kafka.apache.org/documentation/)
+- [https://docs.spring.io/spring-kafka/docs/current/reference/html/](https://docs.spring.io/spring-kafka/docs/current/reference/html/)
+
+## localstack
+
+AWS cloud services emulator for local development.
+
+**Options:**
+- `port`
+- `dashboard_port`
+- `memory_limit`
+- `services`
+- `sqs_queues`
+- `sns_topics`
+- `dynamodb_tables`
+
+**Examples:**
+- `aws --endpoint-url=http://localhost:4566 sqs list-queues`
+- `spring.cloud.aws.sqs.endpoint=http://localhost:4566`
+
+**Usage Notes:** Emulates AWS APIs for local testing. Enable only the services you need for faster startup.
+
+**Links:**
+- [https://docs.localstack.cloud/](https://docs.localstack.cloud/)
+- [https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-endpoints.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-endpoints.html)
+
+## mysql
+
+Relational database (MySQL) as an alternative to PostgreSQL.
+
+**Options:**
+- `port`
+- `database`
+- `username`
+- `password`
+- `root_password`
+- `memory_limit`
+- `character_set`
+- `collation`
+- `sql_mode`
+- `innodb_buffer_pool_size`
+
+**Examples:**
+- `mysql -h localhost -u root -e "SELECT VERSION();"`
+- `spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev`
+
+**Usage Notes:** Use MySQL for compatibility with legacy systems or when required by application stack.
+
+**Links:**
+- [https://dev.mysql.com/doc/](https://dev.mysql.com/doc/)
+- [https://spring.io/projects/spring-data-jpa](https://spring.io/projects/spring-data-jpa)
 
 ## postgres
 
@@ -136,53 +209,6 @@ Relational database (PostgreSQL) for structured data.
 - [https://www.postgresql.org/docs/](https://www.postgresql.org/docs/)
 - [https://spring.io/projects/spring-data-jpa](https://spring.io/projects/spring-data-jpa)
 
-## mysql
-
-Relational database (MySQL) as an alternative to PostgreSQL.
-
-**Options:**
-- `port`
-- `database`
-- `username`
-- `password`
-- `root_password`
-- `memory_limit`
-- `character_set`
-- `collation`
-- `sql_mode`
-- `innodb_buffer_pool_size`
-
-**Examples:**
-- `mysql -h localhost -u root -e "SELECT VERSION();"`
-- `spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev`
-
-**Usage Notes:** Use MySQL for compatibility with legacy systems or when required by application stack.
-
-**Links:**
-- [https://dev.mysql.com/doc/](https://dev.mysql.com/doc/)
-- [https://spring.io/projects/spring-data-jpa](https://spring.io/projects/spring-data-jpa)
-
-## jaeger
-
-Distributed tracing system for observability.
-
-**Options:**
-- `ui_port`
-- `otlp_grpc_port`
-- `otlp_http_port`
-- `memory_limit`
-- `sampling_strategy`
-
-**Examples:**
-- `curl http://localhost:16686`
-- `spring.sleuth.enabled=true`
-
-**Usage Notes:** Use Jaeger to trace requests across microservices. Access the UI at the configured port.
-
-**Links:**
-- [https://www.jaegertracing.io/docs/](https://www.jaegertracing.io/docs/)
-- [https://docs.spring.io/spring-cloud-sleuth/docs/current/reference/html/](https://docs.spring.io/spring-cloud-sleuth/docs/current/reference/html/)
-
 ## prometheus
 
 Metrics collection and monitoring system.
@@ -204,52 +230,26 @@ Metrics collection and monitoring system.
 - [https://prometheus.io/docs/](https://prometheus.io/docs/)
 - [https://micrometer.io/docs/registry/prometheus](https://micrometer.io/docs/registry/prometheus)
 
-## localstack
+## redis
 
-AWS cloud services emulator for local development.
-
-**Options:**
-- `port`
-- `dashboard_port`
-- `memory_limit`
-- `services`
-- `sqs_queues`
-- `sns_topics`
-- `dynamodb_tables`
-
-**Examples:**
-- `aws --endpoint-url=http://localhost:4566 sqs list-queues`
-- `spring.cloud.aws.sqs.endpoint=http://localhost:4566`
-
-**Usage Notes:** Emulates AWS APIs for local testing. Enable only the services you need for faster startup.
-
-**Links:**
-- [https://docs.localstack.cloud/](https://docs.localstack.cloud/)
-- [https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-endpoints.html](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-endpoints.html)
-
-## kafka
-
-Event streaming platform for messaging and pub/sub.
+In-memory data store for caching and session storage.
 
 **Options:**
 - `port`
-- `ui_port`
-- `zookeeper_port`
+- `password`
 - `memory_limit`
-- `auto_create_topics`
-- `num_partitions`
-- `replication_factor`
-- `topics`
+- `persistence`
+- `config`
 
 **Examples:**
-- `kafka-topics --bootstrap-server localhost:9092 --list`
-- `spring.kafka.bootstrap-servers=localhost:9092`
+- `redis-cli -h localhost -p 6379 ping`
+- `spring.data.redis.host=localhost`
 
-**Usage Notes:** Use Kafka for event-driven architectures. Configure topics and partitions as needed.
+**Usage Notes:** Use Redis for caching, session storage, and pub/sub. Set a password for production-like security.
 
 **Links:**
-- [https://kafka.apache.org/documentation/](https://kafka.apache.org/documentation/)
-- [https://docs.spring.io/spring-kafka/docs/current/reference/html/](https://docs.spring.io/spring-kafka/docs/current/reference/html/)
+- [https://redis.io/documentation](https://redis.io/documentation)
+- [https://spring.io/projects/spring-data-redis](https://spring.io/projects/spring-data-redis)
 <!-- AUTO-GENERATED-END -->
 
 ## 🎯 What's Next?
