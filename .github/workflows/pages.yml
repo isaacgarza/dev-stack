@@ -4,12 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "docs/**"
-      - "themes/**"
-      - "config/_default/hugo.toml"
-      - "layouts/**"
-      - "static/**"
-      - "assets/**"
+      - "docs-site/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -29,6 +24,7 @@ concurrency:
 defaults:
   run:
     shell: bash
+    working-directory: docs-site
 
 jobs:
   # Build job
@@ -53,28 +49,36 @@ jobs:
         uses: ./.github/actions/setup-go-version
 
       - name: Verify content structure
+        working-directory: .
         run: |
           echo "🔍 Verifying content structure..."
-          if [ ! -d "docs" ]; then
-            echo "❌ Docs directory not found"
+          if [ ! -d "docs-site" ]; then
+            echo "❌ docs-site directory not found"
             exit 1
           fi
 
-          if [ ! -f "docs/_index.md" ]; then
+          if [ ! -d "docs-site/content" ]; then
+            echo "❌ Content directory not found"
+            exit 1
+          fi
+
+          if [ ! -f "docs-site/content/_index.md" ]; then
             echo "❌ Homepage content not found"
             exit 1
           fi
 
           echo "✅ Content structure verified"
-          echo "📁 Docs files:"
-          ls -la docs/
+          echo "📁 Content files:"
+          ls -la docs-site/content/
 
       - name: Install Task
+        working-directory: .
         run: |
           curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build CLI for documentation
+        working-directory: .
         run: |
           if task build 2>/dev/null; then
             echo "✅ CLI built successfully"
@@ -83,8 +87,9 @@ jobs:
           fi
 
       - name: Generate CLI documentation
+        working-directory: .
         run: |
-          mkdir -p docs/cli-reference
+          mkdir -p docs-site/content/cli-reference
 
           # Try to generate real CLI docs first
           if [ -f "./build/dev-stack" ] && ./build/dev-stack --help > /tmp/cli-help.txt 2>&1; then
@@ -101,7 +106,7 @@ jobs:
               echo '```'
               cat /tmp/cli-help.txt
               echo '```'
-            } > docs/cli-reference/index.md
+            } > docs-site/content/cli-reference/index.md
             echo "✅ CLI documentation generated from binary"
           else
             echo "🔍 Creating CLI reference placeholder..."
@@ -117,7 +122,7 @@ jobs:
               echo 'CLI help generation is not yet implemented.'
               echo ''
               echo 'Check back soon or [contribute to the project]({{< ref "/contributing" >}}) to help add this feature!'
-            } > docs/cli-reference/index.md
+            } > docs-site/content/cli-reference/index.md
             echo "✅ CLI reference placeholder created"
           fi
 
@@ -146,10 +151,10 @@ jobs:
           hugo config | grep baseURL || echo "Base URL: (default)"
           echo ""
           echo "🔍 Theme check:"
-          if [ -d "themes/PaperMod" ]; then
-            echo "✅ PaperMod theme found"
+          if [ -d "themes/doks" ]; then
+            echo "✅ Doks theme found"
           else
-            echo "❌ PaperMod theme not found"
+            echo "❌ Doks theme not found"
             echo "Available themes:"
             ls -la themes/ || echo "No themes directory"
           fi
@@ -175,7 +180,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./public
+          path: ./docs-site/public
 
   # Deployment job
   deploy:

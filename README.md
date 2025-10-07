@@ -36,22 +36,22 @@ dev-stack up
 
 ## Documentation
 
-- **[Setup & Installation](docs/setup.md)**
-- **[Usage Guide](docs/usage.md)**
-- **[Services Guide](docs/services.md)**
-- **[Configuration](docs/configuration.md)**
-- **[CLI Reference](docs/reference.md)**
-- **[Contributing](CONTRIBUTING.md)**
+- **[Setup & Installation](docs-site/content/setup.md)**
+- **[Usage Guide](docs-site/content/usage.md)**
+- **[Services Guide](docs-site/content/services.md)**
+- **[Configuration](docs-site/content/configuration.md)**
+- **[CLI Reference](docs-site/content/reference.md)**
+- **[Contributing](docs-site/content/contributing.md)**
 
 ## Get Started
 
-1. **[Complete installation guide](docs/setup.md)**
-2. **[Learn basic usage](docs/usage.md)**
-3. **[Explore available services](docs/services.md)**
+1. **[Complete installation guide](docs-site/content/setup.md)**
+2. **[Learn basic usage](docs-site/content/usage.md)**
+3. **[Explore available services](docs-site/content/services.md)**
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](docs-site/content/contributing.md) for details.
 
 ## License
 
@@ -59,7 +59,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [Documentation](docs/)
+- 📖 [Documentation](docs-site/)
 - 🐛 [Issues](https://github.com/isaacgarza/dev-stack/issues)
 - 💬 [Discussions](https://github.com/isaacgarza/dev-stack/discussions)
 

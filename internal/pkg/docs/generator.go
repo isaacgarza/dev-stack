@@ -223,6 +223,11 @@ func (g *Generator) GenerateAll() (*GenerationResult, error) {
 		result.Errors = append(result.Errors, err)
 	}
 
+	// Sync CONTRIBUTING.md to docs-site/content/contributing.md (part of docs generation, not Hugo sync)
+	if err := g.syncContributingToDocsContributing(result); err != nil {
+		result.Errors = append(result.Errors, err)
+	}
+
 	return result, nil
 }
 
@@ -542,6 +547,91 @@ toc: true
 
 	// Write the result
 	return os.WriteFile(indexPath, []byte(result), 0644)
+}
+
+// syncContributingToDocsContributing syncs CONTRIBUTING.md to docs-site/content/contributing.md if CONTRIBUTING is newer
+func (g *Generator) syncContributingToDocsContributing(result *GenerationResult) error {
+	contributingPath := "CONTRIBUTING.md"
+	docsContributingPath := filepath.Join(g.options.DocsSourceDir, "contributing.md")
+
+	// Check if CONTRIBUTING is newer than docs/contributing.md
+	needsUpdate, err := g.needsUpdate(contributingPath, docsContributingPath)
+	if err != nil {
+		return fmt.Errorf("failed to check if CONTRIBUTING needs sync: %w", err)
+	}
+	if !needsUpdate {
+		if g.options.Verbose {
+			fmt.Printf("Skipping CONTRIBUTING sync (up to date)\n")
+		}
+		return nil
+	}
+
+	if g.options.DryRun {
+		result.FilesUpdated = append(result.FilesUpdated, docsContributingPath)
+		result.ContributingSynced = true
+		if g.options.Verbose {
+			fmt.Printf("Would sync CONTRIBUTING.md -> %s\n", docsContributingPath)
+		}
+		return nil
+	}
+
+	// Transform CONTRIBUTING to docs contributing format
+	if err := g.transformContributingToDocsContributing(contributingPath, docsContributingPath); err != nil {
+		return fmt.Errorf("failed to sync CONTRIBUTING: %w", err)
+	}
+
+	result.FilesUpdated = append(result.FilesUpdated, docsContributingPath)
+	result.ContributingSynced = true
+	if g.options.Verbose {
+		fmt.Printf("Synced CONTRIBUTING.md -> %s\n", docsContributingPath)
+	}
+
+	return nil
+}
+
+// transformContributingToDocsContributing converts CONTRIBUTING.md to docs-site/content/contributing.md with Hugo frontmatter
+func (g *Generator) transformContributingToDocsContributing(contributingPath, docsContributingPath string) error {
+	// Read CONTRIBUTING content
+	content, err := os.ReadFile(contributingPath)
+	if err != nil {
+		return fmt.Errorf("failed to read CONTRIBUTING.md: %w", err)
+	}
+
+	// Add Hugo frontmatter
+	frontmatter := `---
+title: "Contributing"
+description: "How to contribute to dev-stack development and documentation"
+lead: "Join the dev-stack community and help make it better for everyone"
+date: 2024-01-01T00:00:00+00:00
+lastmod: 2024-01-01T00:00:00+00:00
+draft: false
+weight: 60
+toc: true
+---
+
+`
+
+	// Convert markdown links to Hugo relref format
+	processed := string(content)
+	processed = strings.ReplaceAll(processed, "](docs-site/content/setup.md)", "]({{< relref \"setup\" >}})")
+	processed = strings.ReplaceAll(processed, "](docs-site/content/usage.md)", "]({{< relref \"usage\" >}})")
+	processed = strings.ReplaceAll(processed, "](docs-site/content/services.md)", "]({{< relref \"services\" >}})")
+	processed = strings.ReplaceAll(processed, "](docs-site/content/configuration.md)", "]({{< relref \"configuration\" >}})")
+	processed = strings.ReplaceAll(processed, "](docs-site/content/reference.md)", "]({{< relref \"reference\" >}})")
+	processed = strings.ReplaceAll(processed, "](docs-site/content/troubleshooting.md)", "]({{< relref \"troubleshooting\" >}})")
+	processed = strings.ReplaceAll(processed, "](docs-site/)", "]({{< relref \"/\" >}})")
+
+	// Combine frontmatter with processed content
+	result := frontmatter + processed
+
+	// Ensure directory exists
+	dir := filepath.Dir(docsContributingPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", dir, err)
+	}
+
+	// Write the result
+	return os.WriteFile(docsContributingPath, []byte(result), 0644)
 }
 
 // GenerateAllWithHugo generates all documentation and optionally syncs to Hugo

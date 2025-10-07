@@ -4,9 +4,9 @@
   "description": "Documentation tooling for dev-stack project (Hugo-based)",
   "private": true,
   "scripts": {
-    "lint:md": "markdownlint --config .markdownlint.json README.md docs/",
-    "lint:links": "markdown-link-check README.md docs/**/*.md",
-    "lint:md:fix": "markdownlint --config .markdownlint.json --fix README.md docs/",
+    "lint:md": "markdownlint --config .markdownlint.json README.md content/",
+    "lint:links": "markdown-link-check README.md content/**/*.md",
+    "lint:md:fix": "markdownlint --config .markdownlint.json --fix README.md content/",
     "docs:build": "hugo --minify --gc",
     "docs:serve": "hugo server --disableFastRender --noHTTPCache",
     "docs:dev": "hugo server --buildDrafts --buildFuture --disableFastRender",

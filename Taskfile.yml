@@ -132,53 +132,54 @@ tasks:
     deps: [build]
     cmds:
       - echo "Generating documentation and syncing to Hugo..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --hugo-dir docs-site/content
 
   docs-dry-run:
     desc: Preview documentation changes without writing files
     deps: [build]
     cmds:
       - echo "Previewing documentation changes..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --dry-run --hugo-dir docs
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --dry-run --hugo-dir docs-site/content
 
   hugo-build:
     desc: Build Hugo documentation site
     deps: [docs-hugo]
     cmds:
       - echo "Building Hugo documentation site..."
-      - npm run docs:build
+      - cd docs-site && npm run docs:build
 
   hugo-serve:
     desc: Serve Hugo documentation site locally
     deps: [docs-hugo]
     cmds:
       - echo "Starting Hugo development server..."
-      - npm run docs:dev
+      - cd docs-site && npm run docs:dev
 
   hugo-clean:
     desc: Clean Hugo build artifacts
     cmds:
       - echo "Cleaning Hugo build artifacts..."
-      - npm run docs:clean
-      - rm -rf public/
+      - cd docs-site && npm run docs:clean
+      - rm -rf docs-site/public/
 
   validate-docs:
     desc: Validate Hugo documentation configuration and content
     cmds:
       - echo "Validating Hugo documentation..."
       - |
-        if [ ! -f "hugo.toml" ]; then
-          echo "❌ Hugo configuration file (hugo.toml) not found"
+        cd docs-site
+        if [ ! -f "config/_default/hugo.toml" ]; then
+          echo "❌ Hugo configuration file (config/_default/hugo.toml) not found"
           exit 1
         fi
       - echo "🔍 Checking Hugo configuration..."
-      - hugo config > /dev/null 2>&1 || (echo "❌ Hugo configuration is invalid" && exit 1)
+      - cd docs-site && hugo config > /dev/null 2>&1 || (echo "❌ Hugo configuration is invalid" && exit 1)
       - echo "✅ Hugo configuration is valid"
       - echo "🔍 Testing Hugo build..."
-      - mkdir -p content/cli-reference
+      - mkdir -p docs-site/content/cli-reference
       - |
-        if [ ! -f "content/cli-reference/index.md" ]; then
-          cat > content/cli-reference/index.md << 'EOF'
+        if [ ! -f "docs-site/content/cli-reference/index.md" ]; then
+          cat > docs-site/content/cli-reference/index.md << 'EOF'
         ---
         title: "CLI Reference"
         description: "Complete command reference for dev-stack CLI"
@@ -190,9 +191,9 @@ tasks:
         Placeholder for validation.
         EOF
         fi
-      - hugo --gc --minify --destination public-test > /dev/null 2>&1 || (echo "❌ Hugo build failed" && exit 1)
+      - cd docs-site && hugo --gc --minify --destination public-test > /dev/null 2>&1 || (echo "❌ Hugo build failed" && exit 1)
       - echo "✅ Hugo build successful"
-      - rm -rf public-test
+      - rm -rf docs-site/public-test
       - echo "✅ Documentation validation complete"
 
   dev:
