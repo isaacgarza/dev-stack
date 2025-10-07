@@ -3,6 +3,7 @@ package docs
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -428,13 +429,21 @@ func (g *Generator) copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() {
+		if err := srcFile.Close(); err != nil {
+			log.Printf("Error closing source file: %v", err)
+		}
+	}()
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer func() {
+		if err := dstFile.Close(); err != nil {
+			log.Printf("Error closing destination file: %v", err)
+		}
+	}()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
@@ -548,7 +557,7 @@ func (g *Generator) GenerateAllWithHugo() (*GenerationResult, *HugoSyncResult, e
 	if g.options.EnableHugoSync {
 		hugoResult, err = g.SyncToHugo()
 		if err != nil {
-			return docResult, hugoResult, fmt.Errorf("Hugo sync failed: %w", err)
+			return docResult, hugoResult, fmt.Errorf("hugo sync failed: %w", err)
 		}
 	}
 

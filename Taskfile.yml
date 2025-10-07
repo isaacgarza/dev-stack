@@ -79,7 +79,8 @@ tasks:
         fi
 
   lint:
-    desc: Run Go linting with basic tools
+    desc: Run Go linting (vet + fmt check + golangci-lint)
+    deps: [deps]
     cmds:
       - echo "Running Go linting with basic tools..."
       - echo "Running go vet..."
@@ -92,10 +93,6 @@ tasks:
           exit 1
         fi
       - echo "✅ Basic linting passed"
-
-  lint-advanced:
-    desc: Run advanced linting with golangci-lint (optional)
-    cmds:
       - echo "Running advanced Go linting..."
       - |
         if ! command -v golangci-lint >/dev/null 2>&1; then
@@ -302,8 +299,7 @@ tasks:
       - echo "Testing & Quality:"
       - echo "  test           - Run all tests"
       - echo "  test-integration - Run integration tests"
-      - echo "  lint           - Run basic Go linting (vet + fmt check)"
-      - echo "  lint-advanced  - Run advanced linting with golangci-lint (optional)"
+      - echo "  lint           - Run basic Go linting (vet + fmt check + golangci-lint)"
       - echo "  fmt            - Format Go code"
       - echo "  vet            - Run Go vet"
       - echo ""
