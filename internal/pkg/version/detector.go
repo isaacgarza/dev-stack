@@ -181,8 +181,38 @@ func (d *VersionDetector) parseVersionConstraintFromFile(versionFile *VersionFil
 			fmt.Sprintf("invalid version constraint in file: %s", versionFile.Version), err)
 	}
 
-	// TODO: Handle additional constraints if needed
-	// For now, we'll just use the primary version constraint
+	// Handle additional constraints from minimum/maximum version fields if present
+	if versionFile.MinimumVersion != "" {
+		minConstraint, err := ParseVersionConstraint(">=" + versionFile.MinimumVersion)
+		if err != nil {
+			return nil, NewVersionError(ErrProjectConfig,
+				fmt.Sprintf("invalid minimum version constraint: %s", versionFile.MinimumVersion), err)
+		}
+		// Combine constraints - both must be satisfied
+		if constraint.Operator == "==" {
+			// If we have an exact version, verify it meets the minimum
+			if !minConstraint.IsSatisfiedBy(constraint.Version) {
+				return nil, NewVersionError(ErrProjectConfig,
+					fmt.Sprintf("version %s does not meet minimum requirement %s", constraint.Version, versionFile.MinimumVersion), nil)
+			}
+		}
+	}
+
+	if versionFile.MaximumVersion != "" {
+		maxConstraint, err := ParseVersionConstraint("<=" + versionFile.MaximumVersion)
+		if err != nil {
+			return nil, NewVersionError(ErrProjectConfig,
+				fmt.Sprintf("invalid maximum version constraint: %s", versionFile.MaximumVersion), err)
+		}
+		// Combine constraints - both must be satisfied
+		if constraint.Operator == "==" {
+			// If we have an exact version, verify it meets the maximum
+			if !maxConstraint.IsSatisfiedBy(constraint.Version) {
+				return nil, NewVersionError(ErrProjectConfig,
+					fmt.Sprintf("version %s exceeds maximum requirement %s", constraint.Version, versionFile.MaximumVersion), nil)
+			}
+		}
+	}
 
 	return constraint, nil
 }

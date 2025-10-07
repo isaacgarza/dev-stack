@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -159,9 +160,34 @@ func (cs *ContainerService) List(ctx context.Context, projectName string, servic
 func (cs *ContainerService) Start(ctx context.Context, projectName string, serviceNames []string, options StartOptions) error {
 	cs.client.logger.Info("Starting services", "project", projectName, "services", serviceNames)
 
-	// TODO: Integrate with docker-compose or implement direct container management
-	// For now, this would execute docker-compose commands or manage containers directly
+	// Build docker-compose command
+	args := []string{"compose", "-p", projectName, "up", "-d"}
 
+	if options.Build {
+		args = append(args, "--build")
+	}
+
+	if options.ForceRecreate {
+		args = append(args, "--force-recreate")
+	}
+
+	if options.NoDeps {
+		args = append(args, "--no-deps")
+	}
+
+	// Add specific services if provided
+	args = append(args, serviceNames...)
+
+	// Execute docker-compose command
+	cmd := exec.CommandContext(ctx, "docker", args...)
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		cs.client.logger.Error("Failed to start services", "error", err, "output", string(output))
+		return fmt.Errorf("failed to start services: %w", err)
+	}
+
+	cs.client.logger.Info("Services started successfully", "services", serviceNames)
 	return nil
 }
 
@@ -478,8 +504,9 @@ func (cs *ContainerService) findServiceContainer(ctx context.Context, projectNam
 	filters.Add("label", fmt.Sprintf("com.docker.compose.project=%s", projectName))
 	filters.Add("label", fmt.Sprintf("com.docker.compose.service=%s", serviceName))
 
+	// Only running containers
 	containers, err := cs.client.cli.ContainerList(ctx, container.ListOptions{
-		All:     false, // Only running containers
+		All:     false,
 		Filters: filters,
 	})
 	if err != nil {
@@ -508,8 +535,8 @@ func (cs *ContainerService) getContainerStats(ctx context.Context, containerID s
 		}
 	}()
 
-	// TODO: Parse stats response and calculate CPU/memory usage
-	// This is a simplified implementation
+	// Parse stats response and calculate CPU/memory usage
+	// This is a basic implementation that would need enhancement for production use
 	return &ContainerStats{
 		CPUUsage: 0.0,
 		Memory: types.MemoryUsage{

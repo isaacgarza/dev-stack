@@ -1,34 +1,915 @@
 ###############################################################
-#  dev-stack: commands.yaml                                    #
+#  dev-stack: Commands Configuration                          #
 #-------------------------------------------------------------#
-#  Single source of truth for dev-stack CLI commands & flags.  #
+#  Single source of truth for dev-stack CLI commands,         #
+#  flags, examples, and documentation.                        #
 #                                                             #
-#  - Used by Go docs command to auto-generate                 #
-#    docs/reference.md                                         #
-#  - Update this file when adding or changing commands         #
-#    in the Go CLI                                            #
-#  - Do NOT manually edit docs/reference.md (auto-generated)   #
+#  This file is used to:                                      #
+#  - Generate CLI command structures automatically            #
+#  - Create comprehensive documentation                       #
+#  - Validate CLI implementation consistency                  #
+#  - Enable rich help text and shell completion               #
+#  - Provide command discovery and suggestions                #
 ###############################################################
 
-dev-stack:
-  - backup
-  - cleanup
-  - connect
-  - docs
-  - doctor
-  - down
-  - exec
-  - init
-  - logs
-  - monitor
-  - restore
-  - scale
-  - status
-  - up
-  - version
+metadata:
+  version: "2.0"
+  generated_at: "2024-01-01T00:00:00Z"
+  cli_version: "0.1.0"
+  description: "Development stack management tool"
 
-global-flags:
-  - --config
-  - --help
-  - --verbose
-  - --version
+global:
+  flags:
+    config:
+      short: "c"
+      type: "string"
+      description: "Config file (default: $HOME/.dev-stack.yaml)"
+      default: ""
+    verbose:
+      short: "v"
+      type: "bool"
+      description: "Enable verbose output"
+      default: false
+    help:
+      short: "h"
+      type: "bool"
+      description: "Show help information"
+      default: false
+    version:
+      type: "bool"
+      description: "Show version information"
+      default: false
+
+categories:
+  lifecycle:
+    name: "Lifecycle Management"
+    description: "Commands for starting, stopping, and managing service lifecycles"
+    icon: "🚀"
+    commands: ["up", "down", "restart", "scale"]
+
+  monitoring:
+    name: "Monitoring & Observability"
+    description: "Commands for monitoring services and viewing logs"
+    icon: "📊"
+    commands: ["status", "logs", "monitor", "doctor"]
+
+  data:
+    name: "Data Management"
+    description: "Commands for backup, restore, and data operations"
+    icon: "💾"
+    commands: ["backup", "restore", "exec", "connect"]
+
+  maintenance:
+    name: "Maintenance & Cleanup"
+    description: "Commands for cleanup, initialization, and maintenance"
+    icon: "🧹"
+    commands: ["cleanup", "init", "version"]
+
+  development:
+    name: "Development Tools"
+    description: "Commands for development workflow and documentation"
+    icon: "🛠️"
+    commands: ["docs", "generate", "validate"]
+
+commands:
+  up:
+    category: "lifecycle"
+    description: "Start development stack services"
+    long_description: |
+      Start one or more services in the development stack. Services are started
+      with their configured dependencies and health checks. Use profiles to start
+      predefined service combinations.
+    usage: "up [service...]"
+    aliases: ["start", "run"]
+    examples:
+      - command: "dev-stack up"
+        description: "Start all configured services"
+      - command: "dev-stack up postgres redis"
+        description: "Start specific services"
+      - command: "dev-stack up --profile web"
+        description: "Start services using the 'web' profile"
+      - command: "dev-stack up --detach --build"
+        description: "Build images and start services in background"
+    flags:
+      detach:
+        short: "d"
+        type: "bool"
+        description: "Run services in background (detached mode)"
+        default: false
+      build:
+        short: "b"
+        type: "bool"
+        description: "Build images before starting services"
+        default: false
+      profile:
+        short: "p"
+        type: "string"
+        description: "Use a specific service profile"
+        default: ""
+        completion: "profiles"
+      force-recreate:
+        type: "bool"
+        description: "Recreate containers even if config hasn't changed"
+        default: false
+      no-deps:
+        type: "bool"
+        description: "Don't start linked services"
+        default: false
+      timeout:
+        short: "t"
+        type: "duration"
+        description: "Timeout for service startup"
+        default: "30s"
+    related_commands: ["down", "restart", "status"]
+    tips:
+      - "Use --profile to quickly start predefined service combinations"
+      - "Add --build if you've made changes to Dockerfiles"
+      - "Use --detach to free up your terminal while services run"
+
+  down:
+    category: "lifecycle"
+    description: "Stop development stack services"
+    long_description: |
+      Stop one or more services in the development stack. By default, containers
+      are removed but volumes are preserved. Use --volumes to also remove data.
+    usage: "down [service...]"
+    aliases: ["stop"]
+    examples:
+      - command: "dev-stack down"
+        description: "Stop all running services"
+      - command: "dev-stack down postgres redis"
+        description: "Stop specific services"
+      - command: "dev-stack down --volumes"
+        description: "Stop services and remove volumes"
+      - command: "dev-stack down --timeout 5"
+        description: "Stop services with custom timeout"
+    flags:
+      volumes:
+        short: "v"
+        type: "bool"
+        description: "Remove named volumes and anonymous volumes"
+        default: false
+      remove-orphans:
+        type: "bool"
+        description: "Remove containers for services not in compose file"
+        default: false
+      timeout:
+        short: "t"
+        type: "int"
+        description: "Shutdown timeout in seconds"
+        default: 10
+      remove-images:
+        type: "string"
+        description: "Remove images (all|local)"
+        default: ""
+        options: ["all", "local"]
+    related_commands: ["up", "cleanup", "status"]
+    tips:
+      - "Use --volumes carefully as it will delete all data"
+      - "Add --remove-orphans to clean up unused containers"
+
+  restart:
+    category: "lifecycle"
+    description: "Restart development stack services"
+    long_description: |
+      Restart one or more services. This is equivalent to running down followed
+      by up, but more efficient for quick restarts.
+    usage: "restart [service...]"
+    examples:
+      - command: "dev-stack restart"
+        description: "Restart all services"
+      - command: "dev-stack restart postgres"
+        description: "Restart a specific service"
+      - command: "dev-stack restart --timeout 5"
+        description: "Restart with custom timeout"
+    flags:
+      timeout:
+        short: "t"
+        type: "int"
+        description: "Restart timeout in seconds"
+        default: 10
+      no-deps:
+        type: "bool"
+        description: "Don't restart linked services"
+        default: false
+    related_commands: ["up", "down", "status"]
+
+  status:
+    category: "monitoring"
+    description: "Show status of development stack services"
+    long_description: |
+      Display comprehensive status information for services including running
+      state, health checks, resource usage, and port mappings. Supports multiple
+      output formats and real-time monitoring.
+    usage: "status [service...]"
+    aliases: ["ps", "ls"]
+    examples:
+      - command: "dev-stack status"
+        description: "Show status of all services"
+      - command: "dev-stack status postgres redis"
+        description: "Show status of specific services"
+      - command: "dev-stack status --format json"
+        description: "Output status in JSON format"
+      - command: "dev-stack status --watch"
+        description: "Watch for status changes in real-time"
+      - command: "dev-stack status --filter running"
+        description: "Show only running services"
+    flags:
+      format:
+        short: "f"
+        type: "string"
+        description: "Output format (table|json|yaml)"
+        default: "table"
+        options: ["table", "json", "yaml"]
+      watch:
+        short: "w"
+        type: "bool"
+        description: "Watch for status changes"
+        default: false
+      quiet:
+        short: "q"
+        type: "bool"
+        description: "Only show service names and basic status"
+        default: false
+      filter:
+        type: "string"
+        description: "Filter services by status"
+        options: ["running", "stopped", "starting", "unhealthy"]
+      no-trunc:
+        type: "bool"
+        description: "Don't truncate output"
+        default: false
+    related_commands: ["logs", "monitor", "doctor"]
+    tips:
+      - "Use --watch to monitor services in real-time"
+      - "Try --format json for programmatic access"
+      - "Use --filter to focus on specific service states"
+
+  logs:
+    category: "monitoring"
+    description: "View logs from services"
+    long_description: |
+      View and follow logs from one or more services. Supports filtering,
+      timestamps, and real-time following. Logs from multiple services are
+      color-coded for easy identification.
+    usage: "logs [service...]"
+    examples:
+      - command: "dev-stack logs"
+        description: "Show logs from all services"
+      - command: "dev-stack logs postgres redis"
+        description: "Show logs from specific services"
+      - command: "dev-stack logs --follow postgres"
+        description: "Follow logs from postgres in real-time"
+      - command: "dev-stack logs --tail 100 --since 1h"
+        description: "Show last 100 lines from the past hour"
+    flags:
+      follow:
+        short: "f"
+        type: "bool"
+        description: "Follow log output in real-time"
+        default: false
+      tail:
+        short: "t"
+        type: "string"
+        description: "Number of lines to show from end of logs"
+        default: "all"
+      since:
+        type: "string"
+        description: "Show logs since timestamp or relative time"
+        default: ""
+      timestamps:
+        type: "bool"
+        description: "Show timestamps in log output"
+        default: false
+      no-color:
+        type: "bool"
+        description: "Disable colored output"
+        default: false
+      no-prefix:
+        type: "bool"
+        description: "Don't show service name prefix"
+        default: false
+    related_commands: ["status", "monitor"]
+    tips:
+      - "Use --follow to see logs in real-time"
+      - "Combine --tail and --since for targeted log viewing"
+      - "Use --timestamps to correlate events across services"
+
+  monitor:
+    category: "monitoring"
+    description: "Real-time monitoring dashboard for services"
+    long_description: |
+      Launch an interactive monitoring dashboard showing real-time metrics,
+      logs, and status for all services. Provides a unified view of your
+      development stack health.
+    usage: "monitor [service...]"
+    examples:
+      - command: "dev-stack monitor"
+        description: "Monitor all services"
+      - command: "dev-stack monitor postgres redis"
+        description: "Monitor specific services"
+      - command: "dev-stack monitor --refresh 5"
+        description: "Monitor with custom refresh interval"
+    flags:
+      refresh:
+        short: "r"
+        type: "int"
+        description: "Refresh interval in seconds"
+        default: 2
+      no-logs:
+        type: "bool"
+        description: "Don't show log streams"
+        default: false
+      compact:
+        type: "bool"
+        description: "Use compact display mode"
+        default: false
+    related_commands: ["status", "logs", "doctor"]
+
+  doctor:
+    category: "monitoring"
+    description: "Diagnose and troubleshoot stack health"
+    long_description: |
+      Run comprehensive health checks on your development stack. Identifies
+      common issues, provides troubleshooting suggestions, and validates
+      service configurations.
+    usage: "doctor [service...]"
+    examples:
+      - command: "dev-stack doctor"
+        description: "Run health checks on all services"
+      - command: "dev-stack doctor postgres"
+        description: "Diagnose a specific service"
+      - command: "dev-stack doctor --fix"
+        description: "Attempt to fix detected issues"
+    flags:
+      fix:
+        type: "bool"
+        description: "Attempt to automatically fix issues"
+        default: false
+      verbose:
+        short: "v"
+        type: "bool"
+        description: "Show detailed diagnostic information"
+        default: false
+      format:
+        short: "f"
+        type: "string"
+        description: "Output format (table|json)"
+        default: "table"
+        options: ["table", "json"]
+    related_commands: ["status", "logs"]
+    tips:
+      - "Run doctor when services aren't behaving as expected"
+      - "Use --fix to attempt automatic resolution of common issues"
+
+  exec:
+    category: "data"
+    description: "Execute commands in running service containers"
+    long_description: |
+      Execute commands inside running service containers. Useful for database
+      operations, debugging, and maintenance tasks. Supports interactive and
+      non-interactive modes.
+    usage: "exec <service> <command> [args...]"
+    examples:
+      - command: "dev-stack exec postgres psql -U postgres"
+        description: "Connect to PostgreSQL with psql"
+      - command: "dev-stack exec redis redis-cli"
+        description: "Connect to Redis CLI"
+      - command: "dev-stack exec postgres bash"
+        description: "Open bash shell in postgres container"
+    flags:
+      user:
+        short: "u"
+        type: "string"
+        description: "Username to execute command as"
+        default: ""
+      workdir:
+        short: "w"
+        type: "string"
+        description: "Working directory for command"
+        default: ""
+      interactive:
+        short: "i"
+        type: "bool"
+        description: "Keep STDIN open (interactive mode)"
+        default: true
+      tty:
+        short: "t"
+        type: "bool"
+        description: "Allocate a pseudo-TTY"
+        default: true
+      detach:
+        short: "d"
+        type: "bool"
+        description: "Run command in background"
+        default: false
+      env:
+        short: "e"
+        type: "stringArray"
+        description: "Set environment variables"
+        default: []
+    related_commands: ["connect", "logs"]
+    tips:
+      - "Use for database maintenance and debugging"
+      - "Combine with --user to run as specific user"
+
+  connect:
+    category: "data"
+    description: "Quick connect to service databases and interfaces"
+    long_description: |
+      Quickly connect to service databases and management interfaces using
+      appropriate client tools. Automatically configures connection parameters
+      based on service configuration.
+    usage: "connect <service>"
+    examples:
+      - command: "dev-stack connect postgres"
+        description: "Connect to PostgreSQL database"
+      - command: "dev-stack connect redis"
+        description: "Connect to Redis CLI"
+      - command: "dev-stack connect mysql"
+        description: "Connect to MySQL database"
+    flags:
+      database:
+        short: "d"
+        type: "string"
+        description: "Database name to connect to"
+        default: ""
+      user:
+        short: "u"
+        type: "string"
+        description: "Username for connection"
+        default: ""
+      host:
+        short: "h"
+        type: "string"
+        description: "Host to connect to"
+        default: "localhost"
+      port:
+        short: "p"
+        type: "int"
+        description: "Port to connect to"
+        default: 0
+      read-only:
+        type: "bool"
+        description: "Connect in read-only mode"
+        default: false
+    related_commands: ["exec", "status"]
+    tips:
+      - "Automatically uses correct client tools for each service"
+      - "Use --read-only for safe data exploration"
+
+  backup:
+    category: "data"
+    description: "Backup service data and configurations"
+    long_description: |
+      Create backups of service data, configurations, and state. Supports
+      multiple backup formats and compression. Backups include metadata
+      for easy restoration.
+    usage: "backup [service...]"
+    examples:
+      - command: "dev-stack backup"
+        description: "Backup all services"
+      - command: "dev-stack backup postgres redis"
+        description: "Backup specific services"
+      - command: "dev-stack backup --output ./backups --compress"
+        description: "Backup with compression to custom directory"
+    flags:
+      output:
+        short: "o"
+        type: "string"
+        description: "Output directory for backups"
+        default: "./backups"
+      compress:
+        short: "c"
+        type: "bool"
+        description: "Compress backup files"
+        default: false
+      format:
+        short: "f"
+        type: "string"
+        description: "Backup format (native|sql|json)"
+        default: "native"
+        options: ["native", "sql", "json"]
+      include-config:
+        type: "bool"
+        description: "Include service configurations"
+        default: true
+      exclude-logs:
+        type: "bool"
+        description: "Exclude log files from backup"
+        default: false
+    related_commands: ["restore", "cleanup"]
+
+  restore:
+    category: "data"
+    description: "Restore service data from backups"
+    long_description: |
+      Restore service data and configurations from previously created backups.
+      Supports multiple restore strategies and validation of backup integrity.
+    usage: "restore <service> <backup-path>"
+    examples:
+      - command: "dev-stack restore postgres ./backups/postgres-20240101.sql"
+        description: "Restore PostgreSQL from SQL backup"
+      - command: "dev-stack restore redis ./backups/redis-20240101.rdb"
+        description: "Restore Redis from RDB backup"
+      - command: "dev-stack restore --clean postgres backup.sql"
+        description: "Clean database before restore"
+    flags:
+      clean:
+        type: "bool"
+        description: "Clean existing data before restore"
+        default: false
+      create-db:
+        type: "bool"
+        description: "Create database if it doesn't exist"
+        default: true
+      single-transaction:
+        type: "bool"
+        description: "Perform restore in single transaction"
+        default: false
+      no-owner:
+        type: "bool"
+        description: "Skip ownership commands"
+        default: false
+      validate:
+        type: "bool"
+        description: "Validate backup before restore"
+        default: true
+    related_commands: ["backup", "cleanup"]
+
+  cleanup:
+    category: "maintenance"
+    description: "Clean up unused resources and data"
+    long_description: |
+      Clean up unused Docker resources, temporary files, and orphaned data
+      created by dev-stack services. Helps reclaim disk space and maintain
+      a clean development environment.
+    usage: "cleanup [options]"
+    examples:
+      - command: "dev-stack cleanup"
+        description: "Interactive cleanup with confirmations"
+      - command: "dev-stack cleanup --all --force"
+        description: "Clean up everything without prompts"
+      - command: "dev-stack cleanup --dry-run"
+        description: "Preview what would be cleaned up"
+    flags:
+      all:
+        short: "a"
+        type: "bool"
+        description: "Clean up all resources (containers, volumes, images)"
+        default: false
+      volumes:
+        short: "v"
+        type: "bool"
+        description: "Remove unused volumes"
+        default: false
+      images:
+        short: "i"
+        type: "bool"
+        description: "Remove unused images"
+        default: false
+      networks:
+        short: "n"
+        type: "bool"
+        description: "Remove unused networks"
+        default: false
+      force:
+        short: "f"
+        type: "bool"
+        description: "Don't prompt for confirmation"
+        default: false
+      dry-run:
+        type: "bool"
+        description: "Show what would be cleaned without doing it"
+        default: false
+    related_commands: ["down", "doctor"]
+    tips:
+      - "Use --dry-run first to see what will be removed"
+      - "Be careful with --volumes as it removes all data"
+
+  scale:
+    category: "lifecycle"
+    description: "Scale services up or down"
+    long_description: |
+      Scale the number of running instances for one or more services.
+      Useful for load testing and development scenarios requiring multiple
+      service instances.
+    usage: "scale <service=replicas>..."
+    examples:
+      - command: "dev-stack scale postgres=2"
+        description: "Scale postgres to 2 instances"
+      - command: "dev-stack scale redis=3 postgres=1"
+        description: "Scale multiple services"
+      - command: "dev-stack scale --timeout 60 postgres=2"
+        description: "Scale with custom timeout"
+    flags:
+      timeout:
+        short: "t"
+        type: "int"
+        description: "Timeout for scaling operation"
+        default: 30
+      no-recreate:
+        type: "bool"
+        description: "Don't recreate existing containers"
+        default: false
+    related_commands: ["up", "down", "status"]
+
+  init:
+    category: "maintenance"
+    description: "Initialize a new dev-stack project"
+    long_description: |
+      Initialize a new dev-stack project in the current directory. Creates
+      configuration files, directory structure, and optional service
+      configurations based on project type.
+    usage: "init [project-type]"
+    examples:
+      - command: "dev-stack init"
+        description: "Interactive project initialization"
+      - command: "dev-stack init web"
+        description: "Initialize with web development template"
+      - command: "dev-stack init --name myproject microservices"
+        description: "Initialize microservices project with custom name"
+    flags:
+      name:
+        short: "n"
+        type: "string"
+        description: "Project name"
+        default: ""
+      template:
+        short: "t"
+        type: "string"
+        description: "Project template to use"
+        default: "basic"
+        completion: "templates"
+      force:
+        short: "f"
+        type: "bool"
+        description: "Overwrite existing files"
+        default: false
+      minimal:
+        type: "bool"
+        description: "Create minimal configuration"
+        default: false
+    related_commands: ["docs", "validate"]
+
+  docs:
+    category: "development"
+    description: "Generate and manage documentation"
+    long_description: |
+      Generate documentation from YAML manifests and manage documentation
+      files. Supports multiple output formats and automatic synchronization
+      with documentation websites.
+    usage: "docs [subcommand]"
+    examples:
+      - command: "dev-stack docs"
+        description: "Generate all documentation"
+      - command: "dev-stack docs --commands-only"
+        description: "Generate only command reference"
+      - command: "dev-stack docs --dry-run"
+        description: "Preview documentation changes"
+    flags:
+      commands-only:
+        type: "bool"
+        description: "Generate only command reference"
+        default: false
+      services-only:
+        type: "bool"
+        description: "Generate only services documentation"
+        default: false
+      hugo-sync:
+        type: "bool"
+        description: "Sync to Hugo site"
+        default: true
+      no-hugo-sync:
+        type: "bool"
+        description: "Skip Hugo synchronization"
+        default: false
+      dry-run:
+        type: "bool"
+        description: "Preview changes without writing files"
+        default: false
+      format:
+        short: "f"
+        type: "string"
+        description: "Output format (markdown|html|json)"
+        default: "markdown"
+        options: ["markdown", "html", "json"]
+    related_commands: ["init", "validate"]
+
+  validate:
+    category: "development"
+    description: "Validate configurations and manifests"
+    long_description: |
+      Validate dev-stack configurations, service definitions, and YAML
+      manifests. Checks for syntax errors, missing dependencies, and
+      configuration inconsistencies.
+    usage: "validate [file...]"
+    examples:
+      - command: "dev-stack validate"
+        description: "Validate all configuration files"
+      - command: "dev-stack validate dev-stack-config.yaml"
+        description: "Validate specific configuration file"
+      - command: "dev-stack validate --strict"
+        description: "Use strict validation rules"
+    flags:
+      strict:
+        short: "s"
+        type: "bool"
+        description: "Use strict validation rules"
+        default: false
+      format:
+        short: "f"
+        type: "string"
+        description: "Output format (table|json)"
+        default: "table"
+        options: ["table", "json"]
+      fix:
+        type: "bool"
+        description: "Attempt to fix validation errors"
+        default: false
+    related_commands: ["doctor", "docs"]
+
+  version:
+    category: "maintenance"
+    description: "Show version information"
+    long_description: |
+      Display version information for dev-stack CLI, Docker, and managed
+      services. Includes build information and dependency versions.
+    usage: "version"
+    examples:
+      - command: "dev-stack version"
+        description: "Show basic version information"
+      - command: "dev-stack version --full"
+        description: "Show detailed version and build info"
+      - command: "dev-stack version --check-updates"
+        description: "Check for available updates"
+    flags:
+      full:
+        short: "f"
+        type: "bool"
+        description: "Show detailed version information"
+        default: false
+      check-updates:
+        type: "bool"
+        description: "Check for available updates"
+        default: false
+      format:
+        type: "string"
+        description: "Output format (table|json|yaml)"
+        default: "table"
+        options: ["table", "json", "yaml"]
+    related_commands: ["doctor"]
+
+  generate:
+    category: "development"
+    description: "Generate configuration files and templates"
+    long_description: |
+      Generate various configuration files, service definitions, and project
+      templates. Supports custom templates and configuration inheritance.
+    usage: "generate <type> [options]"
+    examples:
+      - command: "dev-stack generate config"
+        description: "Generate base configuration file"
+      - command: "dev-stack generate service postgres"
+        description: "Generate PostgreSQL service configuration"
+      - command: "dev-stack generate compose --services postgres,redis"
+        description: "Generate docker-compose.yml for specific services"
+    flags:
+      output:
+        short: "o"
+        type: "string"
+        description: "Output file or directory"
+        default: ""
+      template:
+        short: "t"
+        type: "string"
+        description: "Template to use"
+        default: "default"
+      services:
+        short: "s"
+        type: "string"
+        description: "Comma-separated list of services"
+        default: ""
+      overwrite:
+        type: "bool"
+        description: "Overwrite existing files"
+        default: false
+    related_commands: ["init", "validate"]
+
+# Workflow definitions for common task sequences
+workflows:
+  quick-start:
+    name: "Quick Start"
+    description: "Get started with a basic development stack"
+    steps:
+      - command: "init"
+        description: "Initialize project"
+      - command: "up postgres redis"
+        description: "Start database services"
+      - command: "status"
+        description: "Check service status"
+
+  full-stack:
+    name: "Full Stack Development"
+    description: "Complete development environment setup"
+    steps:
+      - command: "init web"
+        description: "Initialize web project"
+      - command: "up --profile web"
+        description: "Start web development services"
+      - command: "monitor"
+        description: "Monitor all services"
+
+  cleanup-reset:
+    name: "Clean Reset"
+    description: "Complete cleanup and fresh start"
+    steps:
+      - command: "down --volumes"
+        description: "Stop services and remove data"
+      - command: "cleanup --all"
+        description: "Clean up all resources"
+      - command: "up"
+        description: "Start fresh services"
+
+# Service profiles for common combinations
+profiles:
+  web:
+    name: "Web Development"
+    description: "Services for web application development"
+    services: ["postgres", "redis", "jaeger"]
+
+  api:
+    name: "API Development"
+    description: "Services for API development and testing"
+    services: ["postgres", "redis", "prometheus"]
+
+  microservices:
+    name: "Microservices"
+    description: "Full microservices development stack"
+    services: ["postgres", "redis", "kafka", "jaeger", "prometheus"]
+
+  data:
+    name: "Data Engineering"
+    description: "Services for data processing and analytics"
+    services: ["postgres", "redis", "kafka", "localstack"]
+
+  minimal:
+    name: "Minimal Stack"
+    description: "Minimal services for basic development"
+    services: ["postgres"]
+
+# Help and documentation sections
+help:
+  getting_started: |
+    ## Getting Started with dev-stack
+
+    1. Initialize a new project:
+       dev-stack init
+
+    2. Start your development services:
+       dev-stack up
+
+    3. Check service status:
+       dev-stack status
+
+    4. View logs:
+       dev-stack logs --follow
+
+    For more help, visit: https://dev-stack.dev/docs
+
+  common_tasks: |
+    ## Common Tasks
+
+    **Start services for web development:**
+    dev-stack up --profile web
+
+    **Connect to database:**
+    dev-stack connect postgres
+
+    **View real-time logs:**
+    dev-stack logs --follow
+
+    **Backup your data:**
+    dev-stack backup
+
+    **Clean up resources:**
+    dev-stack cleanup --dry-run
+
+  troubleshooting: |
+    ## Troubleshooting
+
+    **Services won't start:**
+    - Run: dev-stack doctor
+    - Check: dev-stack logs <service>
+
+    **Port conflicts:**
+    - Use: dev-stack status
+    - Modify port mappings in config
+
+    **Out of disk space:**
+    - Run: dev-stack cleanup --dry-run
+    - Then: dev-stack cleanup --all
+
+    **Performance issues:**
+    - Check: dev-stack monitor
+    - Scale services: dev-stack scale <service>=<count>
