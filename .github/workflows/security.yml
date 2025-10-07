@@ -6,8 +6,7 @@ on:
   pull_request:
     branches: [main, develop]
   schedule:
-    # Run security scans weekly on Sundays at 2 AM UTC
-    - cron: "0 2 * * 0"
+    - cron: "0 2 * * 0"  # Weekly on Sundays at 2 AM UTC
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +17,6 @@ permissions:
   security-events: write
 
 jobs:
-  # Single consolidated security job for easy required status checking
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -28,13 +26,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
+      - name: Load configuration
+        id: config
+        uses: ./.github/actions/load-config
 
-      - name: Download dependencies
-        run: go mod download
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
 
-      # Go security scanner
       - name: Install security tools
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
@@ -44,9 +42,11 @@ jobs:
       - name: Run Gosec security scanner
         run: |
           echo "🔍 Running Gosec security scan..."
-          if [ -f ".gosec.conf" ]; then
-            gosec -conf .gosec.conf -fmt json -out gosec-results.json ./... || true
-            gosec -conf .gosec.conf -fmt text ./... | tee gosec-output.txt || true
+          GOSEC_CONFIG=".gosec.conf"
+          
+          if [ -f "$GOSEC_CONFIG" ]; then
+            gosec -conf "$GOSEC_CONFIG" -fmt json -out gosec-results.json ./... || true
+            gosec -conf "$GOSEC_CONFIG" -fmt text ./... | tee gosec-output.txt || true
           else
             gosec -fmt json -out gosec-results.json ./... || true
             gosec -fmt text ./... | tee gosec-output.txt || true
@@ -57,34 +57,22 @@ jobs:
           echo "🔍 Running vulnerability scan..."
           govulncheck ./... | tee vuln-output.txt || echo "Vulnerability scan completed"
 
-      # Secrets scanning
       - name: Determine scan strategy
         id: scan-strategy
         run: |
           echo "🔍 Determining TruffleHog scan strategy..."
-          echo "Event: ${{ github.event_name }}"
-          echo "Before: ${{ github.event.before }}"
-          echo "SHA: ${{ github.sha }}"
-
+          
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "📋 Using diff scan for pull request"
             echo "strategy=diff" >> $GITHUB_OUTPUT
             echo "base=${{ github.event.pull_request.base.sha }}" >> $GITHUB_OUTPUT
             echo "head=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
-            echo "Base SHA: ${{ github.event.pull_request.base.sha }}"
-            echo "Head SHA: ${{ github.event.pull_request.head.sha }}"
           elif [ "${{ github.event_name }}" = "schedule" ]; then
-            echo "📋 Using filesystem scan for scheduled run"
             echo "strategy=filesystem" >> $GITHUB_OUTPUT
           elif [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            echo "📋 Using diff scan for push with before commit"
             echo "strategy=diff" >> $GITHUB_OUTPUT
             echo "base=${{ github.event.before }}" >> $GITHUB_OUTPUT
             echo "head=${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "Base SHA: ${{ github.event.before }}"
-            echo "Head SHA: ${{ github.sha }}"
           else
-            echo "📋 Using filesystem scan (fallback)"
             echo "strategy=filesystem" >> $GITHUB_OUTPUT
           fi
 
@@ -105,37 +93,22 @@ jobs:
           extra_args: --only-verified --fail
         continue-on-error: true
 
-      - name: TruffleHog scan summary
-        if: always()
-        run: |
-          echo "🔍 TruffleHog scan completed"
-          echo "Strategy used: ${{ steps.scan-strategy.outputs.strategy }}"
-          if [ "${{ steps.scan-strategy.outputs.strategy }}" = "diff" ]; then
-            echo "Scanned commits: ${{ steps.scan-strategy.outputs.base }}..${{ steps.scan-strategy.outputs.head }}"
-          else
-            echo "Scanned entire filesystem"
-          fi
-
-      # Basic security checks
-      - name: Check for security issues
+      - name: Basic security checks
         run: |
           echo "🔍 Running basic security checks..."
 
           # Check for hardcoded secrets patterns
-          echo "Checking for hardcoded secrets..."
           if grep -r -E "(password|pwd|secret|key|token)\s*[:=]\s*['\"][^'\"]{8,}" --include="*.go" . ; then
             echo "⚠️ Potential hardcoded secrets found"
             exit 1
           fi
 
           # Check for unsafe functions
-          echo "Checking for unsafe function usage..."
           if grep -r "unsafe\." --include="*.go" . ; then
             echo "⚠️ Unsafe package usage found - review carefully"
           fi
 
           # Check for dangerous imports
-          echo "Checking imports..."
           go list -json ./... | jq -r '.Imports[]?' | sort | uniq | grep -E "(os/exec)" && echo "⚠️ Found potentially dangerous imports" || echo "✅ Standard imports look safe"
 
       - name: Security summary
@@ -144,7 +117,6 @@ jobs:
           echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Gosec results
           if [ -f gosec-output.txt ]; then
             if grep -q "Issues : 0" gosec-output.txt; then
               echo "✅ **Gosec**: No security issues found" >> $GITHUB_STEP_SUMMARY
@@ -154,7 +126,6 @@ jobs:
             fi
           fi
 
-          # Vulnerability results
           if [ -f vuln-output.txt ]; then
             if grep -q "No vulnerabilities found" vuln-output.txt; then
               echo "✅ **Vulnerabilities**: No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
@@ -163,11 +134,7 @@ jobs:
             fi
           fi
 
-          # TruffleHog results
           echo "🔍 **TruffleHog**: Secrets scan completed using ${{ steps.scan-strategy.outputs.strategy }} strategy" >> $GITHUB_STEP_SUMMARY
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📋 Check individual steps above for detailed results." >> $GITHUB_STEP_SUMMARY
 
       - name: Upload security results
         if: always()
@@ -180,7 +147,6 @@ jobs:
             vuln-output.txt
           retention-days: 30
 
-  # Advanced security scanning (optional job)
   advanced-security:
     name: Advanced Security
     runs-on: ubuntu-latest
@@ -191,8 +157,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/init@v3
@@ -204,9 +170,3 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
-
-      - name: Run additional security tools
-        run: |
-          echo "Running additional security analysis..."
-          # Add any additional security tools here
-          echo "Advanced security scan completed"

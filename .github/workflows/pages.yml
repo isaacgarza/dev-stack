@@ -8,77 +8,67 @@ on:
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
-# Default to bash
 defaults:
   run:
     shell: bash
-    working-directory: docs-site
 
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
-    env:
-      HUGO_VERSION: 0.151.0
     steps:
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: "0.151.0"
-          extended: true
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
+      - name: Load configuration
+        id: config
+        uses: ./.github/actions/load-config
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ steps.config.outputs.hugo-version }}
+          extended: true
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          install-task: "true"
 
       - name: Verify content structure
-        working-directory: .
         run: |
           echo "🔍 Verifying content structure..."
-          if [ ! -d "docs-site" ]; then
-            echo "❌ docs-site directory not found"
+          DOCS_DIR="${{ steps.config.outputs.docs-dir }}"
+          
+          if [ ! -d "$DOCS_DIR" ]; then
+            echo "❌ $DOCS_DIR directory not found"
             exit 1
           fi
 
-          if [ ! -d "docs-site/content" ]; then
+          if [ ! -d "$DOCS_DIR/content" ]; then
             echo "❌ Content directory not found"
             exit 1
           fi
 
-          if [ ! -f "docs-site/content/_index.md" ]; then
+          if [ ! -f "$DOCS_DIR/content/_index.md" ]; then
             echo "❌ Homepage content not found"
             exit 1
           fi
 
           echo "✅ Content structure verified"
-          echo "📁 Content files:"
-          ls -la docs-site/content/
-
-      - name: Install Task
-        working-directory: .
-        run: |
-          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build CLI for documentation
-        working-directory: .
         run: |
           if task build 2>/dev/null; then
             echo "✅ CLI built successfully"
@@ -87,12 +77,14 @@ jobs:
           fi
 
       - name: Generate CLI documentation
-        working-directory: .
         run: |
-          mkdir -p docs-site/content/cli-reference
+          DOCS_DIR="${{ steps.config.outputs.docs-dir }}"
+          BUILD_DIR="${{ steps.config.outputs.build-dir }}"
+          CLI_BINARY="${{ steps.config.outputs.cli-binary }}"
+          
+          mkdir -p "$DOCS_DIR/content/cli-reference"
 
-          # Try to generate real CLI docs first
-          if [ -f "./build/dev-stack" ] && ./build/dev-stack --help > /tmp/cli-help.txt 2>&1; then
+          if [ -f "./$BUILD_DIR/$CLI_BINARY" ] && "./$BUILD_DIR/$CLI_BINARY" --help > /tmp/cli-help.txt 2>&1; then
             echo "🔍 Generating CLI documentation from built binary..."
             {
               echo '---'
@@ -106,7 +98,7 @@ jobs:
               echo '```'
               cat /tmp/cli-help.txt
               echo '```'
-            } > docs-site/content/cli-reference/index.md
+            } > "$DOCS_DIR/content/cli-reference/index.md"
             echo "✅ CLI documentation generated from binary"
           else
             echo "🔍 Creating CLI reference placeholder..."
@@ -122,7 +114,7 @@ jobs:
               echo 'CLI help generation is not yet implemented.'
               echo ''
               echo 'Check back soon or [contribute to the project]({{< ref "/contributing" >}}) to help add this feature!'
-            } > docs-site/content/cli-reference/index.md
+            } > "$DOCS_DIR/content/cli-reference/index.md"
             echo "✅ CLI reference placeholder created"
           fi
 
@@ -131,6 +123,7 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Check for Node.js dependencies
+        working-directory: ${{ steps.config.outputs.docs-dir }}
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
             npm ci
@@ -139,32 +132,17 @@ jobs:
           fi
 
       - name: Build with Hugo
+        working-directory: ${{ steps.config.outputs.docs-dir }}
         env:
-          # For maximum backward compatibility with Hugo modules
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
         run: |
           echo "🔍 Hugo version:"
           hugo version
           echo ""
-          echo "🔍 Site configuration:"
-          hugo config | grep baseURL || echo "Base URL: (default)"
-          echo ""
-          echo "🔍 Theme check:"
-          if [ -d "themes/doks" ]; then
-            echo "✅ Doks theme found"
-          else
-            echo "❌ Doks theme not found"
-            echo "Available themes:"
-            ls -la themes/ || echo "No themes directory"
-          fi
-          echo ""
           echo "🔍 Building Hugo site..."
           if hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/"; then
             echo "✅ Hugo build completed successfully"
-            echo ""
-            echo "📁 Contents of public directory:"
-            ls -la public/ | head -10
             echo ""
             echo "📋 Build summary:"
             find public -name "*.html" | wc -l | xargs echo "HTML files:"
@@ -172,17 +150,14 @@ jobs:
             find public -name "*.js" | wc -l | xargs echo "JS files:"
           else
             echo "❌ Hugo build failed"
-            echo "Checking for errors..."
-            hugo --gc --minify --baseURL "${{ steps.pages.outputs.base_url }}/" --verbose || true
             exit 1
           fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs-site/public
+          path: ./${{ steps.config.outputs.docs-dir }}/public
 
-  # Deployment job
   deploy:
     environment:
       name: github-pages
