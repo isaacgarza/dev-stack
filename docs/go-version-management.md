@@ -1,14 +1,139 @@
-# Go Version Management
+# Version Management
 
-This document explains how Go version management is centralized across the dev-stack project to ensure consistency and maintainability.
+This document explains the comprehensive version management system in dev-stack, covering both Go runtime version management and dev-stack binary version management for multi-project environments.
 
 ## Overview
 
-The dev-stack project uses a centralized approach to manage Go versions across all configuration files and workflows. This prevents version mismatches and makes it easy to upgrade Go versions across the entire project.
+dev-stack implements a two-tier version management system:
 
-## Architecture
+1. **Go Runtime Version Management**: Centralized Go version management across project files and workflows
+2. **dev-stack Binary Version Management**: Multi-version support for different projects with automatic version switching
 
-### Single Source of Truth
+This dual approach ensures both development consistency and deployment flexibility across different project requirements.
+
+## dev-stack Binary Version Management
+
+### Automatic Version Switching
+
+dev-stack can manage multiple versions of itself and automatically switch between them based on project requirements. This allows different projects to use different versions of dev-stack without conflicts.
+
+#### Version Detection
+
+Projects can specify their dev-stack version requirements using `.dev-stack-version` files:
+
+```bash
+# Simple version requirement
+echo "1.2.3" > .dev-stack-version
+
+# Version constraint
+echo ">=1.0.0" > .dev-stack-version
+
+# YAML format with metadata
+cat > .dev-stack-version.yaml << EOF
+version: "^1.2.0"
+metadata:
+  created_by: "dev-stack"
+  project: "my-project"
+EOF
+```
+
+#### Supported Version Constraints
+
+- **Exact**: `1.2.3` - Must match exactly
+- **Greater/Less**: `>1.2.3`, `>=1.2.3`, `<2.0.0`, `<=1.9.9`
+- **Tilde**: `~1.2.3` - Patch-level changes (>=1.2.3 <1.3.0)
+- **Caret**: `^1.2.3` - Minor-level changes (>=1.2.3 <2.0.0)
+- **Wildcard**: `*` - Any version
+
+#### Version Management Commands
+
+```bash
+# List installed versions
+dev-stack versions list
+
+# Install a specific version
+dev-stack versions install 1.2.3
+dev-stack versions install latest
+
+# Set active version globally
+dev-stack versions use 1.2.3
+
+# Set project-specific version requirement
+dev-stack versions set ">=1.0.0" [path]
+
+# Detect project version requirements
+dev-stack versions detect [path]
+
+# List available versions from GitHub
+dev-stack versions available
+
+# Clean up old versions
+dev-stack versions cleanup --keep 3
+
+# Uninstall a version
+dev-stack versions uninstall 1.2.3
+```
+
+#### Automatic Installation and Switching
+
+When dev-stack detects a project with version requirements:
+
+1. **Detection**: Searches for `.dev-stack-version` files in project hierarchy
+2. **Resolution**: Finds best matching installed version
+3. **Auto-install**: Downloads missing versions automatically (optional)
+4. **Delegation**: Transparently switches to the correct version
+5. **Execution**: Runs the command with the appropriate version
+
+```bash
+# Project requires >=1.2.0, but only 1.1.0 is installed
+cd my-project
+dev-stack up  # Automatically suggests installing 1.2.0
+
+# With auto-install enabled
+dev-stack up  # Downloads 1.2.0 and delegates execution
+```
+
+#### Multi-Project Support
+
+Each project can have isolated version requirements:
+
+```bash
+project-a/
+├── .dev-stack-version    # Contains "1.1.0"
+└── services/
+
+project-b/
+├── .dev-stack-version    # Contains ">=1.2.0"
+└── docker-compose.yml
+
+# Commands automatically use the right version per project
+cd project-a && dev-stack up    # Uses version 1.1.0
+cd project-b && dev-stack up    # Uses version 1.2.x
+```
+
+#### Version Storage and Management
+
+Versions are stored in user directories:
+
+```
+~/.dev-stack/
+├── versions/
+│   ├── 1.1.0/
+│   │   └── dev-stack
+│   ├── 1.2.0/
+│   │   └── dev-stack
+│   └── 1.2.3/
+│       └── dev-stack
+└── config/
+    ├── installed_versions.json
+    └── project_configs.json
+```
+
+## Go Runtime Version Management
+
+### Architecture
+
+#### Single Source of Truth
 
 The **`.go-version`** file at the project root serves as the single source of truth for the Go version used throughout the project.
 
@@ -17,11 +142,11 @@ The **`.go-version`** file at the project root serves as the single source of tr
 1.21
 ```
 
-### Automated Synchronization
+#### Automated Synchronization
 
 All configuration files that reference Go versions are automatically synchronized with the `.go-version` file using scripts and workflows.
 
-## Files Managed
+#### Files Managed
 
 The following files are automatically synchronized with the Go version:
 
@@ -32,9 +157,9 @@ The following files are automatically synchronized with the Go version:
 5. **`Taskfile.yml`** - Build system variables
 6. **GitHub Actions workflows** - CI/CD pipeline configurations
 
-## Tools and Scripts
+#### Tools and Scripts
 
-### Version Management Script
+##### Version Management Script
 
 The `scripts/get-go-version.sh` script provides various ways to access the Go version:
 
@@ -52,7 +177,7 @@ The `scripts/get-go-version.sh` script provides various ways to access the Go ve
 ./scripts/get-go-version.sh --github-matrix # Output: ['1.19', '1.20', '1.21']
 ```
 
-### Synchronization Script
+##### Synchronization Script
 
 The `scripts/sync-go-version.sh` script ensures all configuration files use the correct Go version:
 
@@ -67,7 +192,7 @@ The `scripts/sync-go-version.sh` script ensures all configuration files use the 
 ./scripts/sync-go-version.sh --help
 ```
 
-### Taskfile Integration
+##### Taskfile Integration
 
 Convenient task targets are available for version management:
 
@@ -82,9 +207,9 @@ task check-version
 task sync-version
 ```
 
-## GitHub Actions Integration
+#### GitHub Actions Integration
 
-### Composite Action
+##### Composite Action
 
 The `.github/actions/setup-go-version` composite action automatically:
 
@@ -103,7 +228,7 @@ Usage in workflows:
   run: echo "Using Go ${{ steps.setup-go.outputs.go-version }}"
 ```
 
-### Dynamic Matrix Builds
+##### Dynamic Matrix Builds
 
 The test workflow automatically generates a matrix of Go versions for testing:
 
@@ -124,7 +249,7 @@ jobs:
         go-version: ${{ fromJson(needs.get-versions.outputs.go-matrix) }}
 ```
 
-## Upgrading Go Version
+#### Upgrading Go Version
 
 To upgrade the Go version across the entire project:
 
@@ -159,9 +284,9 @@ To upgrade the Go version across the entire project:
    git commit -m "feat: upgrade Go version to 1.22"
    ```
 
-## Validation and CI
+#### Validation and CI
 
-### Pre-commit Checks
+##### Pre-commit Checks
 
 The version consistency check can be added to pre-commit hooks:
 
@@ -171,7 +296,7 @@ The version consistency check can be added to pre-commit hooks:
 task check-version
 ```
 
-### CI Validation
+##### CI Validation
 
 GitHub Actions workflows automatically validate version consistency:
 
@@ -180,9 +305,9 @@ GitHub Actions workflows automatically validate version consistency:
   run: task check-version
 ```
 
-## Configuration Details
+#### Configuration Details
 
-### Taskfile Integration
+##### Taskfile Integration
 
 The Taskfile dynamically reads the Go version:
 
@@ -194,7 +319,7 @@ vars:
 
 This ensures build commands always use the correct version.
 
-### golangci-lint Configuration
+##### golangci-lint Configuration
 
 The `.golangci.yml` file is automatically updated to match:
 
@@ -203,7 +328,7 @@ run:
   go: "1.21"  # Automatically synchronized
 ```
 
-### Dockerfile Integration
+##### Dockerfile Integration
 
 Base images in Dockerfile are automatically updated:
 
@@ -213,7 +338,42 @@ FROM golang:1.21-alpine AS builder
 
 ## Troubleshooting
 
-### Version Mismatch Errors
+### dev-stack Version Issues
+
+#### No Compatible Version Found
+
+```bash
+# Error: No installed version satisfies requirement: >=1.2.0
+# Solution: Install a compatible version
+dev-stack versions install 1.2.0
+
+# Or install latest
+dev-stack versions install latest
+```
+
+#### Version File Not Detected
+
+```bash
+# Check if version file exists and is readable
+dev-stack versions detect
+
+# Create version requirement for current project
+dev-stack versions set ">=1.0.0"
+```
+
+#### Binary Not Found
+
+```bash
+# List installed versions
+dev-stack versions list
+
+# Verify installation
+dev-stack versions use 1.2.0
+```
+
+### Go Runtime Version Issues
+
+#### Version Mismatch Errors
 
 If you see version mismatch errors:
 
@@ -225,7 +385,7 @@ task check-version
 task sync-version
 ```
 
-### Script Permissions
+#### Script Permissions
 
 If scripts aren't executable:
 
@@ -233,7 +393,7 @@ If scripts aren't executable:
 chmod +x scripts/*.sh
 ```
 
-### CI Matrix Issues
+#### CI Matrix Issues
 
 If GitHub Actions matrix builds fail, verify the matrix generation:
 
@@ -243,6 +403,16 @@ If GitHub Actions matrix builds fail, verify the matrix generation:
 
 ## Best Practices
 
+### dev-stack Version Management
+
+1. **Use version files** for project-specific requirements
+2. **Pin versions** for production environments
+3. **Use constraints** for development flexibility
+4. **Regular cleanup** to save disk space
+5. **Document requirements** in project README
+
+### Go Runtime Version Management
+
 1. **Always use `.go-version`** as the source of truth
 2. **Run `task sync-version`** after changing Go versions
 3. **Include version checks** in CI pipelines
@@ -251,6 +421,16 @@ If GitHub Actions matrix builds fail, verify the matrix generation:
 
 ## Benefits
 
+### dev-stack Version Management
+
+- **Project Isolation**: Each project can use its required version
+- **Automatic Switching**: No manual version management needed
+- **Backward Compatibility**: Old projects continue to work
+- **Team Consistency**: Everyone uses the same version per project
+- **Easy Upgrades**: Update version requirements as needed
+
+### Go Runtime Version Management
+
 - **Consistency**: All tools use the same Go version
 - **Maintainability**: Single place to update versions
 - **Automation**: Scripts handle synchronization
@@ -258,6 +438,16 @@ If GitHub Actions matrix builds fail, verify the matrix generation:
 - **Flexibility**: Easy to upgrade or downgrade versions
 
 ## Future Enhancements
+
+### dev-stack Version Management
+
+- Integration with package managers (brew, apt, etc.)
+- Automatic version updates and notifications
+- Enhanced conflict resolution
+- Integration with CI/CD pipelines
+- Version analytics and usage tracking
+
+### Go Runtime Version Management
 
 - Pre-commit hooks for automatic validation
 - Integration with more tools (IDE configurations, etc.)
