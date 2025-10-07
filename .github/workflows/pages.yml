@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "content/**"
+      - "docs/**"
       - "themes/**"
-      - "hugo.toml"
+      - "config/_default/hugo.toml"
       - "layouts/**"
       - "static/**"
       - "assets/**"
@@ -55,19 +55,19 @@ jobs:
       - name: Verify content structure
         run: |
           echo "🔍 Verifying content structure..."
-          if [ ! -d "content" ]; then
-            echo "❌ Content directory not found"
+          if [ ! -d "docs" ]; then
+            echo "❌ Docs directory not found"
             exit 1
           fi
 
-          if [ ! -f "content/_index.md" ]; then
+          if [ ! -f "docs/_index.md" ]; then
             echo "❌ Homepage content not found"
             exit 1
           fi
 
           echo "✅ Content structure verified"
-          echo "📁 Content files:"
-          ls -la content/
+          echo "📁 Docs files:"
+          ls -la docs/
 
       - name: Install Task
         run: |
@@ -84,7 +84,7 @@ jobs:
 
       - name: Generate CLI documentation
         run: |
-          mkdir -p content/cli-reference
+          mkdir -p docs/cli-reference
 
           # Try to generate real CLI docs first
           if [ -f "./build/dev-stack" ] && ./build/dev-stack --help > /tmp/cli-help.txt 2>&1; then
@@ -101,7 +101,7 @@ jobs:
               echo '```'
               cat /tmp/cli-help.txt
               echo '```'
-            } > content/cli-reference/index.md
+            } > docs/cli-reference/index.md
             echo "✅ CLI documentation generated from binary"
           else
             echo "🔍 Creating CLI reference placeholder..."
@@ -117,7 +117,7 @@ jobs:
               echo 'CLI help generation is not yet implemented.'
               echo ''
               echo 'Check back soon or [contribute to the project]({{< ref "/contributing" >}}) to help add this feature!'
-            } > content/cli-reference/index.md
+            } > docs/cli-reference/index.md
             echo "✅ CLI reference placeholder created"
           fi
 
