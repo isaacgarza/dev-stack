@@ -26,11 +26,11 @@ The workflows support the complete development lifecycle from code validation to
 - `integration` (optional): Docker integration tests (triggered by `integration` label)
 
 **Key Steps:**
-- Go environment setup from `.go-version`
+- Centralized environment setup (Go, Task, tools)
 - Dependency validation (`go mod tidy`)
 - Code quality (`gofmt`, `go vet`, `golangci-lint`)
 - Unit tests with coverage
-- Build verification
+- Build verification using Task runner
 
 ### ✅ Validation (`validation.yml`)
 
@@ -39,17 +39,15 @@ The workflows support the complete development lifecycle from code validation to
 
 **Checks:**
 - Conventional commit compliance (PRs only)
-- Configuration file validation
+- Centralized project validation via `scripts/validate-project.sh`
 - Markdown linting
 - Link checking
-- **Hugo validation suite**:
+- **Hugo validation** (using configurable Hugo version):
   - Configuration syntax validation
   - Content structure verification
   - Build testing (dry run)
   - Internal link validation
   - Frontmatter syntax checking
-- TODO/FIXME detection
-- File permissions
 
 ### 📚 Documentation (`pages.yml`)
 
@@ -57,44 +55,74 @@ The workflows support the complete development lifecycle from code validation to
 **Purpose**: GitHub Pages deployment
 
 **Process:**
-1. Build dev-stack CLI binary
-2. Generate CLI documentation (or use placeholder)
-3. Hugo site build with PaperMod theme
-4. Deploy to GitHub Pages
+1. Load centralized configuration for Hugo version and paths
+2. Build dev-stack CLI binary using Task runner
+3. Generate CLI documentation (or use placeholder)
+4. Hugo site build with configurable version
+5. Deploy to GitHub Pages
 
 **Requirements:**
-- Hugo Extended v0.151.0+
+- Hugo Extended (version from centralized config)
 - PaperMod theme (git submodule)
 - Content structure validation
 - Valid Hugo configuration
 
 ### 🛡️ Security (`security.yml`)
 
-**Triggers**: Weekly schedule, Manual dispatch
+**Triggers**: Push/PR to `main`/`develop`, Weekly schedule, Manual dispatch
 **Purpose**: Security vulnerability scanning
 
 **Scans:**
-- Dependency vulnerabilities (GitHub advisories)
-- Static code analysis (`gosec`)
-- License compliance
-- SARIF reporting to GitHub Security tab
+- **Gosec**: Go security scanner with configurable settings
+- **Govulncheck**: Go vulnerability database scanner
+- **TruffleHog**: Secrets scanning (diff-based for PRs, full for scheduled)
+- **Basic checks**: Hardcoded secrets and unsafe function detection
+- **CodeQL**: Advanced security analysis (scheduled or labeled PRs)
 
 ### 🚀 Release (`release.yml`)
 
-**Triggers**: Release tags (`v*`), Manual dispatch
-**Purpose**: Multi-platform binary distribution
+**Triggers**: Push to `main`, Manual dispatch
+**Purpose**: Multi-platform binary distribution and Docker images
 
-**Builds:**
-- Linux (amd64, arm64)
-- macOS (amd64, arm64)
-- Windows (amd64, arm64)
+**Process:**
+1. Create release using release-please
+2. Build multi-platform binaries using Task runner
+3. Generate checksums and verify artifacts
+4. Build and push Docker images to configurable registry
+5. Upload release assets to GitHub
 
 **Outputs:**
-- Platform-specific archives
+- Platform-specific binaries (Linux, macOS, Windows for amd64/arm64)
 - SHA256 checksums
+- Docker images (multi-platform)
 - GitHub release with changelog
 
 ## Configuration
+
+### Centralized Configuration
+
+All workflows use `.github/config/workflow-config.yml` for consistent settings:
+
+```yaml
+versions:
+  hugo: "0.151.0"
+  node: "18"
+
+paths:
+  build_dir: "build"
+  docs_dir: "docs-site"
+  cli_binary: "dev-stack"
+
+docker:
+  registry: "ghcr.io"
+  platforms: "linux/amd64,linux/arm64"
+```
+
+### Reusable Actions
+
+- **`setup-environment`**: Common setup for Go, Task, and tools
+- **`load-config`**: Loads centralized configuration values
+- **`setup-go-version`**: Go setup with caching from `.go-version`
 
 ### Required Status Checks
 
@@ -111,10 +139,17 @@ Control workflow execution:
 
 ### Shared Components
 
-**Setup Go Action** (`.github/actions/setup-go-version`):
-- Reads Go version from `.go-version`
-- Configures caching for dependencies
-- Used across all Go-based workflows
+**Reusable Actions**:
+- **`setup-environment`**: Centralized setup for Go, Task runner, and development tools
+- **`load-config`**: Loads configuration from `.github/config/workflow-config.yml`
+- **`setup-go-version`**: Reads Go version from `.go-version` with caching
+
+**Validation Script** (`scripts/validate-project.sh`):
+- Consolidates validation logic from workflows
+- Configuration file validation
+- Hugo site and content validation
+- Code quality checks
+- Reusable across different contexts
 
 **Dependabot** (`dependabot.yml`):
 - Weekly Go module updates
@@ -128,6 +163,9 @@ Control workflow execution:
 task test              # Unit tests with coverage
 task lint              # Linting and static analysis
 task build             # Build verification
+
+# Project validation (matches CI)
+./scripts/validate-project.sh  # Complete validation suite
 
 # Hugo validation (if working with docs)
 task validate-docs     # Complete Hugo validation suite

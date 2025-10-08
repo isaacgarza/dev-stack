@@ -33,7 +33,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Single release management job
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -47,26 +46,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
-        id: setup-go
+      - name: Load configuration
+        id: config
+        uses: ./.github/actions/load-config
 
-      # Install Task runner
-      - name: Install Task
-        run: |
-          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          install-task: "true"
 
-      # Run tests before any release activities
       - name: Run pre-release tests
         run: |
           echo "🧪 Running pre-release validation..."
-          go mod download
           go test -v -race ./...
           go vet ./...
           task build
 
-      # Create release with release-please
       - name: Create release
         id: release
         uses: googleapis/release-please-action@v4
@@ -81,7 +76,6 @@ jobs:
           echo "Version: ${{ steps.release.outputs.tag_name }}"
           echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.tag_name }}"
 
-  # Build and publish assets when release is created
   build:
     name: Build & Publish
     runs-on: ubuntu-latest
@@ -93,8 +87,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
+      - name: Load configuration
+        id: config
+        uses: ./.github/actions/load-config
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          install-task: "true"
 
       - name: Set build variables
         run: |
@@ -103,52 +103,43 @@ jobs:
           echo "COMMIT=${GITHUB_SHA::8}" >> $GITHUB_ENV
           echo "BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> $GITHUB_ENV
 
-      # Install Task runner
-      - name: Install Task
-        run: |
-          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      # Build binaries for all platforms
       - name: Build all platforms
         run: |
           echo "🔨 Building binaries for all platforms..."
           task build-all
 
           echo "📦 Built artifacts:"
-          ls -la build/
+          ls -la ${{ steps.config.outputs.build-dir }}/
 
           echo "📏 File sizes:"
-          du -h build/*
+          du -h ${{ steps.config.outputs.build-dir }}/*
 
       - name: Generate checksums
         run: |
-          cd build
+          cd ${{ steps.config.outputs.build-dir }}
           sha256sum * > checksums.txt
           echo "🔐 Generated checksums:"
           cat checksums.txt
 
-      # Set up Docker Buildx for multi-platform builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
         with:
-          registry: ghcr.io
+          registry: ${{ steps.config.outputs.docker-registry }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build and push Docker image
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ steps.config.outputs.docker-platforms }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
-            ghcr.io/${{ github.repository }}:latest
+            ${{ steps.config.outputs.docker-registry }}/${{ github.repository }}:${{ env.VERSION }}
+            ${{ steps.config.outputs.docker-registry }}/${{ github.repository }}:latest
           build-args: |
             VERSION=${{ env.VERSION }}
             COMMIT=${{ env.COMMIT }}
@@ -156,33 +147,31 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Upload release assets
       - name: Upload release assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "📤 Uploading release assets to ${{ env.TAG_NAME }}"
-          gh release upload ${{ env.TAG_NAME }} build/* --clobber
+          gh release upload ${{ env.TAG_NAME }} ${{ steps.config.outputs.build-dir }}/* --clobber
 
-      # Verify release assets
       - name: Verify release
         run: |
           echo "🔍 Verifying release assets..."
+          BUILD_DIR="${{ steps.config.outputs.build-dir }}"
+          CLI_BINARY="${{ steps.config.outputs.cli-binary }}"
 
-          # Verify checksums
-          cd build
+          cd "$BUILD_DIR"
           sha256sum -c checksums.txt
           echo "✅ All checksums verified!"
 
-          # Test binary functionality
-          chmod +x dev-stack-linux-amd64
-          ./dev-stack-linux-amd64 version || ./dev-stack-linux-amd64 --version || echo "✅ Binary executes successfully"
+          chmod +x "$CLI_BINARY-linux-amd64"
+          "./$CLI_BINARY-linux-amd64" version || "./$CLI_BINARY-linux-amd64" --version || echo "✅ Binary executes successfully"
 
-          # Verify Docker image
           echo "🐳 Verifying Docker image..."
-          docker run --rm ghcr.io/${{ github.repository }}:${{ env.VERSION }} version || docker run --rm ghcr.io/${{ github.repository }}:${{ env.VERSION }} --version || echo "✅ Docker image runs successfully"
+          docker run --rm ${{ steps.config.outputs.docker-registry }}/${{ github.repository }}:${{ env.VERSION }} version || \
+          docker run --rm ${{ steps.config.outputs.docker-registry }}/${{ github.repository }}:${{ env.VERSION }} --version || \
+          echo "✅ Docker image runs successfully"
 
-  # Post-release tasks
   post-release:
     name: Post-Release
     runs-on: ubuntu-latest
@@ -192,7 +181,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Update package managers (if configured)
+      - name: Load configuration
+        id: config
+        uses: ./.github/actions/load-config
+
       - name: Check package manager configuration
         id: package-config
         run: |
@@ -214,15 +206,12 @@ jobs:
 
           if [[ "${{ steps.package-config.outputs.homebrew_enabled }}" == "true" ]]; then
             echo "🍺 Homebrew formula update would be triggered here"
-            # TODO: Add Homebrew formula update logic
           fi
 
           if [[ "${{ steps.package-config.outputs.scoop_enabled }}" == "true" ]]; then
             echo "🪣 Scoop manifest update would be triggered here"
-            # TODO: Add Scoop manifest update logic
           fi
 
-      # Generate release summary
       - name: Release summary
         run: |
           echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
@@ -232,12 +221,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ **Binaries**: Built for all platforms" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ **Docker**: Published to ghcr.io" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ **Docker**: Published to ${{ steps.config.outputs.docker-registry }}" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ **Checksums**: Generated and verified" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
           echo "- [Release Page](https://github.com/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag_name }})" >> $GITHUB_STEP_SUMMARY
-          echo "- [Docker Image](https://ghcr.io/${{ github.repository }}:${{ needs.release.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Docker Image](${{ steps.config.outputs.docker-registry }}/${{ github.repository }}:${{ needs.release.outputs.version }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ needs.build.result }}" = "success" ]; then
@@ -247,7 +236,6 @@ jobs:
             echo "Build Status: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
           fi
 
-  # Failure notification
   notify-failure:
     name: Notify Failure
     runs-on: ubuntu-latest

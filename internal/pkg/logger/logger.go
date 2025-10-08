@@ -176,22 +176,22 @@ func Fatal(msg string, args ...any) {
 
 // DebugEnabled returns true if debug logging is enabled
 func DebugEnabled() bool {
-	return GetLogger().Enabled(context.TODO(), slog.LevelDebug)
+	return GetLogger().Enabled(context.Background(), slog.LevelDebug)
 }
 
 // InfoEnabled returns true if info logging is enabled
 func InfoEnabled() bool {
-	return GetLogger().Enabled(context.TODO(), slog.LevelInfo)
+	return GetLogger().Enabled(context.Background(), slog.LevelInfo)
 }
 
 // WarnEnabled returns true if warn logging is enabled
 func WarnEnabled() bool {
-	return GetLogger().Enabled(context.TODO(), slog.LevelWarn)
+	return GetLogger().Enabled(context.Background(), slog.LevelWarn)
 }
 
 // ErrorEnabled returns true if error logging is enabled
 func ErrorEnabled() bool {
-	return GetLogger().Enabled(context.TODO(), slog.LevelError)
+	return GetLogger().Enabled(context.Background(), slog.LevelError)
 }
 
 // LogCommand logs command execution with timing

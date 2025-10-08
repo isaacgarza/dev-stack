@@ -11,7 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Single job that consolidates all CI checks for easy required status checking
   ci:
     name: CI
     runs-on: ubuntu-latest
@@ -21,16 +20,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
-        id: setup-go
+      - name: Load configuration
+        id: config
+        uses: ./.github/actions/load-config
 
-      - name: Download dependencies
-        run: |
-          go mod download
-          go mod verify
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          install-task: "true"
 
-      # Validation checks
       - name: Validate Go modules
         run: |
           go mod tidy
@@ -47,39 +45,31 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
-      # Linting
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
           args: --timeout=5m
 
-      # Testing
       - name: Run tests
-        run: |
-          go test -v -race -coverprofile=coverage.out ./cmd/... ./internal/...
+        run: go test -v -race -coverprofile=coverage.out ./cmd/... ./internal/...
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.out
           flags: unittests
           name: codecov-umbrella
 
-      # Build verification
-      - name: Install Task
-        run: |
-          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Build
+      - name: Build binary
         run: task build
 
       - name: Verify binary
         run: |
-          chmod +x build/dev-stack
-          ./build/dev-stack --version || ./build/dev-stack version || echo "Binary built successfully"
+          chmod +x ${{ steps.config.outputs.build-dir }}/${{ steps.config.outputs.cli-binary }}
+          ./${{ steps.config.outputs.build-dir }}/${{ steps.config.outputs.cli-binary }} --version || \
+          ./${{ steps.config.outputs.build-dir }}/${{ steps.config.outputs.cli-binary }} version || \
+          echo "Binary built successfully"
 
-  # Matrix testing for multiple platforms/versions (optional for required checks)
   test-matrix:
     name: Test Matrix
     runs-on: ${{ matrix.os }}
@@ -109,7 +99,6 @@ jobs:
       - name: Build
         run: go build -o dev-stack-${{ matrix.os }}-${{ matrix.go-version }} ./cmd/dev-stack
 
-  # Integration tests (separate job for optional requirement)
   integration:
     name: Integration
     runs-on: ubuntu-latest
@@ -124,19 +113,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: ./.github/actions/setup-go-version
-
-      - name: Install Task
-        run: |
-          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          install-task: "true"
 
       - name: Build binary
         run: task build
-
-      - name: Make binary executable
-        run: chmod +x build/dev-stack
 
       - name: Run integration tests
         run: |

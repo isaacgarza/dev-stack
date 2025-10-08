@@ -1,0 +1,83 @@
+name: "Load Workflow Configuration"
+description: "Load centralized workflow configuration and set outputs"
+
+outputs:
+  hugo-version:
+    description: "Hugo version from config"
+    value: ${{ steps.load.outputs.hugo-version }}
+  node-version:
+    description: "Node.js version from config"
+    value: ${{ steps.load.outputs.node-version }}
+  build-dir:
+    description: "Build directory from config"
+    value: ${{ steps.load.outputs.build-dir }}
+  docs-dir:
+    description: "Documentation directory from config"
+    value: ${{ steps.load.outputs.docs-dir }}
+  cli-binary:
+    description: "CLI binary name from config"
+    value: ${{ steps.load.outputs.cli-binary }}
+  docker-registry:
+    description: "Docker registry from config"
+    value: ${{ steps.load.outputs.docker-registry }}
+  docker-platforms:
+    description: "Docker platforms from config"
+    value: ${{ steps.load.outputs.docker-platforms }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install yq if needed
+      shell: bash
+      run: |
+        if ! command -v yq >/dev/null 2>&1; then
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+        fi
+
+    - name: Load configuration
+      id: load
+      shell: bash
+      run: |
+        CONFIG_FILE=".github/config/workflow-config.yml"
+
+        if [ ! -f "$CONFIG_FILE" ]; then
+          echo "❌ Configuration file not found: $CONFIG_FILE"
+          echo "Using default values..."
+          echo "hugo-version=0.151.0" >> $GITHUB_OUTPUT
+          echo "node-version=18" >> $GITHUB_OUTPUT
+          echo "build-dir=build" >> $GITHUB_OUTPUT
+          echo "docs-dir=docs-site" >> $GITHUB_OUTPUT
+          echo "cli-binary=dev-stack" >> $GITHUB_OUTPUT
+          echo "docker-registry=ghcr.io" >> $GITHUB_OUTPUT
+          echo "docker-platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "📋 Loading configuration from $CONFIG_FILE"
+
+        # Load versions
+        HUGO_VERSION=$(yq eval '.versions.hugo' "$CONFIG_FILE")
+        NODE_VERSION=$(yq eval '.versions.node' "$CONFIG_FILE")
+
+        # Load paths
+        BUILD_DIR=$(yq eval '.paths.build_dir' "$CONFIG_FILE")
+        DOCS_DIR=$(yq eval '.paths.docs_dir' "$CONFIG_FILE")
+        CLI_BINARY=$(yq eval '.paths.cli_binary' "$CONFIG_FILE")
+
+        # Load Docker settings
+        DOCKER_REGISTRY=$(yq eval '.docker.registry' "$CONFIG_FILE")
+        DOCKER_PLATFORMS=$(yq eval '.docker.platforms' "$CONFIG_FILE")
+
+        # Set outputs
+        echo "hugo-version=$HUGO_VERSION" >> $GITHUB_OUTPUT
+        echo "node-version=$NODE_VERSION" >> $GITHUB_OUTPUT
+        echo "golangci-lint-version=$GOLANGCI_LINT_VERSION" >> $GITHUB_OUTPUT
+        echo "build-dir=$BUILD_DIR" >> $GITHUB_OUTPUT
+        echo "docs-dir=$DOCS_DIR" >> $GITHUB_OUTPUT
+        echo "cli-binary=$CLI_BINARY" >> $GITHUB_OUTPUT
+        echo "docker-registry=$DOCKER_REGISTRY" >> $GITHUB_OUTPUT
+        echo "docker-platforms=$DOCKER_PLATFORMS" >> $GITHUB_OUTPUT
+
+        echo "✅ Configuration loaded successfully"
+        echo "Hugo: $HUGO_VERSION, Node: $NODE_VERSION, Build dir: $BUILD_DIR"

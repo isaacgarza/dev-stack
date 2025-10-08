@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Parser handles parsing of YAML manifests
+// Parser handles parsing of enhanced YAML manifests
 type Parser struct {
 	options *GenerationOptions
 }
@@ -19,7 +19,7 @@ func NewParser(options *GenerationOptions) *Parser {
 	}
 }
 
-// ParseCommands reads and parses the commands.yaml file
+// ParseCommands reads and parses the enhanced commands.yaml file
 func (p *Parser) ParseCommands() (*CommandsManifest, error) {
 	data, err := os.ReadFile(p.options.CommandsYAMLPath)
 	if err != nil {
@@ -49,26 +49,80 @@ func (p *Parser) ParseServices() (*ServicesManifest, error) {
 	return &services, nil
 }
 
-// ValidateCommandsManifest validates the commands manifest structure
+// ValidateCommandsManifest validates the enhanced commands manifest structure
 func (p *Parser) ValidateCommandsManifest(commands *CommandsManifest) error {
 	if commands == nil {
 		return fmt.Errorf("commands manifest is nil")
 	}
 
-	if len(*commands) == 0 {
-		return fmt.Errorf("commands manifest is empty")
+	// Validate metadata
+	if commands.Metadata.Version == "" {
+		return fmt.Errorf("metadata.version is required")
 	}
 
-	for script, cmds := range *commands {
-		if script == "" {
-			return fmt.Errorf("found empty script name")
+	if commands.Metadata.CLIVersion == "" {
+		return fmt.Errorf("metadata.cli_version is required")
+	}
+
+	if len(commands.Commands) == 0 {
+		return fmt.Errorf("no commands defined")
+	}
+
+	// Validate each command
+	for name, cmd := range commands.Commands {
+		if cmd.Description == "" {
+			return fmt.Errorf("command %s: description is required", name)
 		}
-		if len(cmds) == 0 {
-			return fmt.Errorf("script %s has no commands", script)
+		if cmd.Usage == "" {
+			return fmt.Errorf("command %s: usage is required", name)
+		}
+
+		// Validate category exists if specified
+		if cmd.Category != "" {
+			if _, exists := commands.Categories[cmd.Category]; !exists {
+				return fmt.Errorf("command %s: category %s does not exist", name, cmd.Category)
+			}
+		}
+
+		// Validate flag types
+		for flagName, flag := range cmd.Flags {
+			if !isValidFlagType(flag.Type) {
+				return fmt.Errorf("command %s, flag %s: invalid type %s", name, flagName, flag.Type)
+			}
+		}
+	}
+
+	// Validate categories reference existing commands
+	for catName, category := range commands.Categories {
+		for _, cmdName := range category.Commands {
+			if _, exists := commands.Commands[cmdName]; !exists {
+				return fmt.Errorf("category %s references undefined command %s", catName, cmdName)
+			}
+		}
+	}
+
+	// Validate workflows reference existing commands
+	for workflowName, workflow := range commands.Workflows {
+		for i, step := range workflow.Steps {
+			// Basic validation - could be enhanced to parse actual commands
+			if step.Command == "" {
+				return fmt.Errorf("workflow %s, step %d: command is required", workflowName, i+1)
+			}
 		}
 	}
 
 	return nil
+}
+
+// isValidFlagType checks if a flag type is valid
+func isValidFlagType(flagType string) bool {
+	validTypes := []string{"bool", "string", "int", "float", "duration", "stringArray", "intArray"}
+	for _, validType := range validTypes {
+		if flagType == validType {
+			return true
+		}
+	}
+	return false
 }
 
 // ValidateServicesManifest validates the services manifest structure

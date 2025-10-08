@@ -1,0 +1,56 @@
+# Centralized workflow configuration
+# This file contains all version numbers and settings used across GitHub workflows
+
+versions:
+  hugo: "0.151.0"
+  node: "18"
+  task: "latest"
+
+tools:
+  # Tool installation commands
+  task_install: "curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin"
+  yq_install: "sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq"
+
+paths:
+  build_dir: "build"
+  docs_dir: "docs-site"
+  cli_binary: "dev-stack"
+
+settings:
+  # Workflow behavior settings
+  cancel_in_progress: true
+  retention_days: 30
+  timeout_minutes: 30
+
+  # Build settings
+  platforms:
+    - "linux/amd64"
+    - "linux/arm64"
+    - "darwin/amd64"
+    - "darwin/arm64"
+    - "windows/amd64"
+
+  # Test matrix
+  test_matrix:
+    os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+    go_versions: ["1.21", "1.22"]
+
+  # Required content files for validation
+  required_content_files:
+    - "docs-site/content/_index.md"
+    - "docs-site/content/setup.md"
+    - "docs-site/content/usage.md"
+    - "docs-site/content/services.md"
+    - "docs-site/content/configuration.md"
+    - "docs-site/content/contributing.md"
+    - "docs-site/content/troubleshooting.md"
+
+docker:
+  registry: "ghcr.io"
+  platforms: "linux/amd64,linux/arm64"
+
+security:
+  # Security scan settings
+  gosec_config: ".gosec.conf"
+  trufflehog_args: "--only-verified --fail"
+  schedule_cron: "0 2 * * 0"  # Weekly on Sundays at 2 AM UTC
