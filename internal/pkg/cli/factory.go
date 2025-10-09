@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/isaacgarza/dev-stack/internal/core/services"
-	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/base"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/config"
 	"github.com/isaacgarza/dev-stack/internal/pkg/logger"
 	"github.com/spf13/cobra"
@@ -22,7 +22,7 @@ import (
 type Factory struct {
 	config   *config.CommandConfig
 	logger   *slog.Logger
-	registry *handlers.Registry
+	registry *base.Registry
 }
 
 // NewFactory creates a new CLI factory with handler registry
@@ -30,7 +30,7 @@ func NewFactory(cfg *config.CommandConfig) *Factory {
 	return &Factory{
 		config:   cfg,
 		logger:   logger.New(slog.LevelInfo),
-		registry: handlers.NewRegistry(),
+		registry: base.NewRegistry(),
 	}
 }
 
@@ -146,7 +146,7 @@ func (f *Factory) createCommandHandler(name string) func(*cobra.Command, []strin
 }
 
 // createBaseCommand creates a base command with common initialization
-func (f *Factory) createBaseCommand() (*handlers.BaseCommand, error) {
+func (f *Factory) createBaseCommand() (*types.BaseCommand, error) {
 	// Get current working directory
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -162,7 +162,7 @@ func (f *Factory) createBaseCommand() (*handlers.BaseCommand, error) {
 		return nil, fmt.Errorf("failed to create service manager: %w", err)
 	}
 
-	return &handlers.BaseCommand{
+	return &types.BaseCommand{
 		ProjectDir: projectDir,
 		Manager:    &serviceManagerAdapter{manager: manager},
 		Logger:     &loggerAdapter{logger: f.logger},
@@ -206,16 +206,15 @@ type serviceManagerAdapter struct {
 	manager *services.Manager
 }
 
-func (s *serviceManagerAdapter) StartServices(ctx context.Context, serviceNames []string, options handlers.StartOptions) error {
+func (s *serviceManagerAdapter) StartServices(ctx context.Context, serviceNames []string, options types.StartOptions) error {
 	startOpts := services.StartOptions{
-		Build:   options.Build,
-		Detach:  options.Detach,
-		Timeout: time.Duration(options.Timeout) * time.Second,
+		Build:  options.Build,
+		Detach: options.Detached,
 	}
 	return s.manager.StartServices(ctx, serviceNames, startOpts)
 }
 
-func (s *serviceManagerAdapter) StopServices(ctx context.Context, serviceNames []string, options handlers.StopOptions) error {
+func (s *serviceManagerAdapter) StopServices(ctx context.Context, serviceNames []string, options types.StopOptions) error {
 	stopOpts := services.StopOptions{
 		Timeout:       options.Timeout,
 		RemoveVolumes: options.Volumes,
@@ -223,13 +222,13 @@ func (s *serviceManagerAdapter) StopServices(ctx context.Context, serviceNames [
 	return s.manager.StopServices(ctx, serviceNames, stopOpts)
 }
 
-func (s *serviceManagerAdapter) GetServiceStatus(ctx context.Context, serviceNames []string) ([]handlers.ServiceStatus, error) {
+func (s *serviceManagerAdapter) GetServiceStatus(ctx context.Context, serviceNames []string) ([]types.ServiceStatus, error) {
 	statuses, err := s.manager.GetServiceStatus(ctx, serviceNames)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]handlers.ServiceStatus, len(statuses))
+	result := make([]types.ServiceStatus, len(statuses))
 	for i, status := range statuses {
 		// Convert PortMapping to string slice
 		ports := make([]string, len(status.Ports))
@@ -237,13 +236,12 @@ func (s *serviceManagerAdapter) GetServiceStatus(ctx context.Context, serviceNam
 			ports[j] = fmt.Sprintf("%s:%s", port.Host, port.Container)
 		}
 
-		result[i] = handlers.ServiceStatus{
-			Name:      status.Name,
-			State:     status.State,
-			Health:    status.Health,
-			Ports:     ports,
-			CreatedAt: status.CreatedAt,
-			UpdatedAt: status.CreatedAt, // Use CreatedAt as UpdatedAt since UpdatedAt doesn't exist
+		result[i] = types.ServiceStatus{
+			Name:   status.Name,
+			Status: status.State,
+			Health: status.Health,
+			Ports:  ports,
+			Uptime: status.Uptime.String(),
 		}
 	}
 	return result, nil
@@ -267,6 +265,10 @@ func (l *loggerAdapter) Error(msg string, args ...interface{}) {
 
 func (l *loggerAdapter) Debug(msg string, args ...interface{}) {
 	l.logger.Debug(msg, args...)
+}
+
+func (l *loggerAdapter) SlogLogger() *slog.Logger {
+	return l.logger
 }
 
 // Helper methods (simplified versions from original factory)

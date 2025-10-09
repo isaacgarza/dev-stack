@@ -106,7 +106,7 @@ Before using this framework, you need Docker installed and running. Here are the
 
 ```bash
 # Install Colima and Docker CLI via Homebrew
-brew install colima docker docker-compose
+brew install colima docker
 
 # Start Colima with recommended settings for development
 colima start --cpu 4 --memory 8 --disk 100
@@ -163,7 +163,7 @@ brew install --cask docker
 sudo apt-get update
 
 # Install Docker
-sudo apt-get install docker.io docker-compose-plugin
+sudo apt-get install docker.io
 
 # Start Docker service
 sudo systemctl start docker
@@ -176,7 +176,7 @@ sudo usermod -aG docker $USER
 **CentOS/RHEL/Fedora:**
 ```bash
 # Install Docker
-sudo dnf install docker docker-compose-plugin
+sudo dnf install docker
 
 # Start Docker service
 sudo systemctl start docker

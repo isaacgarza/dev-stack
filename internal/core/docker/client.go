@@ -18,6 +18,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 
+	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
 	"github.com/isaacgarza/dev-stack/internal/pkg/types"
 )
 
@@ -184,17 +185,17 @@ func (cs *ContainerService) Start(ctx context.Context, projectName string, servi
 
 	if err != nil {
 		cs.client.logger.Error("Failed to start services", "error", err, "output", string(output))
-		
+
 		// Print Docker output to console for immediate feedback
 		if len(output) > 0 {
 			fmt.Printf("\n🔍 Docker output:\n%s\n", string(output))
 		}
-		
+
 		// Save logs to file for debugging
 		if saveErr := cs.saveErrorLogs(string(output)); saveErr != nil {
 			cs.client.logger.Error("Failed to save error logs", "error", saveErr)
 		}
-		
+
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
@@ -204,14 +205,15 @@ func (cs *ContainerService) Start(ctx context.Context, projectName string, servi
 
 // saveErrorLogs saves Docker error output to a log file
 func (cs *ContainerService) saveErrorLogs(output string) error {
-	// Ensure dev-stack directory exists
-	if err := os.MkdirAll("dev-stack", 0755); err != nil {
-		return fmt.Errorf("failed to create dev-stack directory: %w", err)
+	// Ensure logs directory exists
+	logsDir := fmt.Sprintf("%s/%s", constants.DevStackDir, constants.LogsDir)
+	if err := os.MkdirAll(logsDir, 0755); err != nil {
+		return fmt.Errorf("failed to create logs directory: %w", err)
 	}
 
 	// Create log file with timestamp
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	logFile := fmt.Sprintf("dev-stack/docker-error-%s.log", timestamp)
+	logFile := fmt.Sprintf("%s/docker-error-%s.log", logsDir, timestamp)
 
 	// Write error output to file
 	content := fmt.Sprintf("Docker Error Log - %s\n%s\n%s\n\n%s",

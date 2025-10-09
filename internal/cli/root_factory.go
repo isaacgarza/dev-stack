@@ -77,7 +77,7 @@ func initFactoryConfig(commandConfig *config.CommandConfig) {
 		viper.AddConfigPath(".")
 		viper.AddConfigPath(".dev-stack")
 		viper.SetConfigType("yaml")
-		
+
 		// Try to find config file with multiple names
 		configNames := []string{"dev-stack-config", ".dev-stack"}
 		var configFound bool
@@ -88,7 +88,7 @@ func initFactoryConfig(commandConfig *config.CommandConfig) {
 				break
 			}
 		}
-		
+
 		// If no config found, don't call ReadInConfig again
 		if configFound {
 			return

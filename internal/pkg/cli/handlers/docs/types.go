@@ -92,6 +92,7 @@ type ServicesManifest map[string]ServiceInfo
 
 // ServiceInfo represents the information for a single service
 type ServiceInfo struct {
+	Name         string   `yaml:"name"`
 	Description  string   `yaml:"description"`
 	Options      []string `yaml:"options"`
 	Examples     []string `yaml:"examples"`

@@ -2,7 +2,6 @@ package config
 
 import (
 	"embed"
-	_ "embed"
 )
 
 //go:embed commands.yaml
@@ -13,9 +12,6 @@ var EmbeddedInitSettingsYAML []byte
 
 //go:embed dev-stack-config.template
 var EmbeddedConfigTemplate []byte
-
-//go:embed gitignore.txt
-var EmbeddedGitignore []byte
 
 //go:embed docker-compose.template
 var EmbeddedDockerComposeTemplate []byte

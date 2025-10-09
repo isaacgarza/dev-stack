@@ -1,7 +1,0 @@
-# dev-stack generated files
-docker-compose.yml
-.env.generated
-
-# dev-stack backups and logs
-dev-stack-config.yaml.bak
-*.log

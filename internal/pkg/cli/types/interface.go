@@ -1,11 +1,10 @@
-package handlers
+package types
 
 import (
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -53,32 +52,11 @@ type Logger interface {
 	Debug(msg string, args ...interface{})
 }
 
-// Common option types
-type StartOptions struct {
-	Detach  bool
-	Build   bool
-	Timeout int
-}
-
-type StopOptions struct {
-	Timeout int
-	Volumes bool
-}
-
-type ServiceStatus struct {
-	Name      string
-	State     string
-	Health    string
-	Ports     []string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
 // ValidateServices validates service names against available services
 func (b *BaseCommand) ValidateServices(serviceNames []string) error {
 	// Try to load services from embedded config first
 	servicesFile := "internal/config/services/services.yaml"
-	
+
 	// Check if we're in the dev-stack project directory
 	if _, err := os.Stat(filepath.Join(b.ProjectDir, servicesFile)); os.IsNotExist(err) {
 		// We're not in the dev-stack project directory, skip validation for now
