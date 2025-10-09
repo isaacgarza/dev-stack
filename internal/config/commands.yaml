@@ -69,7 +69,7 @@ categories:
     name: "Development Tools"
     description: "Commands for development workflow and documentation"
     icon: "🛠️"
-    commands: ["docs", "validate"]
+    commands: ["docs", "validate", "services", "deps", "conflicts"]
 
 commands:
   up:
@@ -120,6 +120,14 @@ commands:
         type: "string"
         description: "Timeout for service startup (e.g., 30s, 2m)"
         default: "30s"
+      resolve-deps:
+        type: "bool"
+        description: "Show dependency resolution tree before starting"
+        default: false
+      check-conflicts:
+        type: "bool"
+        description: "Check for service conflicts before starting"
+        default: false
     related_commands: ["down", "restart", "status"]
     tips:
       - "Use --profile to quickly start predefined service combinations"
@@ -681,6 +689,60 @@ commands:
         default: "markdown"
         options: ["markdown", "html", "json"]
     related_commands: ["init", "validate"]
+
+  services:
+    category: "development"
+    description: "List available services by category"
+    long_description: |
+      List all available services organized by category (database, cache, 
+      messaging, observability, cloud). Shows service descriptions and 
+      dependencies for easy discovery and selection.
+    usage: "services [flags]"
+    examples:
+      - command: "dev-stack services"
+        description: "List all services grouped by category"
+      - command: "dev-stack services --category database"
+        description: "List services in database category"
+      - command: "dev-stack services --category cache"
+        description: "List cache services"
+    flags:
+      category:
+        short: "c"
+        type: "string"
+        description: "Show services in specific category"
+        default: ""
+        options: ["database", "cache", "messaging", "observability", "cloud"]
+    related_commands: ["deps", "conflicts", "init"]
+
+  deps:
+    category: "development"
+    description: "Show dependency tree for a service"
+    long_description: |
+      Display the complete dependency tree for a service, showing all required
+      dependencies and the resolved start order. Helps understand service
+      relationships and startup sequences.
+    usage: "deps <service>"
+    examples:
+      - command: "dev-stack deps kafka-ui"
+        description: "Show dependencies for kafka-ui service"
+      - command: "dev-stack deps postgres"
+        description: "Show dependencies for postgres service"
+    related_commands: ["services", "conflicts", "up"]
+
+  conflicts:
+    category: "development"
+    description: "Check for conflicts between services"
+    long_description: |
+      Check if the specified services have any conflicts that would prevent
+      them from running together. Identifies port conflicts, resource conflicts,
+      and incompatible service combinations.
+    usage: "conflicts <service1> <service2> [service...]"
+    examples:
+      - command: "dev-stack conflicts postgres mysql"
+        description: "Check if postgres and mysql conflict"
+      - command: "dev-stack conflicts postgres redis kafka-broker"
+        description: "Check conflicts between multiple services"
+    related_commands: ["services", "deps", "up"]
 
   validate:
     category: "development"

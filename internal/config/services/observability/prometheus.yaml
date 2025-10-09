@@ -3,18 +3,37 @@ description: Prometheus metrics collection and monitoring system
 category: observability
 version: "latest"
 
-# Default configuration
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [metrics, monitoring]
+
+options:
+  - port
+  - memory_limit
+  - retention_time
+examples:
+  - "curl http://localhost:9090/metrics"
+usage_notes: "Metrics collection and monitoring. Scrapes application /metrics endpoints."
+links:
+  - "https://prometheus.io/docs/"
+
 defaults:
   image: prom/prometheus:latest
   port: 9090
 
-# Environment variables this service provides
 environment:
   PROMETHEUS_HOST: localhost
   PROMETHEUS_PORT: "${PROMETHEUS_PORT:-9090}"
   PROMETHEUS_URL: "http://localhost:${PROMETHEUS_PORT:-9090}"
 
-# Docker-specific configuration
+spring_config:
+  properties:
+    - "management.endpoints.web.exposure.include=health,info,metrics,prometheus"
+    - "management.endpoint.prometheus.enabled=true"
+    - "management.metrics.export.prometheus.enabled=true"
+
 docker:
   restart: unless-stopped
   networks:
@@ -37,32 +56,23 @@ docker:
     retries: 3
     start_period: 30s
 
-# Spring Boot configuration
-spring_config:
-  properties:
-    - "management.endpoints.web.exposure.include=health,info,metrics,prometheus"
-    - "management.endpoint.prometheus.enabled=true"
-    - "management.metrics.export.prometheus.enabled=true"
-
-# Dependencies
-dependencies: []
-
-# Ports that need to be available
 required_ports:
   - "${PROMETHEUS_PORT:-9090}"
 
-# Volume mounts
 volumes:
   - name: prometheus-data
     mount: /prometheus
     description: Prometheus data directory
 
-# Documentation links
+web_interfaces:
+  - name: Prometheus UI
+    url: "http://localhost:${PROMETHEUS_PORT:-9090}"
+    description: Prometheus metrics and query interface
+
 docs:
   - name: Prometheus Documentation
     url: https://prometheus.io/docs/
 
-# Common use cases
 use_cases:
   - Application metrics collection
   - Performance monitoring

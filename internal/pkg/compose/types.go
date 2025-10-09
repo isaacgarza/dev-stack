@@ -17,18 +17,27 @@ type ServiceDefinition struct {
 	RawContent   []byte                 `yaml:"-"` // Original file content for debugging
 }
 
+// DependencyConfig defines service dependency relationships
+type DependencyConfig struct {
+	Required  []string `yaml:"required"`
+	Soft      []string `yaml:"soft"`
+	Conflicts []string `yaml:"conflicts"`
+	Provides  []string `yaml:"provides"`
+}
+
 // ServiceMetadata contains metadata about a service from services.yaml
 type ServiceMetadata struct {
-	Description  string            `yaml:"description"`
-	Options      []string          `yaml:"options"`
-	Examples     []string          `yaml:"examples"`
-	UsageNotes   string            `yaml:"usage_notes"`
-	Links        []string          `yaml:"links"`
-	Tags         []string          `yaml:"tags"`
-	Category     string            `yaml:"category"`
-	Dependencies []string          `yaml:"dependencies"`
-	Ports        map[string]string `yaml:"ports"`
-	Environment  map[string]string `yaml:"environment"`
+	Description      string            `yaml:"description"`
+	Options          []string          `yaml:"options"`
+	Examples         []string          `yaml:"examples"`
+	UsageNotes       string            `yaml:"usage_notes"`
+	Links            []string          `yaml:"links"`
+	Tags             []string          `yaml:"tags"`
+	Category         string            `yaml:"category"`
+	Dependencies     []string          `yaml:"dependencies"`
+	Ports            map[string]string `yaml:"ports"`
+	Environment      map[string]string `yaml:"environment"`
+	DependencyConfig DependencyConfig  `yaml:"dependency_config"`
 }
 
 // ServicesManifest represents the services.yaml file structure

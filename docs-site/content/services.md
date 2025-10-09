@@ -1,112 +1,14 @@
----
-title: "Services"
-description: "Available services and configuration options for dev-stack"
-lead: "Explore all the services you can use with dev-stack and how to configure them"
-date: 2025-10-07T12:20:14-05:00
-lastmod: 2025-10-07T12:20:14-05:00
-draft: false
-weight: 30
-toc: true
----
-
-<!-- AUTO-GENERATED-START -->
 # Available Services
 
-7 services available for your development stack.
-
-## Service Categories
+This documentation is automatically generated from service definitions.
 
 
-### General
-
-- **[jaeger](#jaeger)** - Distributed tracing system for observability.
-
-- **[kafka](#kafka)** - Event streaming platform for messaging and pub/sub.
-
-- **[localstack](#localstack)** - AWS cloud services emulator for local development.
-
-- **[mysql](#mysql)** - Relational database (MySQL) as an alternative to PostgreSQL.
-
-- **[postgres](#postgres)** - Relational database (PostgreSQL) for structured data.
-
-- **[prometheus](#prometheus)** - Metrics collection and monitoring system.
-
-- **[redis](#redis)** - In-memory data store for caching and session storage.
+## Cache Services
 
 
+### redis
 
-
-## Service Reference
-
-
-### jaeger
-
-Distributed tracing system for observability.
-
-
-
-
-
-
-
-
-
-
-**Configuration Options:**
-
-- ui_port
-
-- otlp_grpc_port
-
-- otlp_http_port
-
-- memory_limit
-
-- sampling_strategy
-
-
-
-
-**Examples:**
-
-```bash
-curl http://localhost:16686
-```
-
-```bash
-spring.sleuth.enabled=true
-```
-
-
-
-
-**Usage Notes:**
-
-Use Jaeger to trace requests across microservices. Access the UI at the configured port.
-
-
-
-**Links:**
-
-- [Documentation](https://www.jaegertracing.io/docs/)
-
-- [Documentation](https://docs.spring.io/spring-cloud-sleuth/docs/current/reference/html/)
-
-
-
----
-
-
-### kafka
-
-Event streaming platform for messaging and pub/sub.
-
-
-
-
-
-
-
+**Description:** Redis in-memory data store for caching and session storage
 
 
 
@@ -114,63 +16,44 @@ Event streaming platform for messaging and pub/sub.
 
 - port
 
-- ui_port
-
-- zookeeper_port
+- password
 
 - memory_limit
 
-- auto_create_topics
+- persistence
 
-- num_partitions
-
-- replication_factor
-
-- topics
-
+- config
 
 
 
 **Examples:**
 
-```bash
-kafka-topics --bootstrap-server localhost:9092 --list
-```
+- redis-cli -h localhost -p 6379 ping
 
-```bash
-spring.kafka.bootstrap-servers=localhost:9092
-```
+- spring.data.redis.host=localhost
 
 
 
-
-**Usage Notes:**
-
-Use Kafka for event-driven architectures. Configure topics and partitions as needed.
-
-
+**Usage Notes:** Use Redis for caching, session storage, and pub/sub. Set a password for production-like security.
 
 **Links:**
 
-- [Documentation](https://kafka.apache.org/documentation/)
+- https://redis.io/documentation
 
-- [Documentation](https://docs.spring.io/spring-kafka/docs/current/reference/html/)
+- https://spring.io/projects/spring-data-redis
 
 
 
 ---
 
 
-### localstack
 
-AWS cloud services emulator for local development.
-
+## Cloud Services
 
 
+### localstack-core
 
-
-
-
+**Description:** LocalStack core AWS service emulator
 
 
 
@@ -182,57 +65,150 @@ AWS cloud services emulator for local development.
 
 - memory_limit
 
-- services
-
-- sqs_queues
-
-- sns_topics
-
-- dynamodb_tables
-
+- persistence
 
 
 
 **Examples:**
 
-```bash
-aws --endpoint-url=http://localhost:4566 sqs list-queues
-```
-
-```bash
-spring.cloud.aws.sqs.endpoint=http://localhost:4566
-```
+- aws --endpoint-url=http://localhost:4566 s3 ls
 
 
 
-
-**Usage Notes:**
-
-Emulates AWS APIs for local testing. Enable only the services you need for faster startup.
-
-
+**Usage Notes:** Core LocalStack service providing AWS API emulation for local development
 
 **Links:**
 
-- [Documentation](https://docs.localstack.cloud/)
-
-- [Documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-endpoints.html)
+- https://docs.localstack.cloud/
 
 
 
 ---
 
 
+### localstack-dynamodb
+
+**Description:** LocalStack DynamoDB NoSQL database emulation
+
+**Dependencies:** localstack-core
+
+**Configuration Options:**
+
+- default_tables
+
+
+
+**Examples:**
+
+- aws --endpoint-url=http://localhost:4566 dynamodb list-tables
+
+
+
+**Usage Notes:** DynamoDB NoSQL database emulation for local development
+
+**Links:**
+
+- https://docs.localstack.cloud/user-guide/aws/dynamodb/
+
+
+
+---
+
+
+### localstack-s3
+
+**Description:** LocalStack S3 (Simple Storage Service) emulation
+
+**Dependencies:** localstack-core
+
+**Configuration Options:**
+
+- default_buckets
+
+
+
+**Examples:**
+
+- aws --endpoint-url=http://localhost:4566 s3 ls
+
+
+
+**Usage Notes:** S3 object storage emulation for local development and testing
+
+**Links:**
+
+- https://docs.localstack.cloud/user-guide/aws/s3/
+
+
+
+---
+
+
+### localstack-sns
+
+**Description:** LocalStack SNS (Simple Notification Service) emulation
+
+**Dependencies:** localstack-core
+
+**Configuration Options:**
+
+- default_topics
+
+
+
+**Examples:**
+
+- aws --endpoint-url=http://localhost:4566 sns list-topics
+
+
+
+**Usage Notes:** SNS pub/sub notification service emulation. Can integrate with SQS for subscriptions.
+
+**Links:**
+
+- https://docs.localstack.cloud/user-guide/aws/sns/
+
+
+
+---
+
+
+### localstack-sqs
+
+**Description:** LocalStack SQS (Simple Queue Service) emulation
+
+**Dependencies:** localstack-core
+
+**Configuration Options:**
+
+- default_queues
+
+
+
+**Examples:**
+
+- aws --endpoint-url=http://localhost:4566 sqs list-queues
+
+
+
+**Usage Notes:** SQS message queue emulation for local development
+
+**Links:**
+
+- https://docs.localstack.cloud/user-guide/aws/sqs/
+
+
+
+---
+
+
+
+## Database Services
+
+
 ### mysql
 
-Relational database (MySQL) as an alternative to PostgreSQL.
-
-
-
-
-
-
-
+**Description:** MySQL relational database for persistent data storage
 
 
 
@@ -246,45 +222,23 @@ Relational database (MySQL) as an alternative to PostgreSQL.
 
 - password
 
-- root_password
-
 - memory_limit
-
-- character_set
-
-- collation
-
-- sql_mode
-
-- innodb_buffer_pool_size
-
 
 
 
 **Examples:**
 
-```bash
-mysql -h localhost -u root -e "SELECT VERSION();"
-```
+- mysql -h localhost -u root -p -e "SELECT version();"
 
-```bash
-spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev
-```
+- spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev
 
 
 
-
-**Usage Notes:**
-
-Use MySQL for compatibility with legacy systems or when required by application stack.
-
-
+**Usage Notes:** MySQL database for relational data storage. Alternative to PostgreSQL.
 
 **Links:**
 
-- [Documentation](https://dev.mysql.com/doc/)
-
-- [Documentation](https://spring.io/projects/spring-data-jpa)
+- https://dev.mysql.com/doc/
 
 
 
@@ -293,14 +247,7 @@ Use MySQL for compatibility with legacy systems or when required by application 
 
 ### postgres
 
-Relational database (PostgreSQL) for structured data.
-
-
-
-
-
-
-
+**Description:** PostgreSQL relational database for persistent data storage
 
 
 
@@ -330,31 +277,196 @@ Relational database (PostgreSQL) for structured data.
 
 
 
-
 **Examples:**
 
-```bash
-psql -h localhost -U postgres -c "SELECT version();"
-```
+- psql -h localhost -U postgres -c "SELECT version();"
 
-```bash
-spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev
-```
+- spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev
 
 
 
-
-**Usage Notes:**
-
-Ideal for structured data and transactional workloads. Use overrides to set custom database/user.
-
-
+**Usage Notes:** Ideal for structured data and transactional workloads. Use overrides to set custom database/user.
 
 **Links:**
 
-- [Documentation](https://www.postgresql.org/docs/)
+- https://www.postgresql.org/docs/
 
-- [Documentation](https://spring.io/projects/spring-data-jpa)
+- https://spring.io/projects/spring-data-jpa
+
+
+
+---
+
+
+
+## Messaging Services
+
+
+### kafka-broker
+
+**Description:** Apache Kafka broker for event streaming and messaging
+
+**Dependencies:** zookeeper
+
+**Configuration Options:**
+
+- port
+
+- memory_limit
+
+- auto_create_topics
+
+- num_partitions
+
+- replication_factor
+
+
+
+**Examples:**
+
+- kafka-broker-api-versions --bootstrap-server localhost:9092
+
+
+
+**Usage Notes:** Kafka broker handles message storage and delivery. Requires Zookeeper for coordination.
+
+**Links:**
+
+- https://kafka.apache.org/documentation/
+
+- https://docs.spring.io/spring-kafka/docs/current/reference/html/
+
+
+
+---
+
+
+### kafka-topics
+
+**Description:** Kafka topic initialization and management service
+
+**Dependencies:** kafka-broker
+
+**Configuration Options:**
+
+- default_topics_enabled
+
+
+
+**Examples:**
+
+- kafka-topics --create --bootstrap-server localhost:9092 --topic test --partitions 3 --replication-factor 1
+
+
+
+**Usage Notes:** Initializes default Kafka topics for development. Runs once on startup.
+
+**Links:**
+
+- https://kafka.apache.org/documentation/#quickstart_createtopic
+
+
+
+---
+
+
+### kafka-ui
+
+**Description:** Web UI for Kafka cluster management and topic browsing
+
+**Dependencies:** kafka-broker
+
+**Configuration Options:**
+
+- port
+
+- memory_limit
+
+
+
+**Examples:**
+
+- curl -f http://localhost:8080/actuator/health
+
+
+
+**Usage Notes:** Web interface for managing Kafka topics, viewing messages, and monitoring cluster health
+
+**Links:**
+
+- https://github.com/provectus/kafka-ui
+
+
+
+---
+
+
+### zookeeper
+
+**Description:** Apache Zookeeper coordination service for distributed systems
+
+
+
+**Configuration Options:**
+
+- port
+
+- memory_limit
+
+
+
+**Examples:**
+
+- echo 'ruok' | nc localhost 2181
+
+
+
+**Usage Notes:** Zookeeper provides coordination services for Kafka and other distributed systems
+
+**Links:**
+
+- https://zookeeper.apache.org/doc/current/
+
+
+
+---
+
+
+
+## Observability Services
+
+
+### jaeger
+
+**Description:** Jaeger distributed tracing system for monitoring and troubleshooting microservices
+
+
+
+**Configuration Options:**
+
+- ui_port
+
+- otlp_http_port
+
+- otlp_grpc_port
+
+- memory_limit
+
+
+
+**Examples:**
+
+- curl -f http://localhost:16686/
+
+
+
+**Usage Notes:** Distributed tracing for microservices. Supports OpenTelemetry and Zipkin protocols.
+
+**Links:**
+
+- https://www.jaegertracing.io/docs/
+
+- https://opentelemetry.io/docs/
 
 
 
@@ -363,114 +475,31 @@ Ideal for structured data and transactional workloads. Use overrides to set cust
 
 ### prometheus
 
-Metrics collection and monitoring system.
-
-
-
-
-
-
-
+**Description:** Prometheus metrics collection and monitoring system
 
 
 
 **Configuration Options:**
 
 - port
-
-- scrape_interval
 
 - memory_limit
 
 - retention_time
 
-- scrape_configs
-
-
 
 
 **Examples:**
 
-```bash
-curl http://localhost:9090
-```
-
-```bash
-spring.metrics.export.prometheus.enabled=true
-```
+- curl http://localhost:9090/metrics
 
 
 
-
-**Usage Notes:**
-
-Prometheus scrapes metrics from configured endpoints. Use for monitoring and alerting.
-
-
+**Usage Notes:** Metrics collection and monitoring. Scrapes application /metrics endpoints.
 
 **Links:**
 
-- [Documentation](https://prometheus.io/docs/)
-
-- [Documentation](https://micrometer.io/docs/registry/prometheus)
-
-
-
----
-
-
-### redis
-
-In-memory data store for caching and session storage.
-
-
-
-
-
-
-
-
-
-
-**Configuration Options:**
-
-- port
-
-- password
-
-- memory_limit
-
-- persistence
-
-- config
-
-
-
-
-**Examples:**
-
-```bash
-redis-cli -h localhost -p 6379 ping
-```
-
-```bash
-spring.data.redis.host=localhost
-```
-
-
-
-
-**Usage Notes:**
-
-Use Redis for caching, session storage, and pub/sub. Set a password for production-like security.
-
-
-
-**Links:**
-
-- [Documentation](https://redis.io/documentation)
-
-- [Documentation](https://spring.io/projects/spring-data-redis)
+- https://prometheus.io/docs/
 
 
 
@@ -478,4 +507,19 @@ Use Redis for caching, session storage, and pub/sub. Set a password for producti
 
 
 
-<!-- AUTO-GENERATED-END -->
+
+## Service Categories
+
+
+- **Cache**: 1 service
+
+- **Cloud**: 5 services
+
+- **Database**: 2 services
+
+- **Messaging**: 4 services
+
+- **Observability**: 2 services
+
+
+*Documentation generated automatically from service definitions*

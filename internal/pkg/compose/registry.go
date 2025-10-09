@@ -36,7 +36,7 @@ func (r *ServiceRegistry) Load() error {
 	return nil
 }
 
-// loadManifest loads the services.yaml manifest file
+// loadManifest loads the services.yaml manifest file (optional for backward compatibility)
 func (r *ServiceRegistry) loadManifest() error {
 	if _, err := os.Stat(r.manifestPath); os.IsNotExist(err) {
 		// Manifest file is optional, continue without it
@@ -45,11 +45,13 @@ func (r *ServiceRegistry) loadManifest() error {
 
 	data, err := os.ReadFile(r.manifestPath)
 	if err != nil {
-		return fmt.Errorf("failed to read manifest file %s: %w", r.manifestPath, err)
+		// Don't fail if manifest can't be read, just continue without it
+		return nil
 	}
 
 	if err := yaml.Unmarshal(data, &r.manifest); err != nil {
-		return fmt.Errorf("failed to parse manifest file %s: %w", r.manifestPath, err)
+		// Don't fail if manifest can't be parsed, just continue without it
+		return nil
 	}
 
 	return nil
@@ -61,6 +63,222 @@ func (r *ServiceRegistry) discoverServices() error {
 		return fmt.Errorf("services directory not found: %s\nPlease ensure you're in a dev-stack project directory or the services path is correct", r.servicesPath)
 	}
 
+	// Try category-based discovery first
+	if err := r.discoverByCategory(); err == nil {
+		return nil
+	}
+
+	// Fall back to legacy flat discovery
+	return r.discoverFlat()
+}
+
+// discoverByCategory discovers services organized in category folders
+func (r *ServiceRegistry) discoverByCategory() error {
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	serviceCount := 0
+	errorCount := 0
+
+	for _, category := range categories {
+		categoryPath := filepath.Join(r.servicesPath, category)
+		if _, err := os.Stat(categoryPath); os.IsNotExist(err) {
+			continue
+		}
+
+		services, err := r.scanCategory(category)
+		if err != nil {
+			errorCount++
+			fmt.Printf("Warning: failed to scan category '%s': %v\n", category, err)
+			continue
+		}
+
+		for _, serviceDef := range services {
+			r.services[serviceDef.Name] = &serviceDef
+			serviceCount++
+		}
+	}
+
+	if serviceCount == 0 {
+		return fmt.Errorf("no services found in category folders")
+	}
+
+	if errorCount > 0 {
+		fmt.Printf("Loaded %d services successfully, %d categories had errors\n", serviceCount, errorCount)
+	}
+
+	return nil
+}
+
+// scanCategory scans a specific category folder for service definitions
+func (r *ServiceRegistry) scanCategory(category string) ([]ServiceDefinition, error) {
+	categoryPath := filepath.Join(r.servicesPath, category)
+	entries, err := os.ReadDir(categoryPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read category directory %s: %w", categoryPath, err)
+	}
+
+	var services []ServiceDefinition
+
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		}
+
+		serviceName := strings.TrimSuffix(entry.Name(), ".yaml")
+		serviceDef, err := r.loadServiceFromFile(filepath.Join(categoryPath, entry.Name()))
+		if err != nil {
+			fmt.Printf("Warning: failed to load service '%s': %v\n", serviceName, err)
+			continue
+		}
+
+		serviceDef.Name = serviceName
+		serviceDef.Metadata.Category = category
+		services = append(services, *serviceDef)
+	}
+
+	return services, nil
+}
+
+// loadServiceFromFile loads a service definition from a YAML file
+func (r *ServiceRegistry) loadServiceFromFile(filePath string) (*ServiceDefinition, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read service file %s: %w", filePath, err)
+	}
+
+	var serviceData map[string]interface{}
+	if err := yaml.Unmarshal(data, &serviceData); err != nil {
+		return nil, fmt.Errorf("invalid YAML in %s: %w", filePath, err)
+	}
+
+	// Extract basic service info
+	name, _ := serviceData["name"].(string)
+	description, _ := serviceData["description"].(string)
+	category, _ := serviceData["category"].(string)
+
+	// Build metadata from the service file
+	metadata := ServiceMetadata{
+		Description: description,
+		Category:    category,
+	}
+
+	// Extract CLI metadata
+	if options, exists := serviceData["options"]; exists {
+		if optionsList, ok := options.([]interface{}); ok {
+			for _, opt := range optionsList {
+				if optStr, ok := opt.(string); ok {
+					metadata.Options = append(metadata.Options, optStr)
+				}
+			}
+		}
+	}
+
+	if examples, exists := serviceData["examples"]; exists {
+		if examplesList, ok := examples.([]interface{}); ok {
+			for _, ex := range examplesList {
+				if exStr, ok := ex.(string); ok {
+					metadata.Examples = append(metadata.Examples, exStr)
+				}
+			}
+		}
+	}
+
+	if usageNotes, exists := serviceData["usage_notes"]; exists {
+		if notesStr, ok := usageNotes.(string); ok {
+			metadata.UsageNotes = notesStr
+		}
+	}
+
+	if links, exists := serviceData["links"]; exists {
+		if linksList, ok := links.([]interface{}); ok {
+			for _, link := range linksList {
+				if linkStr, ok := link.(string); ok {
+					metadata.Links = append(metadata.Links, linkStr)
+				}
+			}
+		}
+	}
+
+	// Extract dependency configuration
+	if deps, exists := serviceData["dependencies"]; exists {
+		if depsMap, ok := deps.(map[string]interface{}); ok {
+			if required, exists := depsMap["required"]; exists {
+				if reqList, ok := required.([]interface{}); ok {
+					for _, req := range reqList {
+						if reqStr, ok := req.(string); ok {
+							metadata.DependencyConfig.Required = append(metadata.DependencyConfig.Required, reqStr)
+						}
+					}
+				}
+			}
+			if soft, exists := depsMap["soft"]; exists {
+				if softList, ok := soft.([]interface{}); ok {
+					for _, s := range softList {
+						if sStr, ok := s.(string); ok {
+							metadata.DependencyConfig.Soft = append(metadata.DependencyConfig.Soft, sStr)
+						}
+					}
+				}
+			}
+			if conflicts, exists := depsMap["conflicts"]; exists {
+				if conflictsList, ok := conflicts.([]interface{}); ok {
+					for _, c := range conflictsList {
+						if cStr, ok := c.(string); ok {
+							metadata.DependencyConfig.Conflicts = append(metadata.DependencyConfig.Conflicts, cStr)
+						}
+					}
+				}
+			}
+			if provides, exists := depsMap["provides"]; exists {
+				if providesList, ok := provides.([]interface{}); ok {
+					for _, p := range providesList {
+						if pStr, ok := p.(string); ok {
+							metadata.DependencyConfig.Provides = append(metadata.DependencyConfig.Provides, pStr)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// For now, create empty docker-compose structure
+	// The actual docker-compose generation will use the service.yaml data
+	services := make(map[string]interface{})
+	volumes := make(map[string]interface{})
+	networks := make(map[string]interface{})
+
+	// Extract dependencies (legacy + new format)
+	dependencies := r.extractDependenciesFromMetadata(metadata)
+
+	serviceDef := &ServiceDefinition{
+		Name:         name,
+		Path:         filepath.Dir(filePath),
+		ComposeFile:  filePath,
+		Services:     services,
+		Volumes:      volumes,
+		Networks:     networks,
+		Dependencies: dependencies,
+		Metadata:     metadata,
+		RawContent:   data,
+	}
+
+	return serviceDef, nil
+}
+
+// extractDependenciesFromMetadata extracts dependencies from service metadata
+func (r *ServiceRegistry) extractDependenciesFromMetadata(metadata ServiceMetadata) []string {
+	var deps []string
+	
+	// Add required dependencies
+	deps = append(deps, metadata.DependencyConfig.Required...)
+	
+	// Add legacy dependencies for backward compatibility
+	deps = append(deps, metadata.Dependencies...)
+	
+	return deps
+}
+
+// discoverFlat performs legacy flat directory discovery
+func (r *ServiceRegistry) discoverFlat() error {
 	entries, err := os.ReadDir(r.servicesPath)
 	if err != nil {
 		return fmt.Errorf("failed to read services directory %s: %w", r.servicesPath, err)
@@ -250,6 +468,47 @@ func (r *ServiceRegistry) ListServices() []string {
 		names = append(names, name)
 	}
 	return names
+}
+
+// GetServicesByCategory returns all services in a specific category
+func (r *ServiceRegistry) GetServicesByCategory(category string) ([]*ServiceDefinition, error) {
+	if !r.loaded {
+		if err := r.Load(); err != nil {
+			return nil, err
+		}
+	}
+
+	var services []*ServiceDefinition
+	for _, service := range r.services {
+		if service.Metadata.Category == category {
+			services = append(services, service)
+		}
+	}
+
+	return services, nil
+}
+
+// ListCategories returns all available categories
+func (r *ServiceRegistry) ListCategories() []string {
+	if !r.loaded {
+		if err := r.Load(); err != nil {
+			return []string{}
+		}
+	}
+
+	categorySet := make(map[string]bool)
+	for _, service := range r.services {
+		if service.Metadata.Category != "" {
+			categorySet[service.Metadata.Category] = true
+		}
+	}
+
+	var categories []string
+	for category := range categorySet {
+		categories = append(categories, category)
+	}
+
+	return categories
 }
 
 // ResolveDependencies resolves service dependencies and returns an ordered list

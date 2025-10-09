@@ -3,7 +3,24 @@ description: Jaeger distributed tracing system for monitoring and troubleshootin
 category: observability
 version: "1.51"
 
-# Default configuration
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [tracing, observability]
+
+options:
+  - ui_port
+  - otlp_http_port
+  - otlp_grpc_port
+  - memory_limit
+examples:
+  - "curl -f http://localhost:16686/"
+usage_notes: "Distributed tracing for microservices. Supports OpenTelemetry and Zipkin protocols."
+links:
+  - "https://www.jaegertracing.io/docs/"
+  - "https://opentelemetry.io/docs/"
+
 defaults:
   image: jaegertracing/all-in-one:1.51
   ui_port: 16686
@@ -12,7 +29,6 @@ defaults:
   http_port: 14268
   grpc_port: 14250
 
-# Environment variables this service provides
 environment:
   JAEGER_HOST: localhost
   JAEGER_UI_PORT: "${JAEGER_UI_PORT:-16686}"
@@ -24,7 +40,11 @@ environment:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
 
-# Docker-specific configuration
+spring_config:
+  properties:
+    - "management.tracing.sampling.probability=1.0"
+    - "management.otlp.tracing.endpoint=http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces"
+
 docker:
   restart: unless-stopped
   networks:
@@ -42,16 +62,6 @@ docker:
     retries: 3
     start_period: 30s
 
-# Spring Boot configuration
-spring_config:
-  properties:
-    - "management.tracing.sampling.probability=1.0"
-    - "management.otlp.tracing.endpoint=http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces"
-
-# Dependencies
-dependencies: []
-
-# Ports that need to be available
 required_ports:
   - "${JAEGER_UI_PORT:-16686}"
   - "${JAEGER_OTLP_HTTP_PORT:-4318}"
@@ -59,17 +69,17 @@ required_ports:
   - "${JAEGER_HTTP_PORT:-14268}"
   - "${JAEGER_GRPC_PORT:-14250}"
 
-# Volume mounts
-volumes: []
+web_interfaces:
+  - name: Jaeger UI
+    url: "http://localhost:${JAEGER_UI_PORT:-16686}"
+    description: Distributed tracing UI
 
-# Documentation links
 docs:
   - name: Jaeger Documentation
     url: https://www.jaegertracing.io/docs/
   - name: OpenTelemetry
     url: https://opentelemetry.io/docs/
 
-# Common use cases
 use_cases:
   - Distributed tracing
   - Performance monitoring

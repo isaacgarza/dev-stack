@@ -3,6 +3,34 @@ description: PostgreSQL relational database for persistent data storage
 category: database
 version: "15"
 
+# Dependency configuration (new Phase 1 addition)
+dependencies:
+  required: []
+  soft: []
+  conflicts: [mysql]
+  provides: [database, sql]
+
+# CLI metadata (from services.yaml)
+options:
+  - port
+  - database
+  - username
+  - password
+  - memory_limit
+  - shared_preload_libraries
+  - log_statement
+  - log_duration
+  - shared_buffers
+  - effective_cache_size
+  - work_mem
+examples:
+  - 'psql -h localhost -U postgres -c "SELECT version();"'
+  - "spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev"
+usage_notes: "Ideal for structured data and transactional workloads. Use overrides to set custom database/user."
+links:
+  - "https://www.postgresql.org/docs/"
+  - "https://spring.io/projects/spring-data-jpa"
+
 # Default configuration
 defaults:
   image: postgres:15-alpine
@@ -59,9 +87,6 @@ spring_config:
     - "spring.jpa.hibernate.ddl-auto=validate"
     - "spring.jpa.show-sql=true"
     - "spring.jpa.properties.hibernate.format_sql=true"
-
-# Dependencies
-dependencies: []
 
 # Ports that need to be available
 required_ports:

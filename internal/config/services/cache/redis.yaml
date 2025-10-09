@@ -3,6 +3,28 @@ description: Redis in-memory data store for caching and session storage
 category: cache
 version: "7"
 
+# Dependency configuration (new Phase 1 addition)
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [cache]
+
+# CLI metadata (from services.yaml)
+options:
+  - port
+  - password
+  - memory_limit
+  - persistence
+  - config
+examples:
+  - "redis-cli -h localhost -p 6379 ping"
+  - "spring.data.redis.host=localhost"
+usage_notes: "Use Redis for caching, session storage, and pub/sub. Set a password for production-like security."
+links:
+  - "https://redis.io/documentation"
+  - "https://spring.io/projects/spring-data-redis"
+
 # Default configuration
 defaults:
   image: redis:7-alpine
@@ -38,9 +60,6 @@ spring_config:
     - "spring.data.redis.host=${REDIS_HOST}"
     - "spring.data.redis.port=${REDIS_PORT}"
     - "spring.data.redis.password=${REDIS_PASSWORD}"
-
-# Dependencies
-dependencies: []
 
 # Ports that need to be available
 required_ports:

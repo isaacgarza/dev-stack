@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -26,6 +27,8 @@ func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []strin
 	detach, _ := cmd.Flags().GetBool("detach")
 	build, _ := cmd.Flags().GetBool("build")
 	profile, _ := cmd.Flags().GetString("profile")
+	resolveDeps, _ := cmd.Flags().GetBool("resolve-deps")
+	checkConflicts, _ := cmd.Flags().GetBool("check-conflicts")
 
 	// If no specific services provided, read from config
 	servicesToStart := args
@@ -36,6 +39,43 @@ func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []strin
 		}
 		servicesToStart = config.Stack.Enabled
 	}
+
+	// Auto-resolve dependencies
+	serviceUtils := NewServiceUtils()
+	resolvedServices, err := serviceUtils.ResolveDependencies(servicesToStart)
+	if err != nil {
+		return fmt.Errorf("dependency resolution failed: %w", err)
+	}
+
+	// Show dependency tree if requested
+	if resolveDeps {
+		fmt.Println("🔗 Dependency resolution:")
+		for _, service := range resolvedServices {
+			deps := h.getServiceDependencies(service)
+			if len(deps) > 0 {
+				fmt.Printf("  %s → %s\n", service, strings.Join(deps, ", "))
+			} else {
+				fmt.Printf("  %s (no dependencies)\n", service)
+			}
+		}
+		fmt.Printf("\nStart order: %s\n", strings.Join(resolvedServices, " → "))
+	}
+
+	// Check for conflicts if requested
+	if checkConflicts {
+		conflicts := h.checkConflicts(resolvedServices)
+		if len(conflicts) > 0 {
+			fmt.Println("⚠️  Conflicts detected:")
+			for _, conflict := range conflicts {
+				fmt.Printf("  %s\n", conflict)
+			}
+			return fmt.Errorf("cannot start services due to conflicts")
+		}
+		fmt.Println("✅ No conflicts detected")
+	}
+
+	// Use resolved services
+	servicesToStart = resolvedServices
 
 	// Validate services if specified
 	if len(servicesToStart) > 0 {
@@ -48,7 +88,11 @@ func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []strin
 	if len(args) == 0 {
 		fmt.Printf("🚀 Starting services from config: %v\n", servicesToStart)
 	} else {
-		fmt.Printf("🚀 Starting specified services: %v\n", servicesToStart)
+		if len(resolvedServices) > len(args) {
+			fmt.Printf("🚀 Starting services with dependencies: %v\n", servicesToStart)
+		} else {
+			fmt.Printf("🚀 Starting specified services: %v\n", servicesToStart)
+		}
 	}
 
 	if profile != "" {
@@ -136,7 +180,7 @@ func (h *UpHandler) generateEnvFile(services []string, projectConfig *ProjectCon
 	}
 
 	for _, serviceName := range services {
-		serviceConfig, err := h.loadServiceConfig(serviceName)
+		serviceConfig, err := NewServiceUtils().LoadServiceConfig(serviceName)
 		if err != nil {
 			fmt.Printf("⚠️  Warning: failed to load config for %s: %v\n", serviceName, err)
 			continue
@@ -226,7 +270,7 @@ func (h *UpHandler) generateDockerCompose(services []string, projectConfig *Proj
 	var volumes []string
 
 	for _, serviceName := range services {
-		serviceConfig, err := h.loadServiceConfig(serviceName)
+		serviceConfig, err := NewServiceUtils().LoadServiceConfig(serviceName)
 		if err != nil {
 			fmt.Printf("⚠️  Warning: failed to load config for %s: %v\n", serviceName, err)
 			continue
@@ -326,14 +370,222 @@ func (h *UpHandler) loadProjectConfig() (*ProjectConfig, error) {
 	return &config, nil
 }
 
+// resolveDependencies resolves service dependencies and returns ordered list
+func (h *UpHandler) resolveDependencies(selectedServices []string) ([]string, error) {
+	servicesPath := "internal/config/services"
+	serviceMap := make(map[string][]string)
+	
+	// Load all service dependencies
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	for _, category := range categories {
+		categoryPath := filepath.Join(servicesPath, category)
+		if _, err := os.Stat(categoryPath); os.IsNotExist(err) {
+			continue
+		}
+
+		entries, err := os.ReadDir(categoryPath)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+				continue
+			}
+
+			serviceName := strings.TrimSuffix(entry.Name(), ".yaml")
+			serviceFile := filepath.Join(categoryPath, entry.Name())
+			
+			data, err := os.ReadFile(serviceFile)
+			if err != nil {
+				continue
+			}
+
+			var serviceData map[string]interface{}
+			if err := yaml.Unmarshal(data, &serviceData); err != nil {
+				continue
+			}
+
+			var dependencies []string
+			if deps, exists := serviceData["dependencies"]; exists {
+				if depsMap, ok := deps.(map[string]interface{}); ok {
+					if required, exists := depsMap["required"]; exists {
+						if reqList, ok := required.([]interface{}); ok {
+							for _, req := range reqList {
+								if reqStr, ok := req.(string); ok {
+									dependencies = append(dependencies, reqStr)
+								}
+							}
+						}
+					}
+				}
+			}
+			serviceMap[serviceName] = dependencies
+		}
+	}
+
+	// Resolve dependencies using topological sort
+	visited := make(map[string]bool)
+	visiting := make(map[string]bool)
+	var result []string
+
+	var visit func(string) error
+	visit = func(serviceName string) error {
+		if visiting[serviceName] {
+			return fmt.Errorf("circular dependency detected involving service: %s", serviceName)
+		}
+		if visited[serviceName] {
+			return nil
+		}
+
+		visiting[serviceName] = true
+		for _, dep := range serviceMap[serviceName] {
+			if err := visit(dep); err != nil {
+				return err
+			}
+		}
+		visiting[serviceName] = false
+		visited[serviceName] = true
+		result = append(result, serviceName)
+		return nil
+	}
+
+	for _, service := range selectedServices {
+		if err := visit(service); err != nil {
+			return selectedServices, err
+		}
+	}
+
+	return result, nil
+}
+
+// getServiceDependencies returns the dependencies for a service
+func (h *UpHandler) getServiceDependencies(serviceName string) []string {
+	servicesPath := "internal/config/services"
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	
+	for _, category := range categories {
+		serviceFile := filepath.Join(servicesPath, category, serviceName+".yaml")
+		if _, err := os.Stat(serviceFile); os.IsNotExist(err) {
+			continue
+		}
+
+		data, err := os.ReadFile(serviceFile)
+		if err != nil {
+			continue
+		}
+
+		var serviceData map[string]interface{}
+		if err := yaml.Unmarshal(data, &serviceData); err != nil {
+			continue
+		}
+
+		var dependencies []string
+		if deps, exists := serviceData["dependencies"]; exists {
+			if depsMap, ok := deps.(map[string]interface{}); ok {
+				if required, exists := depsMap["required"]; exists {
+					if reqList, ok := required.([]interface{}); ok {
+						for _, req := range reqList {
+							if reqStr, ok := req.(string); ok {
+								dependencies = append(dependencies, reqStr)
+							}
+						}
+					}
+				}
+			}
+		}
+		return dependencies
+	}
+	return []string{}
+}
+
+// checkConflicts checks for service conflicts
+func (h *UpHandler) checkConflicts(services []string) []string {
+	servicesPath := "internal/config/services"
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	var conflicts []string
+	
+	// Load conflict information for all services
+	serviceConflicts := make(map[string][]string)
+	for _, category := range categories {
+		categoryPath := filepath.Join(servicesPath, category)
+		if _, err := os.Stat(categoryPath); os.IsNotExist(err) {
+			continue
+		}
+
+		entries, err := os.ReadDir(categoryPath)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+				continue
+			}
+
+			serviceName := strings.TrimSuffix(entry.Name(), ".yaml")
+			serviceFile := filepath.Join(categoryPath, entry.Name())
+			
+			data, err := os.ReadFile(serviceFile)
+			if err != nil {
+				continue
+			}
+
+			var serviceData map[string]interface{}
+			if err := yaml.Unmarshal(data, &serviceData); err != nil {
+				continue
+			}
+
+			var conflictsList []string
+			if deps, exists := serviceData["dependencies"]; exists {
+				if depsMap, ok := deps.(map[string]interface{}); ok {
+					if conflictsData, exists := depsMap["conflicts"]; exists {
+						if conflictsArray, ok := conflictsData.([]interface{}); ok {
+							for _, conflict := range conflictsArray {
+								if conflictStr, ok := conflict.(string); ok {
+									conflictsList = append(conflictsList, conflictStr)
+								}
+							}
+						}
+					}
+				}
+			}
+			serviceConflicts[serviceName] = conflictsList
+		}
+	}
+
+	// Check for conflicts between selected services
+	for i, service1 := range services {
+		for j, service2 := range services {
+			if i >= j {
+				continue
+			}
+			
+			// Check if service1 conflicts with service2
+			for _, conflict := range serviceConflicts[service1] {
+				if conflict == service2 {
+					conflicts = append(conflicts, fmt.Sprintf("%s conflicts with %s", service1, service2))
+				}
+			}
+			
+			// Check if service2 conflicts with service1
+			for _, conflict := range serviceConflicts[service2] {
+				if conflict == service1 {
+					conflicts = append(conflicts, fmt.Sprintf("%s conflicts with %s", service2, service1))
+				}
+			}
+		}
+	}
+
+	return conflicts
+}
+
 // ValidateArgs validates the command arguments
 func (h *UpHandler) ValidateArgs(args []string) error {
-	// No specific validation needed for up command
-	// Service validation is done in Handle method
 	return nil
 }
 
-// GetRequiredFlags returns the required flags for this command
+// GetRequiredFlags returns required flags for this command
 func (h *UpHandler) GetRequiredFlags() []string {
-	return []string{} // No required flags for up command
+	return []string{}
 }

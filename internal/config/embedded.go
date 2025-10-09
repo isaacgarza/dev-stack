@@ -8,9 +8,6 @@ import (
 //go:embed commands.yaml
 var EmbeddedCommandsYAML []byte
 
-//go:embed services/services.yaml
-var EmbeddedServicesYAML []byte
-
 //go:embed init-settings.yaml
 var EmbeddedInitSettingsYAML []byte
 

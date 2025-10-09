@@ -1,0 +1,66 @@
+name: zookeeper
+description: Apache Zookeeper coordination service for distributed systems
+category: messaging
+version: "latest"
+
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [coordination]
+
+options:
+  - port
+  - memory_limit
+examples:
+  - "echo 'ruok' | nc localhost 2181"
+usage_notes: "Zookeeper provides coordination services for Kafka and other distributed systems"
+links:
+  - "https://zookeeper.apache.org/doc/current/"
+
+defaults:
+  image: confluentinc/cp-zookeeper:latest
+  port: 2181
+  memory_limit: 256m
+
+environment:
+  ZOOKEEPER_HOST: localhost
+  ZOOKEEPER_PORT: "${ZOOKEEPER_PORT:-2181}"
+  ZOOKEEPER_CONNECT: "localhost:${ZOOKEEPER_PORT:-2181}"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 256m
+  environment:
+    - ZOOKEEPER_CLIENT_PORT=2181
+    - ZOOKEEPER_TICK_TIME=2000
+    - ZOOKEEPER_SYNC_LIMIT=2
+  health_check:
+    test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
+required_ports:
+  - "${ZOOKEEPER_PORT:-2181}"
+
+volumes:
+  - name: zookeeper-data
+    mount: /var/lib/zookeeper/data
+    description: Zookeeper data directory
+  - name: zookeeper-logs
+    mount: /var/lib/zookeeper/log
+    description: Zookeeper transaction logs
+
+docs:
+  - name: Apache Zookeeper Documentation
+    url: https://zookeeper.apache.org/doc/current/
+
+use_cases:
+  - Kafka cluster coordination
+  - Distributed configuration management
+  - Service discovery
+  - Leader election

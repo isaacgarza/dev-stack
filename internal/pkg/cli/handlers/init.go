@@ -101,32 +101,112 @@ func (h *InitHandler) promptString(reader *bufio.Reader, prompt, defaultValue st
 	return input
 }
 
-// promptServices prompts for service selection
+// promptServices prompts for service selection using category-first workflow
 func (h *InitHandler) promptServices(reader *bufio.Reader) []string {
-	fmt.Println("\n📦 Select services to enable:")
+	fmt.Println("\n📦 Select service categories to configure:")
 
-	// Load services from services.yaml
-	availableServices, err := h.loadAvailableServices()
+	// Load services by category using shared utilities
+	serviceUtils := NewServiceUtils()
+	servicesByCategory, err := serviceUtils.LoadServicesByCategory()
 	if err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
-		fmt.Println("Please ensure you're running dev-stack from the correct location or the services configuration is available.")
+		fmt.Printf("❌ Error loading services: %v\n", err)
+		fmt.Println("Please ensure you're running dev-stack from the correct location.")
 		os.Exit(1)
 	}
 
+	if len(servicesByCategory) == 0 {
+		fmt.Println("❌ No services found in any category")
+		os.Exit(1)
+	}
+
+	// Show available categories with service counts
+	var selectedCategories []string
+	for category, services := range servicesByCategory {
+		serviceNames := make([]string, len(services))
+		for i, service := range services {
+			serviceNames[i] = service.Name
+		}
+		
+		fmt.Printf("  %s services (%s)\n", strings.Title(category), strings.Join(serviceNames, ", "))
+		if h.promptYesOrNo(reader, fmt.Sprintf("Configure %s services?", category), false) {
+			selectedCategories = append(selectedCategories, category)
+		}
+	}
+
+	if len(selectedCategories) == 0 {
+		fmt.Println("⚠️  No categories selected.")
+		return []string{}
+	}
+
+	// For each selected category, show services and allow selection
 	var selectedServices []string
-	for _, service := range availableServices {
-		fmt.Printf("\n%s - %s\n", service.name, service.description)
-		if h.promptYesOrNo(reader, fmt.Sprintf("Enable %s?", service.name), false) {
-			selectedServices = append(selectedServices, service.name)
+	for _, category := range selectedCategories {
+		services := servicesByCategory[category]
+		fmt.Printf("\n%s services:\n", strings.Title(category))
+		
+		for _, service := range services {
+			fmt.Printf("  %s - %s", service.Name, service.Description)
+			if len(service.Dependencies) > 0 {
+				fmt.Printf(" (requires: %s)", strings.Join(service.Dependencies, ", "))
+			}
+			fmt.Println()
+			
+			if h.promptYesOrNo(reader, fmt.Sprintf("  Enable %s?", service.Name), false) {
+				selectedServices = append(selectedServices, service.Name)
+				
+				// Auto-add required dependencies and notify user
+				if len(service.Dependencies) > 0 {
+					fmt.Printf("    → Auto-adding required dependencies: %s\n", strings.Join(service.Dependencies, ", "))
+					for _, dep := range service.Dependencies {
+						// Check if dependency is not already selected
+						found := false
+						for _, selected := range selectedServices {
+							if selected == dep {
+								found = true
+								break
+							}
+						}
+						if !found {
+							selectedServices = append(selectedServices, dep)
+						}
+					}
+				}
+			}
 		}
 	}
 
 	if len(selectedServices) == 0 {
-		fmt.Println("⚠️  No services selected. Adding redis as default.")
-		selectedServices = []string{"redis"}
+		fmt.Println("⚠️  No services selected.")
+		return []string{}
 	}
 
-	return selectedServices
+	// Auto-resolve dependencies (for any nested dependencies)
+	resolvedServices, err := serviceUtils.ResolveDependencies(selectedServices)
+	if err != nil {
+		fmt.Printf("⚠️  Warning: dependency resolution failed: %v\n", err)
+		return selectedServices
+	}
+
+	if len(resolvedServices) > len(selectedServices) {
+		additionalDeps := []string{}
+		for _, resolved := range resolvedServices {
+			found := false
+			for _, selected := range selectedServices {
+				if selected == resolved {
+					found = true
+					break
+				}
+			}
+			if !found {
+				additionalDeps = append(additionalDeps, resolved)
+			}
+		}
+		if len(additionalDeps) > 0 {
+			fmt.Printf("\n🔗 Additional nested dependencies resolved: %s\n", strings.Join(additionalDeps, ", "))
+		}
+	}
+
+	return resolvedServices
 }
 
 // promptValidation prompts for validation settings
@@ -461,45 +541,172 @@ func (h *InitHandler) copyFile(src, dst string) error {
 	return err
 }
 
-// loadAvailableServices loads services from services.yaml
-func (h *InitHandler) loadAvailableServices() ([]struct {
-	name        string
-	description string
+// loadServicesByCategory loads services organized by category from embedded filesystem
+func (h *InitHandler) loadServicesByCategory() (map[string][]struct {
+	name         string
+	description  string
+	dependencies []string
 }, error) {
-	candidates := []string{
-		"internal/config/services/services.yaml",
-		"config/services/services.yaml",
-		".dev-stack/services.yaml",
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	
+	servicesByCategory := make(map[string][]struct {
+		name         string
+		description  string
+		dependencies []string
+	})
+
+	for _, category := range categories {
+		categoryPath := filepath.Join("services", category)
+		
+		// Use embedded filesystem
+		entries, err := config.EmbeddedServicesFS.ReadDir(categoryPath)
+		if err != nil {
+			continue // Category doesn't exist, skip
+		}
+
+		var categoryServices []struct {
+			name         string
+			description  string
+			dependencies []string
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+				continue
+			}
+
+			serviceName := strings.TrimSuffix(entry.Name(), ".yaml")
+			serviceFile := filepath.Join(categoryPath, entry.Name())
+			
+			data, err := config.EmbeddedServicesFS.ReadFile(serviceFile)
+			if err != nil {
+				continue
+			}
+
+			var serviceData map[string]interface{}
+			if err := yaml.Unmarshal(data, &serviceData); err != nil {
+				continue
+			}
+
+			description, _ := serviceData["description"].(string)
+			var dependencies []string
+
+			if deps, exists := serviceData["dependencies"]; exists {
+				if depsMap, ok := deps.(map[string]interface{}); ok {
+					if required, exists := depsMap["required"]; exists {
+						if reqList, ok := required.([]interface{}); ok {
+							for _, req := range reqList {
+								if reqStr, ok := req.(string); ok {
+									dependencies = append(dependencies, reqStr)
+								}
+							}
+						}
+					}
+				}
+			}
+
+			categoryServices = append(categoryServices, struct {
+				name         string
+				description  string
+				dependencies []string
+			}{
+				name:         serviceName,
+				description:  description,
+				dependencies: dependencies,
+			})
+		}
+
+		if len(categoryServices) > 0 {
+			servicesByCategory[category] = categoryServices
+		}
 	}
 
-	data, err := h.loadConfigFile(candidates, config.EmbeddedServicesYAML, "services.yaml")
-	if err != nil {
-		return nil, err
+	return servicesByCategory, nil
+}
+
+// resolveDependencies resolves service dependencies and returns ordered list using embedded filesystem
+func (h *InitHandler) resolveDependencies(selectedServices []string) ([]string, error) {
+	serviceMap := make(map[string][]string)
+	
+	// Load all service dependencies from embedded filesystem
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	for _, category := range categories {
+		categoryPath := filepath.Join("services", category)
+		
+		entries, err := config.EmbeddedServicesFS.ReadDir(categoryPath)
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+				continue
+			}
+
+			serviceName := strings.TrimSuffix(entry.Name(), ".yaml")
+			serviceFile := filepath.Join(categoryPath, entry.Name())
+			
+			data, err := config.EmbeddedServicesFS.ReadFile(serviceFile)
+			if err != nil {
+				continue
+			}
+
+			var serviceData map[string]interface{}
+			if err := yaml.Unmarshal(data, &serviceData); err != nil {
+				continue
+			}
+
+			var dependencies []string
+			if deps, exists := serviceData["dependencies"]; exists {
+				if depsMap, ok := deps.(map[string]interface{}); ok {
+					if required, exists := depsMap["required"]; exists {
+						if reqList, ok := required.([]interface{}); ok {
+							for _, req := range reqList {
+								if reqStr, ok := req.(string); ok {
+									dependencies = append(dependencies, reqStr)
+								}
+							}
+						}
+					}
+				}
+			}
+			serviceMap[serviceName] = dependencies
+		}
 	}
 
-	var servicesConfig map[string]struct {
-		Description string `yaml:"description"`
-	}
-	if err := yaml.Unmarshal(data, &servicesConfig); err != nil {
-		return nil, fmt.Errorf("failed to parse services.yaml: %w", err)
+	// Resolve dependencies using topological sort
+	visited := make(map[string]bool)
+	visiting := make(map[string]bool)
+	var result []string
+
+	var visit func(string) error
+	visit = func(serviceName string) error {
+		if visiting[serviceName] {
+			return fmt.Errorf("circular dependency detected involving service: %s", serviceName)
+		}
+		if visited[serviceName] {
+			return nil
+		}
+
+		visiting[serviceName] = true
+		for _, dep := range serviceMap[serviceName] {
+			if err := visit(dep); err != nil {
+				return err
+			}
+		}
+		visiting[serviceName] = false
+		visited[serviceName] = true
+		result = append(result, serviceName)
+		return nil
 	}
 
-	var services []struct {
-		name        string
-		description string
+	for _, service := range selectedServices {
+		if err := visit(service); err != nil {
+			return selectedServices, err
+		}
 	}
 
-	for name, config := range servicesConfig {
-		services = append(services, struct {
-			name        string
-			description string
-		}{
-			name:        name,
-			description: config.Description,
-		})
-	}
-
-	return services, nil
+	return result, nil
 }
 
 // loadInitSettings loads initialization settings from config
@@ -592,7 +799,7 @@ func (h *InitHandler) generateInitialComposeFiles(services []string, projectName
 
 // generateInitEnvFile generates .env.generated during init using template
 func (h *InitHandler) generateInitEnvFile(services []string, projectConfig interface{}) error {
-	pc := projectConfig.(struct {
+	pc := projectConfig.(*struct {
 		Project struct {
 			Name        string
 			Environment string
@@ -638,7 +845,7 @@ func (h *InitHandler) generateInitEnvFile(services []string, projectConfig inter
 	}
 
 	for _, serviceName := range services {
-		serviceConfig, err := h.loadInitServiceConfig(serviceName)
+		serviceConfig, err := NewServiceUtils().LoadServiceConfig(serviceName)
 		if err != nil {
 			fmt.Printf("⚠️  Warning: failed to load config for %s: %v\n", serviceName, err)
 			continue
@@ -678,7 +885,7 @@ func (h *InitHandler) generateInitEnvFile(services []string, projectConfig inter
 
 // generateInitDockerCompose generates docker-compose.yml during init using template
 func (h *InitHandler) generateInitDockerCompose(services []string, projectConfig interface{}) error {
-	pc := projectConfig.(struct {
+	pc := projectConfig.(*struct {
 		Project struct {
 			Name        string
 			Environment string
@@ -738,7 +945,7 @@ func (h *InitHandler) generateInitDockerCompose(services []string, projectConfig
 	var volumes []string
 
 	for _, serviceName := range services {
-		serviceConfig, err := h.loadInitServiceConfig(serviceName)
+		serviceConfig, err := NewServiceUtils().LoadServiceConfig(serviceName)
 		if err != nil {
 			fmt.Printf("⚠️  Warning: failed to load config for %s: %v\n", serviceName, err)
 			continue
@@ -781,20 +988,27 @@ func (h *InitHandler) generateInitDockerCompose(services []string, projectConfig
 	return os.WriteFile("dev-stack/docker-compose.yml", []byte(result.String()), 0644)
 }
 
-// loadInitServiceConfig loads a service configuration from embedded FS (duplicate for init)
+// loadInitServiceConfig loads a service configuration from embedded FS using category-based paths
 func (h *InitHandler) loadInitServiceConfig(serviceName string) (*ServiceConfig, error) {
-	servicePath := fmt.Sprintf("services/%s/service.yaml", serviceName)
-	data, err := config.EmbeddedServicesFS.ReadFile(servicePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read service config for %s: %w", serviceName, err)
-	}
+	// Search for the service in all categories
+	categories := []string{"database", "cache", "messaging", "observability", "cloud"}
+	
+	for _, category := range categories {
+		servicePath := fmt.Sprintf("services/%s/%s.yaml", category, serviceName)
+		data, err := config.EmbeddedServicesFS.ReadFile(servicePath)
+		if err != nil {
+			continue // Try next category
+		}
 
-	var serviceConfig ServiceConfig
-	if err := yaml.Unmarshal(data, &serviceConfig); err != nil {
-		return nil, fmt.Errorf("failed to parse service config for %s: %w", serviceName, err)
-	}
+		var serviceConfig ServiceConfig
+		if err := yaml.Unmarshal(data, &serviceConfig); err != nil {
+			return nil, fmt.Errorf("failed to parse service config for %s: %w", serviceName, err)
+		}
 
-	return &serviceConfig, nil
+		return &serviceConfig, nil
+	}
+	
+	return nil, fmt.Errorf("service %s not found in any category", serviceName)
 }
 
 // findTemplateFile finds a template file from candidate locations
@@ -825,11 +1039,6 @@ func (h *InitHandler) loadConfigFile(candidates []string, embeddedData []byte, d
 		return nil, fmt.Errorf("no %s found in %v and no embedded config available", description, candidates)
 	}
 	return embeddedData, nil
-}
-
-// getEmbeddedServicesYAML returns embedded services.yaml content
-func (h *InitHandler) getEmbeddedServicesYAML() []byte {
-	return config.EmbeddedServicesYAML
 }
 
 // ValidateArgs validates the command arguments

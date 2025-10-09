@@ -3,7 +3,25 @@ description: MySQL relational database for persistent data storage
 category: database
 version: "8"
 
-# Default configuration
+dependencies:
+  required: []
+  soft: []
+  conflicts: [postgres]
+  provides: [database, sql]
+
+options:
+  - port
+  - database
+  - username
+  - password
+  - memory_limit
+examples:
+  - 'mysql -h localhost -u root -p -e "SELECT version();"'
+  - "spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev"
+usage_notes: "MySQL database for relational data storage. Alternative to PostgreSQL."
+links:
+  - "https://dev.mysql.com/doc/"
+
 defaults:
   image: mysql:8-oracle
   port: 3306
@@ -11,7 +29,6 @@ defaults:
   username: root
   password: password
 
-# Environment variables this service provides
 environment:
   MYSQL_HOST: localhost
   MYSQL_PORT: "${MYSQL_PORT:-3306}"
@@ -21,7 +38,6 @@ environment:
   MYSQL_URL: "mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-password}@localhost:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-local_dev}"
   DATABASE_URL: "mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-password}@localhost:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-local_dev}"
 
-# Docker-specific configuration
 docker:
   restart: unless-stopped
   networks:
@@ -39,25 +55,18 @@ docker:
     retries: 5
     start_period: 30s
 
-# Dependencies
-dependencies: []
-
-# Ports that need to be available
 required_ports:
   - "${MYSQL_PORT:-3306}"
 
-# Volume mounts
 volumes:
   - name: mysql-data
     mount: /var/lib/mysql
     description: MySQL data directory
 
-# Documentation links
 docs:
   - name: MySQL Documentation
     url: https://dev.mysql.com/doc/
 
-# Common use cases
 use_cases:
   - Primary application database
   - Transactional data storage

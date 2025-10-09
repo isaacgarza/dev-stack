@@ -51,12 +51,20 @@ func (r *Registry) registerDefaultHandlers() {
 	// Core service management commands
 	r.RegisterHandler("up", NewUpHandler())
 	r.RegisterHandler("down", NewDownHandler())
+	r.RegisterHandler("restart", NewRestartHandler())
 	r.RegisterHandler("status", NewStatusHandler())
 	r.RegisterHandler("init", NewInitHandler())
 
+	// New Phase 3 commands
+	r.RegisterHandler("services", NewServicesHandler())
+	r.RegisterHandler("deps", NewDepsHandler())
+	r.RegisterHandler("conflicts", NewConflictsHandler())
+	
+	// Phase 4 documentation command
+	r.RegisterHandler("docs", NewDocsHandler())
+
 	// Additional handlers can be registered here as they are implemented:
 	// r.RegisterHandler("logs", NewLogsHandler())
-	// r.RegisterHandler("restart", NewRestartHandler())
 	// r.RegisterHandler("monitor", NewMonitorHandler())
 	// r.RegisterHandler("doctor", NewDoctorHandler())
 	// r.RegisterHandler("exec", NewExecHandler())
@@ -65,7 +73,6 @@ func (r *Registry) registerDefaultHandlers() {
 	// r.RegisterHandler("restore", NewRestoreHandler())
 	// r.RegisterHandler("cleanup", NewCleanupHandler())
 	// r.RegisterHandler("scale", NewScaleHandler())
-	// r.RegisterHandler("docs", NewDocsHandler())
 	// r.RegisterHandler("validate", NewValidateHandler())
 	// r.RegisterHandler("version", NewVersionHandler())
 }
