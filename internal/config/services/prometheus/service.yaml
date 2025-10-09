@@ -7,9 +7,6 @@ version: "latest"
 defaults:
   image: prom/prometheus:latest
   port: 9090
-  memory_limit: 256m
-  retention_time: 15d
-  scrape_interval: 15s
 
 # Environment variables this service provides
 environment:
@@ -17,36 +14,35 @@ environment:
   PROMETHEUS_PORT: "${PROMETHEUS_PORT:-9090}"
   PROMETHEUS_URL: "http://localhost:${PROMETHEUS_PORT:-9090}"
 
+# Docker-specific configuration
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 256m
+  command:
+    - "--config.file=/etc/prometheus/prometheus.yml"
+    - "--storage.tsdb.path=/prometheus"
+    - "--web.console.libraries=/etc/prometheus/console_libraries"
+    - "--web.console.templates=/etc/prometheus/consoles"
+    - "--storage.tsdb.retention.time=15d"
+    - "--web.enable-lifecycle"
+    - "--web.enable-admin-api"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  health_check:
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+
 # Spring Boot configuration
 spring_config:
   properties:
     - "management.endpoints.web.exposure.include=health,info,metrics,prometheus"
     - "management.endpoint.prometheus.enabled=true"
     - "management.metrics.export.prometheus.enabled=true"
-  yaml: |
-    management:
-      endpoints:
-        web:
-          exposure:
-            include: health,info,metrics,prometheus
-      endpoint:
-        prometheus:
-          enabled: true
-      metrics:
-        export:
-          prometheus:
-            enabled: true
-        tags:
-          application: ${spring.application.name:unknown}
-          environment: local
-
-# Health check configuration
-health_check:
-  command: ["wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 30s
 
 # Dependencies
 dependencies: []
@@ -59,71 +55,15 @@ required_ports:
 volumes:
   - name: prometheus-data
     mount: /prometheus
-    description: Prometheus metrics storage
-  - name: prometheus-config
-    mount: /etc/prometheus
-    description: Prometheus configuration files
-
-# Web interfaces
-web_interfaces:
-  - name: Prometheus UI
-    url: "http://localhost:${PROMETHEUS_PORT:-9090}"
-    description: Metrics exploration and query interface
-
-# Common CLI commands
-cli_commands:
-  connect: "open http://localhost:${PROMETHEUS_PORT:-9090}"
-  query: "curl 'http://localhost:${PROMETHEUS_PORT:-9090}/api/v1/query?query=up'"
-  targets: "curl 'http://localhost:${PROMETHEUS_PORT:-9090}/api/v1/targets'"
+    description: Prometheus data directory
 
 # Documentation links
 docs:
   - name: Prometheus Documentation
     url: https://prometheus.io/docs/
-  - name: Spring Boot Actuator
-    url: https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html
-  - name: Micrometer Prometheus
-    url: https://micrometer.io/docs/registry/prometheus
 
 # Common use cases
 use_cases:
   - Application metrics collection
   - Performance monitoring
-  - Custom business metrics
-  - Alerting on thresholds
-  - Resource utilization tracking
-  - SLA monitoring
-
-# Integration notes
-integration_notes:
-  - "Requires Spring Boot Actuator with Prometheus endpoint enabled"
-  - "Automatically discovers and scrapes application metrics"
-  - "Default scrape targets include application on localhost:8080"
-  - "Add custom scrape targets via prometheus.yml configuration"
-  - "Data retention set to 15 days for development use"
-  - "For production, consider external storage and alerting"
-
-# Required dependencies
-required_dependencies:
-  maven:
-    - "org.springframework.boot:spring-boot-starter-actuator"
-    - "io.micrometer:micrometer-registry-prometheus"
-  gradle:
-    - "implementation 'org.springframework.boot:spring-boot-starter-actuator'"
-    - "implementation 'io.micrometer:micrometer-registry-prometheus'"
-
-# Validation warnings
-validation:
-  warnings:
-    - condition: "no_spring_boot_detected"
-      message: "Prometheus enabled but no Spring Boot application detected. Ensure your application exposes /actuator/prometheus endpoint."
-    - condition: "no_actuator_dependency"
-      message: "Add spring-boot-starter-actuator and micrometer-registry-prometheus dependencies to enable metrics collection."
-
-# Default scrape configuration
-default_scrape_targets:
-  - job_name: 'local-application'
-    static_configs:
-      - targets: ['host.docker.internal:8080']
-    metrics_path: '/actuator/prometheus'
-    scrape_interval: 15s
+  - Alerting and notifications

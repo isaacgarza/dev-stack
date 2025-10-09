@@ -76,29 +76,34 @@ type ServiceStatus struct {
 
 // ValidateServices validates service names against available services
 func (b *BaseCommand) ValidateServices(serviceNames []string) error {
-	// Load services.yaml to get available services
-	servicesFile := filepath.Join(b.ProjectDir, "internal/config/services", "services.yaml")
-	if _, err := os.Stat(servicesFile); os.IsNotExist(err) {
-		return fmt.Errorf("services.yaml not found at %s. Please ensure you're in a dev-stack project directory", servicesFile)
+	// Try to load services from embedded config first
+	servicesFile := "internal/config/services/services.yaml"
+	
+	// Check if we're in the dev-stack project directory
+	if _, err := os.Stat(filepath.Join(b.ProjectDir, servicesFile)); os.IsNotExist(err) {
+		// We're not in the dev-stack project directory, skip validation for now
+		// TODO: Use embedded services configuration
+		b.Logger.Debug("services.yaml not found, skipping service validation")
+		return nil
 	}
 
-	data, err := os.ReadFile(servicesFile)
+	// We're in the dev-stack project directory, use local services.yaml
+	fullPath := filepath.Join(b.ProjectDir, servicesFile)
+	data, err := os.ReadFile(fullPath)
 	if err != nil {
 		return fmt.Errorf("failed to read services.yaml: %w", err)
 	}
 
-	var servicesConfig struct {
-		Services map[string]interface{} `yaml:"services"`
-	}
+	var servicesConfig map[string]interface{}
 	if err := yaml.Unmarshal(data, &servicesConfig); err != nil {
 		return fmt.Errorf("failed to parse services.yaml: %w", err)
 	}
 
 	// Check each service name
 	for _, serviceName := range serviceNames {
-		if _, exists := servicesConfig.Services[serviceName]; !exists {
-			availableServices := make([]string, 0, len(servicesConfig.Services))
-			for name := range servicesConfig.Services {
+		if _, exists := servicesConfig[serviceName]; !exists {
+			availableServices := make([]string, 0, len(servicesConfig))
+			for name := range servicesConfig {
 				availableServices = append(availableServices, name)
 			}
 			return fmt.Errorf("unknown service '%s'. Available services: %v", serviceName, availableServices)

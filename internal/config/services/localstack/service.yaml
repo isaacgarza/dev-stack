@@ -64,9 +64,58 @@ spring_config:
         dynamodb:
           endpoint: http://localhost:${LOCALSTACK_PORT:-4566}
 
+# Docker-specific configuration
+docker:
+  services:
+    localstack:
+      image: localstack/localstack:latest
+      restart: unless-stopped
+      networks:
+        - dev-stack
+      memory_limit: 512m
+      environment:
+        - SERVICES=${LOCALSTACK_SERVICES:-sqs,sns}
+        - DEBUG=1
+        - DATA_DIR=/tmp/localstack/data
+        - PERSISTENCE=1
+        - LAMBDA_EXECUTOR=docker-reuse
+        - DOCKER_HOST=unix:///var/run/docker.sock
+        - START_WEB=1
+        - AWS_DEFAULT_REGION=us-east-1
+        - AWS_ACCESS_KEY_ID=test
+        - AWS_SECRET_ACCESS_KEY=test
+        - EAGER_SERVICE_LOADING=1
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      health_check:
+        test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
+        start_period: 45s
+    
+    localstack-init:
+      image: amazon/aws-cli:latest
+      depends_on:
+        - localstack
+      restart: "no"
+      networks:
+        - dev-stack
+      environment:
+        - AWS_ACCESS_KEY_ID=test
+        - AWS_SECRET_ACCESS_KEY=test
+        - AWS_DEFAULT_REGION=us-east-1
+      command: |
+        sh -c "
+          apk add --no-cache curl jq bash
+          chmod +x /usr/local/bin/init-aws-resources.sh
+          /usr/local/bin/init-aws-resources.sh
+        "
+
 # Health check configuration
 health_check:
   command: ["curl", "-f", "http://localhost:4566/health"]
+  test: ["CMD", "curl", "-f", "http://localhost:4566/health"]
   interval: 30s
   timeout: 10s
   retries: 5

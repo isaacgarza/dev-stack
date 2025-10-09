@@ -1,0 +1,30 @@
+package config
+
+import (
+	"embed"
+	_ "embed"
+)
+
+//go:embed commands.yaml
+var EmbeddedCommandsYAML []byte
+
+//go:embed services/services.yaml
+var EmbeddedServicesYAML []byte
+
+//go:embed init-settings.yaml
+var EmbeddedInitSettingsYAML []byte
+
+//go:embed dev-stack-config.template
+var EmbeddedConfigTemplate []byte
+
+//go:embed gitignore.txt
+var EmbeddedGitignore []byte
+
+//go:embed docker-compose.template
+var EmbeddedDockerComposeTemplate []byte
+
+//go:embed env.template
+var EmbeddedEnvTemplate []byte
+
+//go:embed services
+var EmbeddedServicesFS embed.FS

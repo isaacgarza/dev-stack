@@ -69,7 +69,7 @@ categories:
     name: "Development Tools"
     description: "Commands for development workflow and documentation"
     icon: "🛠️"
-    commands: ["docs", "generate", "validate"]
+    commands: ["docs", "validate"]
 
 commands:
   up:
@@ -117,8 +117,8 @@ commands:
         default: false
       timeout:
         short: "t"
-        type: "duration"
-        description: "Timeout for service startup"
+        type: "string"
+        description: "Timeout for service startup (e.g., 30s, 2m)"
         default: "30s"
     related_commands: ["down", "restart", "status"]
     tips:
@@ -405,9 +405,9 @@ commands:
         default: false
       env:
         short: "e"
-        type: "stringArray"
-        description: "Set environment variables"
-        default: []
+        type: "string"
+        description: "Set environment variables (comma-separated key=value pairs)"
+        default: ""
     related_commands: ["connect", "logs"]
     tips:
       - "Use for database maintenance and debugging"
@@ -616,39 +616,25 @@ commands:
 
   init:
     category: "maintenance"
-    description: "Initialize a new dev-stack project"
+    description: "Initialize a new dev-stack project interactively"
     long_description: |
-      Initialize a new dev-stack project in the current directory. Creates
-      configuration files, directory structure, and optional service
-      configurations based on project type.
-    usage: "init [project-type]"
+      Initialize a new dev-stack project in the current directory with an
+      interactive setup process. Guides you through selecting services,
+      configuring validation and advanced settings, and creates all
+      necessary configuration files.
+    usage: "init [flags]"
     examples:
       - command: "dev-stack init"
-        description: "Interactive project initialization"
-      - command: "dev-stack init web"
-        description: "Initialize with web development template"
-      - command: "dev-stack init --name myproject microservices"
-        description: "Initialize microservices project with custom name"
+        description: "Interactive project initialization (recommended)"
+      - command: "dev-stack init --name myproject --minimal"
+        description: "Non-interactive minimal setup"
+      - command: "dev-stack init --force"
+        description: "Overwrite existing configuration"
     flags:
-      name:
-        short: "n"
-        type: "string"
-        description: "Project name"
-        default: ""
-      template:
-        short: "t"
-        type: "string"
-        description: "Project template to use"
-        default: "basic"
-        completion: "templates"
       force:
         short: "f"
         type: "bool"
         description: "Overwrite existing files"
-        default: false
-      minimal:
-        type: "bool"
-        description: "Create minimal configuration"
         default: false
     related_commands: ["docs", "validate"]
 
@@ -759,42 +745,6 @@ commands:
         default: "table"
         options: ["table", "json", "yaml"]
     related_commands: ["doctor"]
-
-  generate:
-    category: "development"
-    description: "Generate configuration files and templates"
-    long_description: |
-      Generate various configuration files, service definitions, and project
-      templates. Supports custom templates and configuration inheritance.
-    usage: "generate <type> [options]"
-    examples:
-      - command: "dev-stack generate config"
-        description: "Generate base configuration file"
-      - command: "dev-stack generate service postgres"
-        description: "Generate PostgreSQL service configuration"
-      - command: "dev-stack generate compose --services postgres,redis"
-        description: "Generate docker-compose.yml for specific services"
-    flags:
-      output:
-        short: "o"
-        type: "string"
-        description: "Output file or directory"
-        default: ""
-      template:
-        short: "t"
-        type: "string"
-        description: "Template to use"
-        default: "default"
-      services:
-        short: "s"
-        type: "string"
-        description: "Comma-separated list of services"
-        default: ""
-      overwrite:
-        type: "bool"
-        description: "Overwrite existing files"
-        default: false
-    related_commands: ["init", "validate"]
 
 # Workflow definitions for common task sequences
 workflows:

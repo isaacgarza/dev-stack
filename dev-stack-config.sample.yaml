@@ -8,7 +8,7 @@ project:
   environment: local
 
 # Services to enable
-services:
+stack:
   enabled:
     - redis
     - jaeger
@@ -196,20 +196,20 @@ advanced:
 # Examples of common configurations:
 
 # Minimal setup (just caching and tracing):
-# services:
+# stack:
 #   enabled:
 #     - redis
 #     - jaeger
 
 # Database choice setup:
-# services:
+# stack:
 #   enabled:
 #     - redis
 #     - mysql        # or postgres
 #     - jaeger
 
 # Full observability setup:
-# services:
+# stack:
 #   enabled:
 #     - redis
 #     - postgres
@@ -217,7 +217,7 @@ advanced:
 #     - prometheus
 
 # AWS development setup:
-# services:
+# stack:
 #   enabled:
 #     - redis
 #     - postgres
@@ -253,7 +253,7 @@ advanced:
 #         WriteCapacityUnits: 5
 
 # Event-driven architecture setup:
-# services:
+# stack:
 #   enabled:
 #     - redis
 #     - postgres
@@ -272,7 +272,7 @@ advanced:
 #         cleanup_policy: "compact"
 
 # Everything enabled (high resource usage):
-# services:
+# stack:
 #   enabled:
 #     - redis
 #     - postgres

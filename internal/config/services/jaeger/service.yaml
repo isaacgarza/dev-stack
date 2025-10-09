@@ -11,8 +11,6 @@ defaults:
   otlp_grpc_port: 4317
   http_port: 14268
   grpc_port: 14250
-  storage: memory
-  memory_limit: 512m
 
 # Environment variables this service provides
 environment:
@@ -26,45 +24,29 @@ environment:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
 
+# Docker-specific configuration
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 512m
+  environment:
+    - COLLECTOR_OTLP_ENABLED=true
+    - COLLECTOR_ZIPKIN_HOST_PORT=9411
+    - SPAN_STORAGE_TYPE=memory
+    - JAEGER_DISABLED=false
+  health_check:
+    test: ["CMD", "curl", "-f", "http://localhost:16686/"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+
 # Spring Boot configuration
 spring_config:
   properties:
-    - "management.tracing.enabled=true"
-    - "management.otlp.tracing.endpoint=http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces"
     - "management.tracing.sampling.probability=1.0"
-  yaml: |
-    management:
-      tracing:
-        enabled: true
-        sampling:
-          probability: 1.0
-      otlp:
-        tracing:
-          endpoint: http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces
-          timeout: 10s
-    otel:
-      service:
-        name: ${spring.application.name:unknown-service}
-        version: ${spring.application.version:unknown}
-      resource:
-        attributes:
-          service.name: ${spring.application.name:unknown-service}
-          service.version: ${spring.application.version:unknown}
-          environment: local
-      traces:
-        exporter: otlp
-      exporter:
-        otlp:
-          endpoint: http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces
-          protocol: http/protobuf
-
-# Health check configuration
-health_check:
-  command: ["curl", "-f", "http://localhost:16686/"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 30s
+    - "management.otlp.tracing.endpoint=http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces"
 
 # Dependencies
 dependencies: []
@@ -80,34 +62,16 @@ required_ports:
 # Volume mounts
 volumes: []
 
-# Web interfaces
-web_interfaces:
-  - name: Jaeger UI
-    url: "http://localhost:${JAEGER_UI_PORT:-16686}"
-    description: Trace visualization and exploration interface
-
 # Documentation links
 docs:
   - name: Jaeger Documentation
     url: https://www.jaegertracing.io/docs/
-  - name: OpenTelemetry Integration
-    url: https://opentelemetry.io/docs/instrumentation/java/
-  - name: Spring Boot Tracing
-    url: https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.micrometer-tracing
+  - name: OpenTelemetry
+    url: https://opentelemetry.io/docs/
 
 # Common use cases
 use_cases:
   - Distributed tracing
   - Performance monitoring
-  - Service dependency mapping
-  - Request flow analysis
-  - Microservices debugging
-  - Latency troubleshooting
-
-# Integration notes
-integration_notes:
-  - "Automatically collects traces from Spring Boot applications with micrometer-tracing"
-  - "Supports both OTLP and legacy Jaeger protocols"
-  - "Memory storage - traces are lost on container restart"
-  - "For production, configure external storage (Elasticsearch, Cassandra)"
-  - "Compatible with OpenTelemetry SDKs"
+  - Service dependency analysis
+  - Request flow visualization

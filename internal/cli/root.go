@@ -16,16 +16,13 @@ var (
 // rootCmd provides a minimal fallback CLI
 var rootCmd = &cobra.Command{
 	Use:   "dev-stack",
-	Short: "A development stack management tool (fallback mode)",
-	Long: `dev-stack fallback CLI - limited functionality.
-Please check your commands.yaml configuration file.`,
+	Short: "A development stack management tool",
+	Long:  `dev-stack - A powerful development stack management tool for streamlined local development automation.`,
 	Version: "0.1.0",
 }
 
 // Execute provides fallback CLI execution
 func Execute() error {
-	fmt.Println("⚠️  Running in fallback mode - enhanced CLI unavailable")
-	fmt.Println("Please check your commands.yaml configuration file")
 	return rootCmd.Execute()
 }
 

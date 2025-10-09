@@ -89,11 +89,12 @@ func (f *Factory) addCommands(rootCmd *cobra.Command) error {
 // createCommand creates a single command from configuration using handlers
 func (f *Factory) createCommand(name string, cmdConfig config.Command) (*cobra.Command, error) {
 	cmd := &cobra.Command{
-		Use:     name,
-		Short:   cmdConfig.Description,
-		Long:    f.formatLongDescription(cmdConfig),
-		Aliases: cmdConfig.Aliases,
-		RunE:    f.createCommandHandler(name),
+		Use:          name,
+		Short:        cmdConfig.Description,
+		Long:         f.formatLongDescription(cmdConfig),
+		Aliases:      cmdConfig.Aliases,
+		SilenceUsage: true, // Don't show usage on errors
+		RunE:         f.createCommandHandler(name),
 	}
 
 	// Add command-specific flags

@@ -1,0 +1,160 @@
+services:
+{{- range .Services}}
+{{- if .Config.Docker.Services}}
+{{- range $serviceName, $serviceConfig := .Config.Docker.Services}}
+  {{$serviceName}}:
+    image: {{$serviceConfig.Image}}
+    container_name: {{$.ProjectName}}-{{$serviceName}}
+{{- if $serviceConfig.Restart}}
+    restart: {{$serviceConfig.Restart}}
+{{- end}}
+{{- if $serviceConfig.Networks}}
+    networks:
+{{- range $serviceConfig.Networks}}
+      - {{.}}
+{{- end}}
+{{- end}}
+{{- if $serviceConfig.DependsOn}}
+    depends_on:
+{{- range $serviceConfig.DependsOn}}
+      {{.}}:
+        condition: service_healthy
+{{- end}}
+{{- end}}
+    env_file:
+      - .env.generated
+{{- if $serviceConfig.Environment}}
+    environment:
+{{- range $serviceConfig.Environment}}
+      - {{.}}
+{{- end}}
+{{- end}}
+{{- if eq $serviceName "zookeeper"}}
+    ports:
+      - "${ZOOKEEPER_PORT:-2181}:2181"
+{{- else if eq $serviceName "kafka"}}
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+      - "29092:29092"
+{{- else if eq $serviceName "kafka-ui"}}
+    ports:
+      - "${KAFKA_UI_PORT:-8080}:8080"
+{{- else if eq $serviceName "prometheus"}}
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+{{- else if eq $serviceName "localstack"}}
+    ports:
+      - "${LOCALSTACK_PORT:-4566}:4566"
+      - "${LOCALSTACK_DASHBOARD_PORT:-8055}:8080"
+{{- end}}
+{{- if $serviceConfig.Command}}
+    command: {{$serviceConfig.Command}}
+{{- end}}
+{{- if $serviceConfig.ExtraHosts}}
+    extra_hosts:
+{{- range $serviceConfig.ExtraHosts}}
+      - {{.}}
+{{- end}}
+{{- end}}
+{{- if $serviceConfig.MemoryLimit}}
+    mem_limit: {{$serviceConfig.MemoryLimit}}
+{{- end}}
+{{- if eq $serviceName "kafka"}}
+    volumes:
+      - {{$.ProjectName}}-kafka-data:/var/lib/kafka/data
+{{- else if eq $serviceName "zookeeper"}}
+    volumes:
+      - {{$.ProjectName}}-zookeeper-data:/var/lib/zookeeper/data
+      - {{$.ProjectName}}-zookeeper-logs:/var/lib/zookeeper/log
+{{- else if eq $serviceName "prometheus"}}
+    volumes:
+      - {{$.ProjectName}}-prometheus-data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+{{- else if eq $serviceName "localstack"}}
+    volumes:
+      - {{$.ProjectName}}-localstack-data:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./init-aws-resources.sh:/etc/localstack/init/ready.d/init-aws-resources.sh:ro
+{{- else if eq $serviceName "localstack-init"}}
+    volumes:
+      - ./init-aws-resources.sh:/usr/local/bin/init-aws-resources.sh:ro
+      - {{$.ProjectName}}-localstack-data:/tmp/localstack:rw
+{{- else if eq $serviceName "kafka-init"}}
+    volumes:
+      - ./init-kafka-topics.sh:/usr/local/bin/init-kafka-topics.sh:ro
+{{- end}}
+{{- if $serviceConfig.HealthCheck.Test}}
+    healthcheck:
+      test: {{toYamlArray $serviceConfig.HealthCheck.Test}}
+      interval: {{$serviceConfig.HealthCheck.Interval}}
+      timeout: {{$serviceConfig.HealthCheck.Timeout}}
+      retries: {{$serviceConfig.HealthCheck.Retries}}
+      start_period: {{$serviceConfig.HealthCheck.StartPeriod}}
+{{- end}}
+{{- end}}
+{{- else}}
+  {{.Name}}:
+    image: {{.Config.Defaults.Image}}
+    container_name: {{$.ProjectName}}-{{.Name}}
+{{- if .Config.Docker.Restart}}
+    restart: {{.Config.Docker.Restart}}
+{{- end}}
+{{- if .Config.Docker.Networks}}
+    networks:
+{{- range .Config.Docker.Networks}}
+      - {{.}}
+{{- end}}
+{{- end}}
+    env_file:
+      - .env.generated
+{{- if .Config.Docker.Environment}}
+    environment:
+{{- range .Config.Docker.Environment}}
+      - {{.}}
+{{- end}}
+{{- end}}
+{{- if .Config.Defaults.Port}}
+    ports:
+      - "{{.Config.Defaults.Port}}:{{.Config.Defaults.Port}}"
+{{- end}}
+{{- if .Config.Docker.Command}}
+    command: {{.Config.Docker.Command}}
+{{- end}}
+{{- if .Config.Docker.ExtraHosts}}
+    extra_hosts:
+{{- range .Config.Docker.ExtraHosts}}
+      - {{.}}
+{{- end}}
+{{- end}}
+{{- if .Config.Docker.MemoryLimit}}
+    mem_limit: {{.Config.Docker.MemoryLimit}}
+{{- end}}
+{{- if .Config.Volumes}}
+    volumes:
+{{- range .Config.Volumes}}
+      - {{$.ProjectName}}-{{.Name}}:{{.Mount}}
+{{- end}}
+{{- end}}
+{{- if .Config.Docker.HealthCheck.Test}}
+    healthcheck:
+      test: {{toYamlArray .Config.Docker.HealthCheck.Test}}
+      interval: {{.Config.Docker.HealthCheck.Interval}}
+      timeout: {{.Config.Docker.HealthCheck.Timeout}}
+      retries: {{.Config.Docker.HealthCheck.Retries}}
+      start_period: {{.Config.Docker.HealthCheck.StartPeriod}}
+{{- end}}
+{{- end}}
+{{- end}}
+
+{{- if .Volumes}}
+volumes:
+{{- range .Volumes}}
+  {{.}}:
+    driver: local
+{{- end}}
+{{- end}}
+
+networks:
+  dev-stack:
+    driver: bridge
+    name: {{.ProjectName}}-network

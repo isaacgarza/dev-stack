@@ -160,8 +160,8 @@ func (cs *ContainerService) List(ctx context.Context, projectName string, servic
 func (cs *ContainerService) Start(ctx context.Context, projectName string, serviceNames []string, options StartOptions) error {
 	cs.client.logger.Info("Starting services", "project", projectName, "services", serviceNames)
 
-	// Build docker-compose command
-	args := []string{"compose", "-p", projectName, "up", "-d"}
+	// Build docker-compose command using the generated compose file in dev-stack folder
+	args := []string{"compose", "-f", "dev-stack/docker-compose.yml", "-p", projectName, "up", "-d"}
 
 	if options.Build {
 		args = append(args, "--build")
@@ -184,10 +184,47 @@ func (cs *ContainerService) Start(ctx context.Context, projectName string, servi
 
 	if err != nil {
 		cs.client.logger.Error("Failed to start services", "error", err, "output", string(output))
+		
+		// Print Docker output to console for immediate feedback
+		if len(output) > 0 {
+			fmt.Printf("\n🔍 Docker output:\n%s\n", string(output))
+		}
+		
+		// Save logs to file for debugging
+		if saveErr := cs.saveErrorLogs(string(output)); saveErr != nil {
+			cs.client.logger.Error("Failed to save error logs", "error", saveErr)
+		}
+		
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
 	cs.client.logger.Info("Services started successfully", "services", serviceNames)
+	return nil
+}
+
+// saveErrorLogs saves Docker error output to a log file
+func (cs *ContainerService) saveErrorLogs(output string) error {
+	// Ensure dev-stack directory exists
+	if err := os.MkdirAll("dev-stack", 0755); err != nil {
+		return fmt.Errorf("failed to create dev-stack directory: %w", err)
+	}
+
+	// Create log file with timestamp
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	logFile := fmt.Sprintf("dev-stack/docker-error-%s.log", timestamp)
+
+	// Write error output to file
+	content := fmt.Sprintf("Docker Error Log - %s\n%s\n%s\n\n%s",
+		time.Now().Format(time.RFC3339),
+		strings.Repeat("=", 50),
+		"Docker Compose Output:",
+		output)
+
+	if err := os.WriteFile(logFile, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write error log: %w", err)
+	}
+
+	fmt.Printf("📝 Error details saved to: %s\n", logFile)
 	return nil
 }
 

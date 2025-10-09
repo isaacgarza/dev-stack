@@ -52,6 +52,7 @@ func (r *Registry) registerDefaultHandlers() {
 	r.RegisterHandler("up", NewUpHandler())
 	r.RegisterHandler("down", NewDownHandler())
 	r.RegisterHandler("status", NewStatusHandler())
+	r.RegisterHandler("init", NewInitHandler())
 
 	// Additional handlers can be registered here as they are implemented:
 	// r.RegisterHandler("logs", NewLogsHandler())
@@ -64,9 +65,7 @@ func (r *Registry) registerDefaultHandlers() {
 	// r.RegisterHandler("restore", NewRestoreHandler())
 	// r.RegisterHandler("cleanup", NewCleanupHandler())
 	// r.RegisterHandler("scale", NewScaleHandler())
-	// r.RegisterHandler("init", NewInitHandler())
 	// r.RegisterHandler("docs", NewDocsHandler())
 	// r.RegisterHandler("validate", NewValidateHandler())
 	// r.RegisterHandler("version", NewVersionHandler())
-	// r.RegisterHandler("generate", NewGenerateHandler())
 }

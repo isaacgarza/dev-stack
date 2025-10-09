@@ -10,9 +10,6 @@ defaults:
   database: local_dev
   username: postgres
   password: password
-  memory_limit: 512m
-  persistence: true
-  log_slow_queries: true
 
 # Environment variables this service provides
 environment:
@@ -23,6 +20,33 @@ environment:
   POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
   POSTGRES_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
   DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+
+# Docker-specific configuration
+docker:
+  restart: unless-stopped
+  command: >
+    postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c max_connections=200
+      -c log_statement=all
+      -c log_destination=stderr
+      -c log_min_duration_statement=100ms
+  networks:
+    - dev-stack
+  memory_limit: 512m
+  environment:
+    - POSTGRES_DB=${POSTGRES_DB:-local_dev}
+    - POSTGRES_USER=${POSTGRES_USER:-postgres}
+    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+  health_check:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev}"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
 
 # Spring Boot configuration
 spring_config:
@@ -35,39 +59,6 @@ spring_config:
     - "spring.jpa.hibernate.ddl-auto=validate"
     - "spring.jpa.show-sql=true"
     - "spring.jpa.properties.hibernate.format_sql=true"
-  yaml: |
-    spring:
-      datasource:
-        url: jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}
-        username: ${POSTGRES_USER:-postgres}
-        password: ${POSTGRES_PASSWORD:-password}
-        driver-class-name: org.postgresql.Driver
-      jpa:
-        database-platform: org.hibernate.dialect.PostgreSQLDialect
-        hibernate:
-          ddl-auto: validate
-        show-sql: true
-        properties:
-          hibernate:
-            format_sql: true
-            jdbc:
-              lob:
-                non_contextual_creation: true
-
-# Health check configuration
-health_check:
-  command:
-    [
-      "pg_isready",
-      "-U",
-      "${POSTGRES_USER:-postgres}",
-      "-d",
-      "${POSTGRES_DB:-local_dev}",
-    ]
-  interval: 10s
-  timeout: 5s
-  retries: 5
-  start_period: 30s
 
 # Dependencies
 dependencies: []
@@ -80,52 +71,18 @@ required_ports:
 volumes:
   - name: postgres-data
     mount: /var/lib/postgresql/data
-    description: PostgreSQL database files and data
-  - name: init-scripts
-    mount: /docker-entrypoint-initdb.d
-    description: Database initialization scripts
-    optional: true
-
-# Web interfaces
-web_interfaces: []
-
-# Common CLI commands
-cli_commands:
-  connect: "docker exec -it ${PROJECT_NAME:-dev-stack}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev}"
-  backup: "docker exec ${PROJECT_NAME:-dev-stack}-postgres pg_dump -U ${POSTGRES_USER:-postgres} ${POSTGRES_DB:-local_dev} > backup.sql"
-  restore: "docker exec -i ${PROJECT_NAME:-dev-stack}-postgres psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev} < backup.sql"
+    description: PostgreSQL data directory
 
 # Documentation links
 docs:
   - name: PostgreSQL Documentation
     url: https://www.postgresql.org/docs/
-  - name: Spring Boot Data JPA
-    url: https://docs.spring.io/spring-boot/docs/current/reference/html/data.html#data.sql.jpa-and-spring-data
-  - name: Hibernate PostgreSQL Dialect
-    url: https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#database-dialect
+  - name: Spring Data JPA
+    url: https://docs.spring.io/spring-data/jpa/docs/current/reference/html/
 
 # Common use cases
 use_cases:
   - Primary application database
-  - User data storage
-  - Transactional data
+  - Transactional data storage
   - Relational data modeling
   - ACID compliance requirements
-  - Complex queries and joins
-  - Data integrity constraints
-
-# Integration notes
-integration_notes:
-  - "Requires PostgreSQL JDBC driver in your application dependencies"
-  - "DDL auto is set to 'validate' - use Flyway/Liquibase for schema management"
-  - "Slow queries (>100ms) are logged for performance debugging"
-  - "pg_stat_statements extension enabled for query performance analysis"
-  - "Default encoding is UTF-8"
-  - "Connection pooling recommended for production applications"
-
-# Required dependencies
-required_dependencies:
-  maven:
-    - "org.postgresql:postgresql"
-  gradle:
-    - "implementation 'org.postgresql:postgresql'"

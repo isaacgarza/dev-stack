@@ -1,0 +1,80 @@
+# dev-stack configuration for {{.ProjectName}}
+project:
+  name: {{.ProjectName}}
+  environment: {{.Environment}}
+
+stack:
+  enabled:
+{{- range .Services}}
+    - {{.}}
+{{- end}}
+
+# Service-specific overrides
+overrides:
+{{- range .Services}}
+{{- if eq . "redis"}}
+  redis:
+#    port: 6379
+#    password: "dev-password"
+#    memory_limit: "256m"
+{{- end}}
+{{- if eq . "postgres"}}
+  postgres:
+#    port: 5432
+#    database: "{{$.ProjectName}}_dev"
+#    username: "app_user"
+#    password: "dev-password"
+#    memory_limit: "512m"
+{{- end}}
+{{- if eq . "mysql"}}
+  mysql:
+#    port: 3306
+#    database: "{{$.ProjectName}}_dev"
+#    username: "root"
+#    password: "dev-password"
+#    memory_limit: "512m"
+{{- end}}
+{{- if eq . "jaeger"}}
+  jaeger:
+#    ui_port: 16686
+#    otlp_http_port: 4318
+#    memory_limit: "512m"
+{{- end}}
+{{- if eq . "prometheus"}}
+  prometheus:
+#    port: 9090
+#    memory_limit: "256m"
+#    scrape_interval: "15s"
+{{- end}}
+{{- if eq . "localstack"}}
+  localstack:
+#    port: 4566
+#    dashboard_port: 8055
+#    memory_limit: "512m"
+#    services:
+#      - sqs
+#      - sns
+#      - dynamodb
+{{- end}}
+{{- if eq . "kafka"}}
+  kafka:
+#    port: 9092
+#    ui_port: 8080
+#    zookeeper_port: 2181
+#    memory_limit: "1024m"
+#    auto_create_topics: true
+#    num_partitions: 1
+{{- end}}
+{{- end}}
+
+# Validation settings
+validation:
+{{- range $key, $value := .Validation}}
+  {{$key}}: {{$value}}
+{{- end}}
+
+# Advanced settings
+advanced:
+{{- range $key, $value := .Advanced}}
+  {{$key}}: {{$value}}
+{{- end}}

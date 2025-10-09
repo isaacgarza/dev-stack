@@ -3,7 +3,7 @@ version: "3"
 vars:
   BINARY_NAME: dev-stack
   BUILD_DIR: build
-  MODULE_PATH: dev-stack
+  MODULE_PATH: github.com/isaacgarza/dev-stack
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
   COMMIT:
@@ -11,7 +11,7 @@ vars:
   BUILD_DATE:
     sh: date -u +"%Y-%m-%dT%H:%M:%SZ"
   LDFLAGS: '-ldflags "-X {{.MODULE_PATH}}/internal/cli.version={{.VERSION}} -X {{.MODULE_PATH}}/internal/cli.commit={{.COMMIT}} -X {{.MODULE_PATH}}/internal/cli.date={{.BUILD_DATE}}"'
-  GOLANGCI_LINT_VERSION: "v2.4.0"
+  GOLANGCI_LINT_VERSION: "v1.55.2"
 
 tasks:
   default:
@@ -54,7 +54,7 @@ tasks:
       - go install {{.LDFLAGS}} ./cmd/dev-stack
 
   test:
-    desc: Run all tests
+    desc: Run all tests with coverage
     deps: [deps]
     sources:
       - "**/*.go"
@@ -63,8 +63,16 @@ tasks:
     generates:
       - "coverage.out"
     cmds:
-      - echo "Running Go tests..."
-      - go test -v -race -coverprofile=coverage.out ./...
+      - echo "Running tests with coverage..."
+      - go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+      - echo "Coverage report generated to coverage.out"
+
+  test-coverage:
+    desc: View test coverage report
+    deps: [test]
+    cmds:
+      - echo "Opening coverage report..."
+      - go tool cover -html=coverage.out
 
   test-integration:
     desc: Run integration tests
@@ -82,25 +90,23 @@ tasks:
     desc: Run Go linting (vet + fmt check + golangci-lint)
     deps: [deps]
     cmds:
-      - echo "Running Go linting with basic tools..."
       - echo "Running go vet..."
       - go vet ./...
-      - echo "Running go fmt check..."
+      - echo "Checking code formatting..."
       - |
         if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
-          echo "Code is not formatted. Run 'task fmt' to fix:"
+          echo "❌ Code is not formatted. Run 'task fmt' to fix:"
           gofmt -l .
           exit 1
         fi
       - echo "✅ Basic linting passed"
-      - echo "Running advanced Go linting..."
+      - echo "Running golangci-lint..."
       - |
         if ! command -v golangci-lint >/dev/null 2>&1; then
-          echo "golangci-lint not found. Installing version {{.GOLANGCI_LINT_VERSION}}..."
-          echo "Note: This may not work with very new Go versions"
+          echo "Installing golangci-lint {{.GOLANGCI_LINT_VERSION}}..."
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin {{.GOLANGCI_LINT_VERSION}}
         fi
-      - $(go env GOPATH)/bin/golangci-lint run ./... || echo "⚠️ Advanced linting failed - this is optional"
+      - $(go env GOPATH)/bin/golangci-lint run ./...
 
   fmt:
     desc: Format Go code
@@ -227,11 +233,13 @@ tasks:
   clean:
     desc: Remove build artifacts and generated files
     cmds:
-      - echo "Cleaning up..."
+      - echo "Cleaning build artifacts..."
       - rm -rf {{.BUILD_DIR}}/
       - rm -f coverage.out
-      - rm -f lint.log
-      - go clean
+      - rm -f *.test
+      - rm -f *.prof
+      - go clean -cache
+      - echo "✅ Clean complete"
 
   clean-all:
     desc: Remove all generated files including dependencies
@@ -239,6 +247,18 @@ tasks:
     cmds:
       - go clean -modcache
       - rm -rf vendor/
+
+  security:
+    desc: Run security vulnerability scan
+    deps: [deps]
+    cmds:
+      - echo "Running security scan..."
+      - |
+        if ! command -v govulncheck >/dev/null 2>&1; then
+          echo "Installing govulncheck..."
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+        fi
+      - govulncheck ./...
 
   deps:
     desc: Download Go dependencies
@@ -298,11 +318,13 @@ tasks:
       - echo "  dev            - Build and run in development mode"
       - echo ""
       - echo "Testing & Quality:"
-      - echo "  test           - Run all tests"
+      - echo "  test           - Run all tests with coverage"
+      - echo "  test-coverage  - View test coverage report"
       - echo "  test-integration - Run integration tests"
-      - echo "  lint           - Run basic Go linting (vet + fmt check + golangci-lint)"
+      - echo "  lint           - Run Go linting (vet + fmt + golangci-lint)"
       - echo "  fmt            - Format Go code"
       - echo "  vet            - Run Go vet"
+      - echo "  security       - Run security vulnerability scan"
       - echo ""
       - echo "Documentation:"
       - echo "  docs           - Generate documentation only (no Hugo sync)"

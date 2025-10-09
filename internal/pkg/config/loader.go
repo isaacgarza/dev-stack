@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/isaacgarza/dev-stack/internal/config"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,16 +28,20 @@ func (l *Loader) Load() (*CommandConfig, error) {
 		return l.cache, nil
 	}
 
-	// Resolve config path
-	configPath, err := l.resolveConfigPath()
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve config path: %w", err)
-	}
+	var data []byte
+	var err error
 
-	// Read the YAML file
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
+	// Try to resolve config path
+	configPath, pathErr := l.resolveConfigPath()
+	if pathErr != nil {
+		// If no file found, use embedded config
+		data = config.EmbeddedCommandsYAML
+	} else {
+		// Read the YAML file
+		data, err = os.ReadFile(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
+		}
 	}
 
 	// Parse YAML

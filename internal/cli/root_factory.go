@@ -77,14 +77,28 @@ func initFactoryConfig(commandConfig *config.CommandConfig) {
 		viper.AddConfigPath(".")
 		viper.AddConfigPath(".dev-stack")
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".dev-stack")
-		viper.SetConfigName("dev-stack-config")
+		
+		// Try to find config file with multiple names
+		configNames := []string{"dev-stack-config", ".dev-stack"}
+		var configFound bool
+		for _, name := range configNames {
+			viper.SetConfigName(name)
+			if err := viper.ReadInConfig(); err == nil {
+				configFound = true
+				break
+			}
+		}
+		
+		// If no config found, don't call ReadInConfig again
+		if configFound {
+			return
+		}
 	}
 
 	// read in environment variables that match
 	viper.AutomaticEnv()
 
-	// If a config file is found, read it in
+	// If a config file is found, read it in (only if not already read above)
 	if err := viper.ReadInConfig(); err == nil {
 		if viper.GetBool("verbose") {
 			fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
