@@ -47,22 +47,9 @@ case "${1:-}" in
         ;;
     --github-matrix)
         # Output as JSON array for GitHub Actions matrix
-        # Include current version and one version back for compatibility testing
+        # Only include current version since go.mod specifies minimum version
         MAJOR_MINOR=$(echo "$GO_VERSION" | sed -E 's/^([0-9]+\.[0-9]+).*/\1/')
-        MAJOR=$(echo "$MAJOR_MINOR" | cut -d. -f1)
-        MINOR=$(echo "$MAJOR_MINOR" | cut -d. -f2)
-        PREV_MINOR=$((MINOR - 1))
-        PREV_PREV_MINOR=$((MINOR - 2))
-
-        if [[ $PREV_MINOR -ge 19 ]]; then
-            if [[ $PREV_PREV_MINOR -ge 19 ]]; then
-                echo "['$MAJOR.$PREV_PREV_MINOR', '$MAJOR.$PREV_MINOR', '$MAJOR_MINOR']"
-            else
-                echo "['$MAJOR.$PREV_MINOR', '$MAJOR_MINOR']"
-            fi
-        else
-            echo "['$MAJOR_MINOR']"
-        fi
+        echo "['$MAJOR_MINOR']"
         ;;
     --help|-h)
         cat << EOF
