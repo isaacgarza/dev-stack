@@ -1,0 +1,79 @@
+name: localstack-core
+description: LocalStack core AWS service emulator
+category: cloud
+version: "latest"
+
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [aws-emulation, cloud-core]
+
+options:
+  - port
+  - dashboard_port
+  - memory_limit
+  - persistence
+examples:
+  - "aws --endpoint-url=http://localhost:4566 s3 ls"
+usage_notes: "Core LocalStack service providing AWS API emulation for local development"
+links:
+  - "https://docs.localstack.cloud/"
+
+defaults:
+  image: localstack/localstack:latest
+  port: 4566
+  dashboard_port: 8055
+  memory_limit: 512m
+  persistence: true
+
+environment:
+  LOCALSTACK_HOST: localhost
+  LOCALSTACK_PORT: "${LOCALSTACK_PORT:-4566}"
+  LOCALSTACK_DASHBOARD_PORT: "${LOCALSTACK_DASHBOARD_PORT:-8055}"
+  LOCALSTACK_URL: "http://localhost:${LOCALSTACK_PORT:-4566}"
+  AWS_ENDPOINT_URL: "http://localhost:${LOCALSTACK_PORT:-4566}"
+  AWS_ACCESS_KEY_ID: "test"
+  AWS_SECRET_ACCESS_KEY: "test"
+  AWS_DEFAULT_REGION: "us-east-1"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 512m
+  environment:
+    - SERVICES=
+    - DEBUG=1
+    - PERSISTENCE=1
+    - LAMBDA_EXECUTOR=docker
+    - DOCKER_HOST=unix:///var/run/docker.sock
+  health_check:
+    test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 5
+    start_period: 30s
+
+required_ports:
+  - "${LOCALSTACK_PORT:-4566}"
+  - "${LOCALSTACK_DASHBOARD_PORT:-8055}"
+
+volumes:
+  - name: localstack-data
+    mount: /tmp/localstack
+    description: LocalStack persistence data
+
+web_interfaces:
+  - name: LocalStack Dashboard
+    url: "http://localhost:${LOCALSTACK_DASHBOARD_PORT:-8055}"
+    description: LocalStack web dashboard
+
+docs:
+  - name: LocalStack Documentation
+    url: https://docs.localstack.cloud/
+
+use_cases:
+  - AWS service emulation for local development
+  - Cloud service testing without AWS costs
+  - Offline development environment

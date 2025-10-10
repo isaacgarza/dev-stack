@@ -1,0 +1,18 @@
+validation:
+  skip_warnings:
+    description: "Skip validation warnings during startup"
+    default: false
+  allow_multiple_databases:
+    description: "Allow both MySQL and PostgreSQL"
+    default: false
+
+advanced:
+  auto_start:
+    description: "Start services automatically after setup"
+    default: true
+  pull_latest_images:
+    description: "Pull latest Docker images"
+    default: true
+  cleanup_on_recreate:
+    description: "Keep data when recreating services"
+    default: false

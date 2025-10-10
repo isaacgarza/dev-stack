@@ -1,0 +1,106 @@
+name: mysql
+description: MySQL relational database for persistent data storage
+category: database
+version: "8"
+
+dependencies:
+  required: []
+  soft: []
+  conflicts: [postgres]
+  provides: [database, sql]
+
+options:
+  - port
+  - database
+  - username
+  - password
+  - memory_limit
+examples:
+  - 'mysql -h localhost -u root -p -e "SELECT version();"'
+  - "spring.datasource.url=jdbc:mysql://localhost:3306/my_app_dev"
+usage_notes: "MySQL database for relational data storage. Alternative to PostgreSQL."
+links:
+  - "https://dev.mysql.com/doc/"
+
+defaults:
+  image: mysql:8-oracle
+  port: 3306
+  database: local_dev
+  username: root
+  password: password
+
+environment:
+  MYSQL_HOST: localhost
+  MYSQL_PORT: "${MYSQL_PORT:-3306}"
+  MYSQL_DATABASE: "${MYSQL_DATABASE:-local_dev}"
+  MYSQL_USER: "${MYSQL_USER:-root}"
+  MYSQL_PASSWORD: "${MYSQL_PASSWORD:-password}"
+  MYSQL_URL: "mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-password}@localhost:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-local_dev}"
+  DATABASE_URL: "mysql://${MYSQL_USER:-root}:${MYSQL_PASSWORD:-password}@localhost:${MYSQL_PORT:-3306}/${MYSQL_DATABASE:-local_dev}"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 512m
+  environment:
+    - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD:-password}
+    - MYSQL_DATABASE=${MYSQL_DATABASE:-local_dev}
+    - MYSQL_USER=${MYSQL_USER:-root}
+    - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+  health_check:
+    test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_PASSWORD:-password}"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
+required_ports:
+  - "${MYSQL_PORT:-3306}"
+
+volumes:
+  - name: mysql-data
+    mount: /var/lib/mysql
+    description: MySQL data directory
+
+docs:
+  - name: MySQL Documentation
+    url: https://dev.mysql.com/doc/
+
+use_cases:
+  - Primary application database
+  - Transactional data storage
+  - Relational data modeling
+
+# Service operations
+operations:
+  connect:
+    command: ["mysql"]
+    args:
+      user: ["-u", "{{.User}}"]
+      database: ["{{.Database}}"]
+      password: ["-p"]
+    defaults:
+      user: "root"
+  
+  backup:
+    type: "command"
+    command: ["mysqldump", "-u", "{{.User}}", "-p"]
+    args:
+      database: ["{{.Database}}"]
+      all: ["--all-databases"]
+    defaults:
+      user: "root"
+    extension: "sql"
+  
+  restore:
+    type: "command"
+    pre_commands:
+      clean:
+        - ["mysql", "-u", "{{.User}}", "-p", "-e", "DROP DATABASE IF EXISTS {{.Database}};"]
+        - ["mysql", "-u", "{{.User}}", "-p", "-e", "CREATE DATABASE {{.Database}};"]
+    command: ["mysql", "-u", "{{.User}}", "-p"]
+    args:
+      database: ["{{.Database}}"]
+    defaults:
+      user: "root"

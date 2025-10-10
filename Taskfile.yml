@@ -3,7 +3,7 @@ version: "3"
 vars:
   BINARY_NAME: dev-stack
   BUILD_DIR: build
-  MODULE_PATH: dev-stack
+  MODULE_PATH: github.com/isaacgarza/dev-stack
   VERSION:
     sh: git describe --tags --always --dirty 2>/dev/null || echo "dev"
   COMMIT:
@@ -14,13 +14,16 @@ vars:
   GOLANGCI_LINT_VERSION: "v2.4.0"
 
 tasks:
+  # Default task - most common action
   default:
-    desc: Build the binary (default task)
+    desc: "🚀 Build the binary (default task)"
+    silent: true
     cmds:
       - task: build
 
+  # === BUILD TASKS ===
   build:
-    desc: Build the Go binary for current platform
+    desc: "🔨 Build the Go binary for current platform"
     deps: [deps]
     sources:
       - "**/*.go"
@@ -28,33 +31,67 @@ tasks:
       - "go.sum"
     generates:
       - "{{.BUILD_DIR}}/{{.BINARY_NAME}}"
+    silent: true
     cmds:
-      - echo "Building {{.BINARY_NAME}}..."
+      - echo "🔨 Building {{.BINARY_NAME}}..."
       - mkdir -p {{.BUILD_DIR}}
       - go build {{.LDFLAGS}} -o {{.BUILD_DIR}}/{{.BINARY_NAME}} ./cmd/dev-stack
+      - echo "✅ Built at {{.BUILD_DIR}}/{{.BINARY_NAME}}"
 
   build-all:
-    desc: Build binaries for all supported platforms
+    desc: "🌍 Build binaries for all supported platforms"
     deps: [deps]
+    silent: true
     cmds:
-      - echo "Building {{.BINARY_NAME}} for all platforms..."
+      - echo "🌍 Building {{.BINARY_NAME}} for all platforms..."
       - mkdir -p {{.BUILD_DIR}}
       - GOOS=linux GOARCH=amd64 go build {{.LDFLAGS}} -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-linux-amd64 ./cmd/dev-stack
       - GOOS=linux GOARCH=arm64 go build {{.LDFLAGS}} -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-linux-arm64 ./cmd/dev-stack
       - GOOS=darwin GOARCH=amd64 go build {{.LDFLAGS}} -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-darwin-amd64 ./cmd/dev-stack
       - GOOS=darwin GOARCH=arm64 go build {{.LDFLAGS}} -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-darwin-arm64 ./cmd/dev-stack
       - GOOS=windows GOARCH=amd64 go build {{.LDFLAGS}} -o {{.BUILD_DIR}}/{{.BINARY_NAME}}-windows-amd64.exe ./cmd/dev-stack
-      - echo "Binaries built in {{.BUILD_DIR}}/"
+      - echo "✅ All binaries built in {{.BUILD_DIR}}/"
 
   install:
-    desc: Install the binary to GOPATH/bin
+    desc: "📦 Install the binary to GOPATH/bin"
     deps: [build]
+    silent: true
     cmds:
-      - echo "Installing {{.BINARY_NAME}}..."
+      - echo "📦 Installing {{.BINARY_NAME}}..."
       - go install {{.LDFLAGS}} ./cmd/dev-stack
+      - echo "✅ Installed to $(go env GOPATH)/bin/{{.BINARY_NAME}}"
 
+  # === DEVELOPMENT TASKS ===
+  dev:
+    desc: "🚀 Quick start - build and show help"
+    deps: [build]
+    silent: true
+    cmds:
+      - echo "🚀 Running {{.BINARY_NAME}} in development mode..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} --help
+
+  watch:
+    desc: "👀 Watch for changes and rebuild automatically"
+    watch: true
+    sources:
+      - "**/*.go"
+    silent: true
+    cmds:
+      - echo "👀 Rebuilding due to changes..."
+      - task: build
+
+  deps:
+    desc: "📥 Download and tidy Go dependencies"
+    silent: true
+    cmds:
+      - echo "📥 Downloading Go dependencies..."
+      - go mod download
+      - go mod tidy
+      - echo "✅ Dependencies updated"
+
+  # === TESTING & QUALITY ===
   test:
-    desc: Run all tests
+    desc: "🧪 Run all tests with coverage report"
     deps: [deps]
     sources:
       - "**/*.go"
@@ -62,277 +99,177 @@ tasks:
       - "go.sum"
     generates:
       - "coverage.out"
+    silent: true
     cmds:
-      - echo "Running Go tests..."
-      - go test -v -race -coverprofile=coverage.out ./...
+      - echo "🧪 Running tests with coverage..."
+      - go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+      - echo "✅ Coverage report at coverage.out"
 
-  test-integration:
-    desc: Run integration tests
-    deps: [build]
+  test-coverage:
+    desc: "📊 View test coverage report in browser"
+    deps: [test]
+    silent: true
     cmds:
-      - echo "Running integration tests..."
-      - |
-        if [ -d "./tests/integration" ] && find ./tests/integration -name "*_test.go" 2>/dev/null | grep -q .; then
-          cd tests/integration && go test -v -tags=integration .
-        else
-          echo "No integration tests found, skipping..."
-        fi
+      - echo "📊 Opening coverage report..."
+      - go tool cover -html=coverage.out
 
   lint:
-    desc: Run Go linting (vet + fmt check + golangci-lint)
+    desc: "🔍 Run comprehensive linting (vet + fmt + golangci-lint)"
     deps: [deps]
+    silent: true
     cmds:
-      - echo "Running Go linting with basic tools..."
-      - echo "Running go vet..."
+      - echo "🔍 Running go vet..."
       - go vet ./...
-      - echo "Running go fmt check..."
+      - echo "🔍 Checking code formatting..."
       - |
         if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
-          echo "Code is not formatted. Run 'task fmt' to fix:"
+          echo "❌ Code is not formatted. Run 'task fmt' to fix:"
           gofmt -l .
           exit 1
         fi
       - echo "✅ Basic linting passed"
-      - echo "Running advanced Go linting..."
+      - echo "🔍 Running golangci-lint..."
       - |
         if ! command -v golangci-lint >/dev/null 2>&1; then
-          echo "golangci-lint not found. Installing version {{.GOLANGCI_LINT_VERSION}}..."
-          echo "Note: This may not work with very new Go versions"
+          echo "📦 Installing golangci-lint {{.GOLANGCI_LINT_VERSION}}..."
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin {{.GOLANGCI_LINT_VERSION}}
         fi
-      - $(go env GOPATH)/bin/golangci-lint run ./... || echo "⚠️ Advanced linting failed - this is optional"
+      - $(go env GOPATH)/bin/golangci-lint run ./...
+      - echo "✅ All linting checks passed!"
 
   fmt:
-    desc: Format Go code
+    desc: "✨ Format Go code with gofmt and goimports"
+    silent: true
     cmds:
-      - echo "Formatting Go code..."
+      - echo "✨ Formatting Go code..."
       - |
         if [ ! -f $(go env GOPATH)/bin/goimports ]; then
-          echo "Installing goimports..."
+          echo "📦 Installing goimports..."
           go install golang.org/x/tools/cmd/goimports@latest
         fi
       - go fmt ./...
       - $(go env GOPATH)/bin/goimports -w .
+      - echo "✅ Code formatted"
 
-  vet:
-    desc: Run Go vet
-    cmds:
-      - echo "Running go vet..."
-      - go vet ./...
-
-  docs:
-    desc: Generate documentation only (no Hugo sync)
-    deps: [build]
-    cmds:
-      - echo "Generating documentation..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --no-hugo-sync --verbose
-
-  docs-hugo:
-    desc: Generate documentation and sync to Hugo content directory
-    deps: [build]
-    cmds:
-      - echo "Generating documentation and syncing to Hugo..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --hugo-dir docs-site/content
-
-  docs-dry-run:
-    desc: Preview documentation changes without writing files
-    deps: [build]
-    cmds:
-      - echo "Previewing documentation changes..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose --dry-run --hugo-dir docs-site/content
-
-  hugo-build:
-    desc: Build Hugo documentation site
-    deps: [docs-hugo]
-    cmds:
-      - echo "Building Hugo documentation site..."
-      - cd docs-site && npm run docs:build
-
-  hugo-serve:
-    desc: Serve Hugo documentation site locally
-    deps: [docs-hugo]
-    cmds:
-      - echo "Starting Hugo development server..."
-      - cd docs-site && npm run docs:dev
-
-  hugo-clean:
-    desc: Clean Hugo build artifacts
-    cmds:
-      - echo "Cleaning Hugo build artifacts..."
-      - cd docs-site && npm run docs:clean
-      - rm -rf docs-site/public/
-
-  validate-docs:
-    desc: Validate Hugo documentation configuration and content
-    cmds:
-      - echo "Validating Hugo documentation..."
-      - |
-        cd docs-site
-        if [ ! -f "config/_default/hugo.toml" ]; then
-          echo "❌ Hugo configuration file (config/_default/hugo.toml) not found"
-          exit 1
-        fi
-      - echo "🔍 Checking Hugo configuration..."
-      - cd docs-site && hugo config > /dev/null 2>&1 || (echo "❌ Hugo configuration is invalid" && exit 1)
-      - echo "✅ Hugo configuration is valid"
-      - echo "🔍 Testing Hugo build..."
-      - mkdir -p docs-site/content/cli-reference
-      - |
-        if [ ! -f "docs-site/content/cli-reference/index.md" ]; then
-          cat > docs-site/content/cli-reference/index.md << 'EOF'
-        ---
-        title: "CLI Reference"
-        description: "Complete command reference for dev-stack CLI"
-        weight: 30
-        ---
-
-        # CLI Reference
-
-        Placeholder for validation.
-        EOF
-        fi
-      - cd docs-site && hugo --gc --minify --destination public-test > /dev/null 2>&1 || (echo "❌ Hugo build failed" && exit 1)
-      - echo "✅ Hugo build successful"
-      - rm -rf docs-site/public-test
-      - echo "✅ Documentation validation complete"
-
-  dev:
-    desc: Build and run in development mode
-    deps: [build]
-    cmds:
-      - echo "Running {{.BINARY_NAME}} in development mode..."
-      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} --help
-
-  watch:
-    desc: Watch for changes and rebuild
-    watch: true
-    sources:
-      - "**/*.go"
-    cmds:
-      - task: build
-
-  docker-build:
-    desc: Build Docker image
-    cmds:
-      - echo "Building Docker image..."
-      - docker build -t {{.BINARY_NAME}}:{{.VERSION}} .
-
-  docker-run:
-    desc: Run Docker container
-    deps: [docker-build]
-    cmds:
-      - echo "Running Docker container..."
-      - docker run --rm -it {{.BINARY_NAME}}:{{.VERSION}}
-
-  clean:
-    desc: Remove build artifacts and generated files
-    cmds:
-      - echo "Cleaning up..."
-      - rm -rf {{.BUILD_DIR}}/
-      - rm -f coverage.out
-      - rm -f lint.log
-      - go clean
-
-  clean-all:
-    desc: Remove all generated files including dependencies
-    deps: [clean]
-    cmds:
-      - go clean -modcache
-      - rm -rf vendor/
-
-  deps:
-    desc: Download Go dependencies
-    cmds:
-      - echo "Downloading Go dependencies..."
-      - go mod download
-      - go mod tidy
-
-  version:
-    desc: Show version information
-    cmds:
-      - echo "Version {{.VERSION}}"
-      - echo "Commit {{.COMMIT}}"
-      - echo "Build Date {{.BUILD_DATE}}"
-
-  info:
-    desc: Show build information
-    cmds:
-      - echo "Binary Name {{.BINARY_NAME}}"
-      - echo "Build Directory {{.BUILD_DIR}}"
-
-  sync-version:
-    desc: Sync Go version across all config files
-    cmds:
-      - echo "Syncing Go version across configuration files..."
-      - ./scripts/sync-go-version.sh --fix
-
-  check-version:
-    desc: Check if Go versions are consistent across config files
-    cmds:
-      - echo "Checking Go version consistency..."
-      - ./scripts/sync-go-version.sh --check
-
-  show-go-version:
-    desc: Show the current Go version from .go-version
-    cmds:
-      - echo "Current Go version from .go-version file"
-      - cat .go-version
-      - |
-        echo "Matrix versions for CI:"
-        ./scripts/get-go-version.sh --github-matrix
-
-  help:
-    desc: Show available tasks with descriptions
+  security:
+    desc: "🔒 Run security vulnerability scan"
+    deps: [deps]
     silent: true
     cmds:
-      - echo "dev-stack Taskfile"
+      - echo "🔒 Running security scan..."
+      - |
+        if ! command -v govulncheck >/dev/null 2>&1; then
+          echo "📦 Installing govulncheck..."
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+        fi
+      - govulncheck ./...
+      - echo "✅ Security scan complete"
+
+  # === DOCUMENTATION ===
+  docs:
+    desc: "📚 Generate documentation"
+    deps: [build]
+    silent: true
+    cmds:
+      - echo "📚 Generating documentation..."
+      - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
+      - echo "✅ Documentation generated"
+
+  # === DOCKER ===
+  docker-build:
+    desc: "🐳 Build Docker image"
+    silent: true
+    cmds:
+      - echo "🐳 Building Docker image..."
+      - docker build -t {{.BINARY_NAME}}:{{.VERSION}} .
+      - echo "✅ Docker image built at {{.BINARY_NAME}}:{{.VERSION}}"
+
+  docker-run:
+    desc: "🐳 Run Docker container interactively"
+    deps: [docker-build]
+    silent: true
+    cmds:
+      - echo "🐳 Running Docker container..."
+      - docker run --rm -it {{.BINARY_NAME}}:{{.VERSION}}
+
+  # === CLEANUP ===
+  clean:
+    desc: "🧹 Remove build artifacts and generated files"
+    silent: true
+    cmds:
+      - echo "🧹 Cleaning build artifacts..."
+      - rm -rf {{.BUILD_DIR}}/
+      - rm -f coverage.out *.test *.prof
+      - go clean -cache
+      - echo "✅ Clean complete"
+
+  clean-all:
+    desc: "🧹 Deep clean - remove all generated files including dependencies"
+    deps: [clean]
+    silent: true
+    cmds:
+      - echo "🧹 Deep cleaning..."
+      - go clean -modcache
+      - rm -rf vendor/
+      - echo "✅ Deep clean complete"
+
+  # === UTILITY ===
+  version:
+    desc: "ℹ️  Show version information"
+    silent: true
+    cmds:
+      - echo "📋 Version Information:"
+      - echo "   Version:" {{.VERSION}}
+      - echo "   Commit:"  {{.COMMIT}}
+      - echo "   Date:"    {{.BUILD_DATE}}
+
+  help:
+    desc: "❓ Show this help message"
+    silent: true
+    cmds:
+      - echo "🛠️  dev-stack Task Runner"
       - echo ""
-      - echo "Build Tasks:"
-      - echo "  build          - Build the Go binary for current platform"
-      - echo "  build-all      - Build binaries for all supported platforms"
-      - echo "  install        - Install the binary to GOPATH/bin"
+      - echo "📋 Quick Start:"
+      - echo "   task build     - Build the binary"
+      - echo "   task dev       - Build and run"
+      - echo "   task test      - Run tests"
+      - echo "   task lint      - Check code quality"
       - echo ""
-      - echo "Development Tasks:"
-      - echo "  deps           - Download all dependencies"
-      - echo "  watch          - Watch for changes and rebuild"
-      - echo "  dev            - Build and run in development mode"
+      - echo "🔨 Build Tasks:"
+      - echo "   build          - Build binary for current platform"
+      - echo "   build-all      - Build for all platforms"
+      - echo "   install        - Install to GOPATH/bin"
       - echo ""
-      - echo "Testing & Quality:"
-      - echo "  test           - Run all tests"
-      - echo "  test-integration - Run integration tests"
-      - echo "  lint           - Run basic Go linting (vet + fmt check + golangci-lint)"
-      - echo "  fmt            - Format Go code"
-      - echo "  vet            - Run Go vet"
+      - echo "🚀 Development:"
+      - echo "   dev            - Quick start (build + help)"
+      - echo "   watch          - Auto-rebuild on changes"
+      - echo "   deps           - Update dependencies"
       - echo ""
-      - echo "Documentation:"
-      - echo "  docs           - Generate documentation only (no Hugo sync)"
-      - echo "  docs-hugo      - Generate docs and sync to Hugo content"
-      - echo "  docs-dry-run   - Preview documentation changes (dry-run)"
-      - echo "  hugo-build     - Build Hugo documentation site"
-      - echo "  hugo-serve     - Serve Hugo site locally for development"
-      - echo "  hugo-clean     - Clean Hugo build artifacts"
-      - echo "  validate-docs  - Validate Hugo documentation"
+      - echo "🧪 Testing & Quality:"
+      - echo "   test           - Run tests with coverage"
+      - echo "   test-coverage  - View coverage in browser"
+      - echo "   lint           - Run all linting checks"
+      - echo "   fmt            - Format code"
+      - echo "   security       - Security vulnerability scan"
       - echo ""
-      - echo "Docker Tasks:"
-      - echo "  docker-build   - Build Docker image"
-      - echo "  docker-run     - Run Docker container"
+      - echo "📚 Documentation:"
+      - echo "   docs           - Generate documentation"
       - echo ""
-      - echo "Version Management:"
-      - echo "  sync-version   - Sync Go version across config files"
-      - echo "  check-version  - Check Go version consistency"
-      - echo "  show-go-version - Show current Go version"
+      - echo "🐳 Docker:"
+      - echo "   docker-build   - Build Docker image"
+      - echo "   docker-run     - Run in container"
       - echo ""
-      - echo "Utility Tasks:"
-      - echo "  clean          - Remove build artifacts"
-      - echo "  clean-all      - Remove all generated files"
-      - echo "  version        - Show version information"
-      - echo "  info           - Show build information"
-      - echo "  help           - Show this help message"
+      - echo "🧹 Cleanup:"
+      - echo "   clean          - Remove build artifacts"
+      - echo "   clean-all      - Deep clean everything"
       - echo ""
-      - echo "Usage Examples:"
-      - echo "  task build"
-      - echo "  task build-all"
-      - echo "  task test"
-      - echo "  task watch"
+      - echo "ℹ️  Info:"
+      - echo "   version        - Show version info"
+      - echo "   help           - Show this help"
       - echo ""
-      - echo "For more details run task --list"
+      - echo "💡 Examples:"
+      - echo "   task build && ./build/dev-stack --help"
+      - echo "   task watch  (Auto-rebuild on file changes)"
+      - echo "   task test && task lint"
+      - echo ""
+      - echo "For detailed task list:" "task --list"

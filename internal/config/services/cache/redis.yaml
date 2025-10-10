@@ -1,0 +1,114 @@
+name: redis
+description: Redis in-memory data store for caching and session storage
+category: cache
+version: "7"
+
+# Dependency configuration (new Phase 1 addition)
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [cache]
+
+# CLI metadata (from services.yaml)
+options:
+  - port
+  - password
+  - memory_limit
+  - persistence
+  - config
+examples:
+  - "redis-cli -h localhost -p 6379 ping"
+  - "spring.data.redis.host=localhost"
+usage_notes: "Use Redis for caching, session storage, and pub/sub. Set a password for production-like security."
+links:
+  - "https://redis.io/documentation"
+  - "https://spring.io/projects/spring-data-redis"
+
+# Default configuration
+defaults:
+  image: redis:7-alpine
+  port: 6379
+  password: password
+
+# Environment variables this service provides
+environment:
+  REDIS_HOST: localhost
+  REDIS_PORT: "${REDIS_PORT:-6379}"
+  REDIS_PASSWORD: "${REDIS_PASSWORD:-password}"
+  REDIS_URL: "redis://:${REDIS_PASSWORD:-password}@localhost:${REDIS_PORT:-6379}"
+
+# Docker-specific configuration
+docker:
+  restart: unless-stopped
+  command: redis-server --requirepass ${REDIS_PASSWORD:-password} --appendonly yes
+  networks:
+    - dev-stack
+  memory_limit: 256m
+  environment:
+    - REDIS_PASSWORD=${REDIS_PASSWORD:-password}
+  health_check:
+    test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-password}", "ping"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
+# Spring Boot configuration
+spring_config:
+  properties:
+    - "spring.data.redis.host=${REDIS_HOST}"
+    - "spring.data.redis.port=${REDIS_PORT}"
+    - "spring.data.redis.password=${REDIS_PASSWORD}"
+
+# Ports that need to be available
+required_ports:
+  - "${REDIS_PORT:-6379}"
+
+# Volume mounts
+volumes:
+  - name: redis-data
+    mount: /data
+    description: Redis persistence data
+
+# Documentation links
+docs:
+  - name: Redis Documentation
+    url: https://redis.io/documentation
+  - name: Spring Data Redis
+    url: https://docs.spring.io/spring-data/redis/docs/current/reference/html/
+
+# Common use cases
+use_cases:
+  - Session storage
+  - Application caching
+  - Rate limiting
+  - Pub/Sub messaging
+  - Temporary data storage
+
+# Service operations
+operations:
+  connect:
+    command: ["redis-cli"]
+    args:
+      host: ["-h", "{{.Host}}"]
+      port: ["-p", "{{.Port}}"]
+      password: ["-a", "{{.Password}}"]
+    defaults:
+      host: "localhost"
+      port: "6379"
+  
+  backup:
+    type: "custom"
+    commands:
+      - ["redis-cli", "BGSAVE"]
+      - ["cp", "/data/dump.rdb", "/data/backup_{{.Timestamp}}.rdb"]
+    extension: "rdb"
+  
+  restore:
+    type: "custom"
+    pre_commands:
+      - ["rm", "-f", "/data/dump.rdb"]
+    commands:
+      - ["cp", "{{.BackupFile}}", "/data/dump.rdb"]
+    requires_restart: true

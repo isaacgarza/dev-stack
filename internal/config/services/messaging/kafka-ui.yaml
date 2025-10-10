@@ -1,0 +1,62 @@
+name: kafka-ui
+description: Web UI for Kafka cluster management and topic browsing
+category: messaging
+version: "latest"
+
+dependencies:
+  required: [kafka-broker]
+  soft: []
+  conflicts: []
+  provides: [ui, management]
+
+options:
+  - port
+  - memory_limit
+examples:
+  - "curl -f http://localhost:8080/actuator/health"
+usage_notes: "Web interface for managing Kafka topics, viewing messages, and monitoring cluster health"
+links:
+  - "https://github.com/provectus/kafka-ui"
+
+defaults:
+  image: provectuslabs/kafka-ui:latest
+  port: 8080
+  memory_limit: 256m
+
+environment:
+  KAFKA_UI_PORT: "${KAFKA_UI_PORT:-8080}"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 256m
+  environment:
+    - KAFKA_CLUSTERS_0_NAME=dev-stack
+    - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka-broker:29092
+    - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    - DYNAMIC_CONFIG_ENABLED=true
+  health_check:
+    test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+
+required_ports:
+  - "${KAFKA_UI_PORT:-8080}"
+
+web_interfaces:
+  - name: Kafka UI
+    url: "http://localhost:${KAFKA_UI_PORT:-8080}"
+    description: Kafka cluster management and topic browser
+
+docs:
+  - name: Kafka UI Documentation
+    url: https://github.com/provectus/kafka-ui
+
+use_cases:
+  - Topic management and browsing
+  - Message inspection and debugging
+  - Cluster monitoring and health checks
+  - Consumer group management

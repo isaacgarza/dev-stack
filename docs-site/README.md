@@ -2,6 +2,28 @@
 
 This directory contains the Hugo-based documentation site for the dev-stack project.
 
+## Documentation Generation
+
+The CLI reference and services guide are automatically generated from the actual CLI code and service configurations:
+
+```bash
+# Generate docs from CLI and service configs
+npm run docs:generate
+
+# Build site with fresh docs
+npm run docs:build
+
+# Serve with auto-generated docs
+npm run docs:serve
+```
+
+### Generated Files
+
+- `content/reference.md` - CLI command reference (generated from `dev-stack --help`)
+- `content/services.md` - Services guide (generated from service YAML files)
+
+These files are automatically generated and should not be edited manually.
+
 ## Structure
 
 ```

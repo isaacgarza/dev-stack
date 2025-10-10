@@ -1,0 +1,65 @@
+name: kafka-topics
+description: Kafka topic initialization and management service
+category: messaging
+version: "latest"
+
+dependencies:
+  required: [kafka-broker]
+  soft: []
+  conflicts: []
+  provides: [topic-management]
+
+options:
+  - default_topics_enabled
+examples:
+  - "kafka-topics --create --bootstrap-server localhost:9092 --topic test --partitions 3 --replication-factor 1"
+usage_notes: "Initializes default Kafka topics for development. Runs once on startup."
+links:
+  - "https://kafka.apache.org/documentation/#quickstart_createtopic"
+
+defaults:
+  image: confluentinc/cp-kafka:latest
+  default_topics_enabled: true
+
+docker:
+  restart: "no"
+  networks:
+    - dev-stack
+  command: |
+    bash -c "
+      apk add --no-cache jq bash
+      chmod +x /usr/local/bin/init-kafka-topics.sh
+      /usr/local/bin/init-kafka-topics.sh
+    "
+
+cli_commands:
+  create_topic: "docker exec ${PROJECT_NAME:-dev-stack}-kafka-broker kafka-topics --create --bootstrap-server localhost:9092 --topic test --partitions 3 --replication-factor 1"
+  produce_message: "docker exec -it ${PROJECT_NAME:-dev-stack}-kafka-broker kafka-console-producer --bootstrap-server localhost:9092 --topic test"
+  consume_messages: "docker exec -it ${PROJECT_NAME:-dev-stack}-kafka-broker kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning"
+
+default_topics:
+  - name: "test"
+    partitions: 3
+    replication_factor: 1
+    description: "Default test topic for development"
+  - name: "events"
+    partitions: 6
+    replication_factor: 1
+    description: "General application events topic"
+  - name: "user-events"
+    partitions: 3
+    replication_factor: 1
+    description: "User-related events topic"
+  - name: "notifications"
+    partitions: 3
+    replication_factor: 1
+    description: "Notifications topic"
+
+docs:
+  - name: Kafka Topics Documentation
+    url: https://kafka.apache.org/documentation/#quickstart_createtopic
+
+use_cases:
+  - Automatic topic creation for development
+  - Topic initialization scripts
+  - Development environment setup

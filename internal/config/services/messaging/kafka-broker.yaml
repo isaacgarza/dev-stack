@@ -1,0 +1,101 @@
+name: kafka-broker
+description: Apache Kafka broker for event streaming and messaging
+category: messaging
+version: "latest"
+
+dependencies:
+  required: [zookeeper]
+  soft: [kafka-ui]
+  conflicts: []
+  provides: [messaging, streaming]
+
+options:
+  - port
+  - memory_limit
+  - auto_create_topics
+  - num_partitions
+  - replication_factor
+examples:
+  - "kafka-broker-api-versions --bootstrap-server localhost:9092"
+usage_notes: "Kafka broker handles message storage and delivery. Requires Zookeeper for coordination."
+links:
+  - "https://kafka.apache.org/documentation/"
+  - "https://docs.spring.io/spring-kafka/docs/current/reference/html/"
+
+defaults:
+  image: confluentinc/cp-kafka:latest
+  port: 9092
+  memory_limit: 1024m
+  auto_create_topics: true
+  num_partitions: 1
+  replication_factor: 1
+
+environment:
+  KAFKA_HOST: localhost
+  KAFKA_PORT: "${KAFKA_PORT:-9092}"
+  KAFKA_BOOTSTRAP_SERVERS: "localhost:${KAFKA_PORT:-9092}"
+
+spring_config:
+  properties:
+    - "spring.kafka.bootstrap-servers=localhost:${KAFKA_PORT:-9092}"
+    - "spring.kafka.consumer.group-id=${spring.application.name:local-app}"
+    - "spring.kafka.consumer.auto-offset-reset=earliest"
+    - "spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer"
+    - "spring.kafka.consumer.value-deserializer=org.apache.kafka.common.serialization.StringDeserializer"
+    - "spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer"
+    - "spring.kafka.producer.value-serializer=org.apache.kafka.common.serialization.StringSerializer"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 1024m
+  environment:
+    - KAFKA_BROKER_ID=1
+    - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker:29092,PLAINTEXT_HOST://localhost:${KAFKA_PORT:-9092}
+    - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+    - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+    - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+    - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    - KAFKA_NUM_PARTITIONS=3
+    - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+    - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+    - KAFKA_LOG_RETENTION_HOURS=168
+    - KAFKA_LOG_RETENTION_BYTES=1073741824
+    - KAFKA_LOG_SEGMENT_BYTES=1073741824
+    - KAFKA_LOG_CLEANUP_POLICY=delete
+    - KAFKA_HEAP_OPTS=-Xmx512M -Xms256M
+  health_check:
+    test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+    interval: 30s
+    timeout: 10s
+    retries: 5
+    start_period: 60s
+
+required_ports:
+  - "${KAFKA_PORT:-9092}"
+
+volumes:
+  - name: kafka-data
+    mount: /var/lib/kafka/data
+    description: Kafka topic data and logs
+
+cli_commands:
+  list_topics: "docker exec ${PROJECT_NAME:-dev-stack}-kafka-broker kafka-topics --list --bootstrap-server localhost:9092"
+  describe_topic: "docker exec ${PROJECT_NAME:-dev-stack}-kafka-broker kafka-topics --describe --bootstrap-server localhost:9092 --topic"
+
+docs:
+  - name: Apache Kafka Documentation
+    url: https://kafka.apache.org/documentation/
+  - name: Spring for Apache Kafka
+    url: https://docs.spring.io/spring-kafka/docs/current/reference/html/
+
+use_cases:
+  - Event-driven microservices architecture
+  - Real-time data streaming and processing
+  - Message queuing between services
+  - Data pipeline and ETL processes

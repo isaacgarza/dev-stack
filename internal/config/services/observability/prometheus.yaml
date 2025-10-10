@@ -1,0 +1,79 @@
+name: prometheus
+description: Prometheus metrics collection and monitoring system
+category: observability
+version: "latest"
+
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [metrics, monitoring]
+
+options:
+  - port
+  - memory_limit
+  - retention_time
+examples:
+  - "curl http://localhost:9090/metrics"
+usage_notes: "Metrics collection and monitoring. Scrapes application /metrics endpoints."
+links:
+  - "https://prometheus.io/docs/"
+
+defaults:
+  image: prom/prometheus:latest
+  port: 9090
+
+environment:
+  PROMETHEUS_HOST: localhost
+  PROMETHEUS_PORT: "${PROMETHEUS_PORT:-9090}"
+  PROMETHEUS_URL: "http://localhost:${PROMETHEUS_PORT:-9090}"
+
+spring_config:
+  properties:
+    - "management.endpoints.web.exposure.include=health,info,metrics,prometheus"
+    - "management.endpoint.prometheus.enabled=true"
+    - "management.metrics.export.prometheus.enabled=true"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 256m
+  command:
+    - "--config.file=/etc/prometheus/prometheus.yml"
+    - "--storage.tsdb.path=/prometheus"
+    - "--web.console.libraries=/etc/prometheus/console_libraries"
+    - "--web.console.templates=/etc/prometheus/consoles"
+    - "--storage.tsdb.retention.time=15d"
+    - "--web.enable-lifecycle"
+    - "--web.enable-admin-api"
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  health_check:
+    test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+
+required_ports:
+  - "${PROMETHEUS_PORT:-9090}"
+
+volumes:
+  - name: prometheus-data
+    mount: /prometheus
+    description: Prometheus data directory
+
+web_interfaces:
+  - name: Prometheus UI
+    url: "http://localhost:${PROMETHEUS_PORT:-9090}"
+    description: Prometheus metrics and query interface
+
+docs:
+  - name: Prometheus Documentation
+    url: https://prometheus.io/docs/
+
+use_cases:
+  - Application metrics collection
+  - Performance monitoring
+  - Alerting and notifications

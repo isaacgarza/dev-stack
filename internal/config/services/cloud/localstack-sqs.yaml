@@ -1,0 +1,47 @@
+name: localstack-sqs
+description: LocalStack SQS (Simple Queue Service) emulation
+category: cloud
+version: "latest"
+
+dependencies:
+  required: [localstack-core]
+  soft: []
+  conflicts: []
+  provides: [sqs, messaging-queue]
+
+options:
+  - default_queues
+examples:
+  - "aws --endpoint-url=http://localhost:4566 sqs list-queues"
+usage_notes: "SQS message queue emulation for local development"
+links:
+  - "https://docs.localstack.cloud/user-guide/aws/sqs/"
+
+spring_config:
+  properties:
+    - "cloud.aws.sqs.endpoint=http://localhost:${LOCALSTACK_PORT:-4566}"
+    - "cloud.aws.credentials.access-key=test"
+    - "cloud.aws.credentials.secret-key=test"
+    - "cloud.aws.region.static=us-east-1"
+
+cli_commands:
+  list_queues: "aws --endpoint-url=http://localhost:4566 sqs list-queues"
+  create_queue: "aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name test-queue"
+  send_message: "aws --endpoint-url=http://localhost:4566 sqs send-message --queue-url http://localhost:4566/000000000000/test-queue --message-body 'Hello World'"
+
+default_queues:
+  - name: "test-queue"
+    visibility_timeout: 30
+    message_retention_period: 1209600
+  - name: "events-queue"
+    visibility_timeout: 60
+    message_retention_period: 1209600
+
+docs:
+  - name: LocalStack SQS Documentation
+    url: https://docs.localstack.cloud/user-guide/aws/sqs/
+
+use_cases:
+  - Message queue testing
+  - Asynchronous processing development
+  - Event-driven architecture testing

@@ -1,0 +1,147 @@
+name: postgres
+description: PostgreSQL relational database for persistent data storage
+category: database
+version: "15"
+
+# Dependency configuration (new Phase 1 addition)
+dependencies:
+  required: []
+  soft: []
+  conflicts: [mysql]
+  provides: [database, sql]
+
+# CLI metadata (from services.yaml)
+options:
+  - port
+  - database
+  - username
+  - password
+  - memory_limit
+  - shared_preload_libraries
+  - log_statement
+  - log_duration
+  - shared_buffers
+  - effective_cache_size
+  - work_mem
+examples:
+  - 'psql -h localhost -U postgres -c "SELECT version();"'
+  - "spring.datasource.url=jdbc:postgresql://localhost:5432/my_app_dev"
+usage_notes: "Ideal for structured data and transactional workloads. Use overrides to set custom database/user."
+links:
+  - "https://www.postgresql.org/docs/"
+  - "https://spring.io/projects/spring-data-jpa"
+
+# Default configuration
+defaults:
+  image: postgres:15-alpine
+  port: 5432
+  database: local_dev
+  username: postgres
+  password: password
+
+# Environment variables this service provides
+environment:
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+  POSTGRES_DB: "${POSTGRES_DB:-local_dev}"
+  POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
+  POSTGRES_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+  DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+
+# Docker-specific configuration
+docker:
+  restart: unless-stopped
+  command: >
+    postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c pg_stat_statements.track=all
+      -c max_connections=200
+      -c log_statement=all
+      -c log_destination=stderr
+      -c log_min_duration_statement=100ms
+  networks:
+    - dev-stack
+  memory_limit: 512m
+  environment:
+    - POSTGRES_DB=${POSTGRES_DB:-local_dev}
+    - POSTGRES_USER=${POSTGRES_USER:-postgres}
+    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+  health_check:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-local_dev}"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
+# Spring Boot configuration
+spring_config:
+  properties:
+    - "spring.datasource.url=jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-local_dev}"
+    - "spring.datasource.username=${POSTGRES_USER:-postgres}"
+    - "spring.datasource.password=${POSTGRES_PASSWORD:-password}"
+    - "spring.datasource.driver-class-name=org.postgresql.Driver"
+    - "spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect"
+    - "spring.jpa.hibernate.ddl-auto=validate"
+    - "spring.jpa.show-sql=true"
+    - "spring.jpa.properties.hibernate.format_sql=true"
+
+# Ports that need to be available
+required_ports:
+  - "${POSTGRES_PORT:-5432}"
+
+# Volume mounts
+volumes:
+  - name: postgres-data
+    mount: /var/lib/postgresql/data
+    description: PostgreSQL data directory
+
+# Documentation links
+docs:
+  - name: PostgreSQL Documentation
+    url: https://www.postgresql.org/docs/
+  - name: Spring Data JPA
+    url: https://docs.spring.io/spring-data/jpa/docs/current/reference/html/
+
+# Common use cases
+use_cases:
+  - Primary application database
+  - Transactional data storage
+  - Relational data modeling
+  - ACID compliance requirements
+
+# Service operations
+operations:
+  connect:
+    command: ["psql"]
+    args:
+      user: ["-U", "{{.User}}"]
+      database: ["-d", "{{.Database}}"]
+      host: ["-h", "{{.Host}}"]
+    defaults:
+      user: "postgres"
+      host: "localhost"
+  
+  backup:
+    type: "command"
+    command: ["pg_dump", "-U", "{{.User}}", "-h", "{{.Host}}"]
+    args:
+      database: ["{{.Database}}"]
+    defaults:
+      user: "postgres"
+      host: "localhost"
+    extension: "sql"
+  
+  restore:
+    type: "command"
+    pre_commands:
+      clean:
+        - ["dropdb", "-U", "{{.User}}", "--if-exists", "{{.Database}}"]
+        - ["createdb", "-U", "{{.User}}", "{{.Database}}"]
+    command: ["psql", "-U", "{{.User}}"]
+    args:
+      database: ["-d", "{{.Database}}"]
+    defaults:
+      user: "postgres"

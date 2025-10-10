@@ -1,0 +1,87 @@
+name: jaeger
+description: Jaeger distributed tracing system for monitoring and troubleshooting microservices
+category: observability
+version: "1.51"
+
+dependencies:
+  required: []
+  soft: []
+  conflicts: []
+  provides: [tracing, observability]
+
+options:
+  - ui_port
+  - otlp_http_port
+  - otlp_grpc_port
+  - memory_limit
+examples:
+  - "curl -f http://localhost:16686/"
+usage_notes: "Distributed tracing for microservices. Supports OpenTelemetry and Zipkin protocols."
+links:
+  - "https://www.jaegertracing.io/docs/"
+  - "https://opentelemetry.io/docs/"
+
+defaults:
+  image: jaegertracing/all-in-one:1.51
+  ui_port: 16686
+  otlp_http_port: 4318
+  otlp_grpc_port: 4317
+  http_port: 14268
+  grpc_port: 14250
+
+environment:
+  JAEGER_HOST: localhost
+  JAEGER_UI_PORT: "${JAEGER_UI_PORT:-16686}"
+  JAEGER_OTLP_HTTP_PORT: "${JAEGER_OTLP_HTTP_PORT:-4318}"
+  JAEGER_OTLP_GRPC_PORT: "${JAEGER_OTLP_GRPC_PORT:-4317}"
+  JAEGER_HTTP_PORT: "${JAEGER_HTTP_PORT:-14268}"
+  JAEGER_GRPC_PORT: "${JAEGER_GRPC_PORT:-14250}"
+  JAEGER_UI_URL: "http://localhost:${JAEGER_UI_PORT:-16686}"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+
+spring_config:
+  properties:
+    - "management.tracing.sampling.probability=1.0"
+    - "management.otlp.tracing.endpoint=http://localhost:${JAEGER_OTLP_HTTP_PORT:-4318}/v1/traces"
+
+docker:
+  restart: unless-stopped
+  networks:
+    - dev-stack
+  memory_limit: 512m
+  environment:
+    - COLLECTOR_OTLP_ENABLED=true
+    - COLLECTOR_ZIPKIN_HOST_PORT=9411
+    - SPAN_STORAGE_TYPE=memory
+    - JAEGER_DISABLED=false
+  health_check:
+    test: ["CMD", "curl", "-f", "http://localhost:16686/"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 30s
+
+required_ports:
+  - "${JAEGER_UI_PORT:-16686}"
+  - "${JAEGER_OTLP_HTTP_PORT:-4318}"
+  - "${JAEGER_OTLP_GRPC_PORT:-4317}"
+  - "${JAEGER_HTTP_PORT:-14268}"
+  - "${JAEGER_GRPC_PORT:-14250}"
+
+web_interfaces:
+  - name: Jaeger UI
+    url: "http://localhost:${JAEGER_UI_PORT:-16686}"
+    description: Distributed tracing UI
+
+docs:
+  - name: Jaeger Documentation
+    url: https://www.jaegertracing.io/docs/
+  - name: OpenTelemetry
+    url: https://opentelemetry.io/docs/
+
+use_cases:
+  - Distributed tracing
+  - Performance monitoring
+  - Service dependency analysis
+  - Request flow visualization

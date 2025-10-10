@@ -29,11 +29,14 @@ This guide covers daily usage patterns, service management commands, and common 
 
 ## 📋 Overview
 
-**dev-stack** provides two main scripts for different purposes:
-- **`setup.sh`**: Initial configuration and environment setup
-- **`manage.sh`**: Ongoing service management and operations
+**dev-stack** provides a unified CLI for all development stack operations:
+- **`dev-stack up`**: Start services and development environment
+- **`dev-stack down`**: Stop services and clean up
+- **`dev-stack status`**: Check service status and health
+- **`dev-stack logs`**: View service logs
+- **`dev-stack exec`**: Execute commands in containers
 
-For a quick start and full command reference, see the [README](../README.md).
+For a complete command reference, see [CLI Reference](reference.md).
 
 ## 🚀 Common Workflows
 

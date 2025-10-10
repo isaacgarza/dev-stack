@@ -1,0 +1,48 @@
+name: localstack-sns
+description: LocalStack SNS (Simple Notification Service) emulation
+category: cloud
+version: "latest"
+
+dependencies:
+  required: [localstack-core]
+  soft: [localstack-sqs]
+  conflicts: []
+  provides: [sns, notifications]
+
+options:
+  - default_topics
+examples:
+  - "aws --endpoint-url=http://localhost:4566 sns list-topics"
+usage_notes: "SNS pub/sub notification service emulation. Can integrate with SQS for subscriptions."
+links:
+  - "https://docs.localstack.cloud/user-guide/aws/sns/"
+
+spring_config:
+  properties:
+    - "cloud.aws.sns.endpoint=http://localhost:${LOCALSTACK_PORT:-4566}"
+    - "cloud.aws.credentials.access-key=test"
+    - "cloud.aws.credentials.secret-key=test"
+    - "cloud.aws.region.static=us-east-1"
+
+cli_commands:
+  list_topics: "aws --endpoint-url=http://localhost:4566 sns list-topics"
+  create_topic: "aws --endpoint-url=http://localhost:4566 sns create-topic --name test-topic"
+  publish_message: "aws --endpoint-url=http://localhost:4566 sns publish --topic-arn arn:aws:sns:us-east-1:000000000000:test-topic --message 'Hello World'"
+
+default_topics:
+  - name: "test-topic"
+    display_name: "Test Topic"
+  - name: "notifications"
+    display_name: "Application Notifications"
+  - name: "events"
+    display_name: "System Events"
+
+docs:
+  - name: LocalStack SNS Documentation
+    url: https://docs.localstack.cloud/user-guide/aws/sns/
+
+use_cases:
+  - Pub/sub messaging patterns
+  - Event notifications
+  - Fan-out message distribution
+  - Integration with SQS subscriptions

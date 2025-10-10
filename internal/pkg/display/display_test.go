@@ -116,11 +116,10 @@ func TestYAMLFormatter(t *testing.T) {
 }
 
 func TestFormatterFactory(t *testing.T) {
-	factory := NewFactory()
 	var buf bytes.Buffer
 
 	// Test table formatter
-	formatter, err := factory.CreateFormatter("table", &buf)
+	formatter, err := CreateFormatter("table", &buf)
 	if err != nil {
 		t.Errorf("Failed to create table formatter: %v", err)
 	}
@@ -129,7 +128,7 @@ func TestFormatterFactory(t *testing.T) {
 	}
 
 	// Test JSON formatter
-	formatter, err = factory.CreateFormatter("json", &buf)
+	formatter, err = CreateFormatter("json", &buf)
 	if err != nil {
 		t.Errorf("Failed to create JSON formatter: %v", err)
 	}
@@ -138,7 +137,7 @@ func TestFormatterFactory(t *testing.T) {
 	}
 
 	// Test YAML formatter
-	formatter, err = factory.CreateFormatter("yaml", &buf)
+	formatter, err = CreateFormatter("yaml", &buf)
 	if err != nil {
 		t.Errorf("Failed to create YAML formatter: %v", err)
 	}
@@ -147,13 +146,13 @@ func TestFormatterFactory(t *testing.T) {
 	}
 
 	// Test unsupported format
-	_, err = factory.CreateFormatter("xml", &buf)
+	_, err = CreateFormatter("xml", &buf)
 	if err == nil {
 		t.Error("Expected error for unsupported format")
 	}
 
 	// Test supported formats
-	formats := factory.GetSupportedFormats()
+	formats := GetSupportedFormats()
 	expectedFormats := []string{"table", "json", "yaml"}
 	if len(formats) != len(expectedFormats) {
 		t.Errorf("Expected %d formats, got %d", len(expectedFormats), len(formats))

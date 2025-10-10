@@ -1,0 +1,48 @@
+name: localstack-s3
+description: LocalStack S3 (Simple Storage Service) emulation
+category: cloud
+version: "latest"
+
+dependencies:
+  required: [localstack-core]
+  soft: []
+  conflicts: []
+  provides: [s3, object-storage]
+
+options:
+  - default_buckets
+examples:
+  - "aws --endpoint-url=http://localhost:4566 s3 ls"
+usage_notes: "S3 object storage emulation for local development and testing"
+links:
+  - "https://docs.localstack.cloud/user-guide/aws/s3/"
+
+spring_config:
+  properties:
+    - "cloud.aws.s3.endpoint=http://localhost:${LOCALSTACK_PORT:-4566}"
+    - "cloud.aws.credentials.access-key=test"
+    - "cloud.aws.credentials.secret-key=test"
+    - "cloud.aws.region.static=us-east-1"
+
+cli_commands:
+  list_buckets: "aws --endpoint-url=http://localhost:4566 s3 ls"
+  create_bucket: "aws --endpoint-url=http://localhost:4566 s3 mb s3://test-bucket"
+  upload_file: "aws --endpoint-url=http://localhost:4566 s3 cp file.txt s3://test-bucket/"
+
+default_buckets:
+  - name: "test-bucket"
+    versioning: false
+  - name: "uploads"
+    versioning: true
+  - name: "static-assets"
+    versioning: false
+
+docs:
+  - name: LocalStack S3 Documentation
+    url: https://docs.localstack.cloud/user-guide/aws/s3/
+
+use_cases:
+  - File storage and retrieval testing
+  - Static asset hosting
+  - Data backup and archival
+  - Content distribution testing
