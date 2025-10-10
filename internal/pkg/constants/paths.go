@@ -2,12 +2,15 @@ package constants
 
 // File names
 const (
-	ConfigFileName         = "dev-stack-config.yml"
-	DockerComposeFileName  = "docker-compose.yml"
-	EnvGeneratedFileName   = ".env.generated"
-	GitignoreFileName      = ".gitignore"
-	ReadmeFileName         = "README.md"
-	ServiceConfigExtension = ".yaml"
+	ConfigFileName           = "dev-stack-config.yml"
+	ConfigFileNameYAML       = "dev-stack-config.yaml"
+	ConfigFileNameHidden     = ".dev-stack-config.yml"
+	ConfigFileNameHiddenYAML = ".dev-stack-config.yaml"
+	DockerComposeFileName    = "docker-compose.yml"
+	EnvGeneratedFileName     = ".env.generated"
+	GitignoreFileName        = ".gitignore"
+	ReadmeFileName           = "README.md"
+	ServiceConfigExtension   = ".yaml"
 )
 
 // Directory names
@@ -21,9 +24,14 @@ const (
 
 // Template file names
 const (
-	ConfigTemplate        = "dev-stack-config.template"
 	EnvTemplate           = "env.template"
 	DockerComposeTemplate = "docker-compose.template"
+)
+
+// Configuration URLs
+const (
+	ConfigDocsURL    = "https://github.com/isaacgarza/dev-stack/tree/main/docs-site/content/configuration.md"
+	ServiceConfigURL = "https://github.com/isaacgarza/dev-stack/tree/main/internal/config/services"
 )
 
 // Git entries

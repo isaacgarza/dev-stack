@@ -85,3 +85,30 @@ use_cases:
   - Rate limiting
   - Pub/Sub messaging
   - Temporary data storage
+
+# Service operations
+operations:
+  connect:
+    command: ["redis-cli"]
+    args:
+      host: ["-h", "{{.Host}}"]
+      port: ["-p", "{{.Port}}"]
+      password: ["-a", "{{.Password}}"]
+    defaults:
+      host: "localhost"
+      port: "6379"
+  
+  backup:
+    type: "custom"
+    commands:
+      - ["redis-cli", "BGSAVE"]
+      - ["cp", "/data/dump.rdb", "/data/backup_{{.Timestamp}}.rdb"]
+    extension: "rdb"
+  
+  restore:
+    type: "custom"
+    pre_commands:
+      - ["rm", "-f", "/data/dump.rdb"]
+    commands:
+      - ["cp", "{{.BackupFile}}", "/data/dump.rdb"]
+    requires_restart: true

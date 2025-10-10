@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/isaacgarza/dev-stack/internal/core/docker"
-	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
+	cliTypes "github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
+	"github.com/isaacgarza/dev-stack/internal/pkg/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/ui"
 	"github.com/isaacgarza/dev-stack/internal/pkg/utils"
 	"github.com/spf13/cobra"
@@ -22,13 +23,13 @@ func NewDownHandler() *DownHandler {
 }
 
 // Handle executes the down command
-func (h *DownHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *types.BaseCommand) error {
-	ui.Header("Stopping Dev Stack")
+func (h *DownHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *cliTypes.BaseCommand) error {
+	ui.Header(constants.MsgStopping)
 
 	// Check if dev-stack is initialized
 	configPath := filepath.Join(constants.DevStackDir, constants.ConfigFileName)
 	if !utils.FileExists(configPath) {
-		return fmt.Errorf("dev-stack not initialized. Run 'dev-stack init' first")
+		return fmt.Errorf(constants.ErrNotInitialized)
 	}
 
 	// Load project configuration
@@ -51,11 +52,10 @@ func (h *DownHandler) Handle(ctx context.Context, cmd *cobra.Command, args []str
 
 	// Parse flags
 	timeout, _ := cmd.Flags().GetInt("timeout")
-	removeVolumes, _ := cmd.Flags().GetBool("volumes")
 
-	options := docker.StopOptions{
-		Timeout:       timeout,
-		RemoveVolumes: removeVolumes,
+	options := types.StopOptions{
+		Timeout: timeout,
+		Remove:  true,
 	}
 
 	// Determine services to stop
@@ -69,7 +69,7 @@ func (h *DownHandler) Handle(ctx context.Context, cmd *cobra.Command, args []str
 		return fmt.Errorf("failed to stop services: %w", err)
 	}
 
-	ui.Success("Dev stack stopped successfully")
+	ui.Success(constants.MsgStopSuccess)
 	return nil
 }
 

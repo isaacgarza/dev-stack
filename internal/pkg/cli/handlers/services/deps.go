@@ -57,7 +57,7 @@ func (h *DepsHandler) Handle(ctx context.Context, cmd *cobra.Command, args []str
 	}
 
 	// Display results
-	formatter, err := display.NewFactory().CreateFormatter(format, cmd.OutOrStdout())
+	formatter, err := display.CreateFormatter(format, cmd.OutOrStdout())
 	if err != nil {
 		return fmt.Errorf("failed to create formatter: %w", err)
 	}

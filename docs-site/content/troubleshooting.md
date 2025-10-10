@@ -247,16 +247,16 @@ dev-stack exec redis redis-cli INFO
 **Solutions:**
 ```bash
 # Restart Redis
-./scripts/manage.sh restart redis
+dev-stack restart redis
 
 # Clear Redis data if corrupted
-./scripts/manage.sh exec redis redis-cli FLUSHALL
+dev-stack exec redis redis-cli FLUSHALL
 
 # Check Redis configuration
-./scripts/manage.sh exec redis redis-cli CONFIG GET "*"
+dev-stack exec redis redis-cli CONFIG GET "*"
 
 # Verify password in configuration
-./scripts/manage.sh info redis
+dev-stack services
 ```
 
 ### Kafka Connection Issues
@@ -269,11 +269,11 @@ dev-stack exec redis redis-cli INFO
 **Diagnosis:**
 ```bash
 # Check Kafka status
-./scripts/manage.sh logs kafka
-./scripts/manage.sh logs zookeeper
+dev-stack logs kafka
+dev-stack logs zookeeper
 
 # Test Kafka connection
-./scripts/manage.sh exec kafka kafka-topics --bootstrap-server localhost:9092 --list
+dev-stack exec kafka kafka-topics --bootstrap-server localhost:9092 --list
 
 # Check Kafka UI
 curl http://localhost:8080
@@ -282,15 +282,15 @@ curl http://localhost:8080
 **Solutions:**
 ```bash
 # Restart Kafka stack
-./scripts/manage.sh restart kafka
+dev-stack restart kafka
 
 # Clear Kafka data if needed
-./scripts/manage.sh stop kafka
+dev-stack down kafka
 docker volume rm $(docker volume ls -q | grep kafka)
-./scripts/setup.sh --services=kafka
+dev-stack up kafka
 
 # Check Zookeeper connectivity
-./scripts/manage.sh exec zookeeper zkCli.sh -server localhost:2181
+dev-stack exec zookeeper zkCli.sh -server localhost:2181
 ```
 
 ## 🌐 Network and Port Issues
@@ -311,7 +311,7 @@ lsof -i :9092                          # Kafka
 netstat -tulpn | grep :PORT
 
 # Check for other framework instances
-./scripts/manage.sh list-all
+dev-stack services
 ```
 
 **Solutions:**
@@ -328,8 +328,8 @@ vim dev-stack-config.yaml
 #     port: 6380
 
 # Let framework handle conflicts automatically
-./scripts/setup.sh --cleanup-existing
-./scripts/setup.sh --force
+dev-stack up --cleanup-existing
+dev-stack up --force
 ```
 
 ### DNS Resolution Issues
@@ -349,8 +349,8 @@ docker network ls
 docker network inspect dev-stack-framework_default
 
 # Recreate network
-./scripts/manage.sh cleanup
-./scripts/setup.sh
+dev-stack down --volumes
+dev-stack up
 ```
 
 ## ⚙️ Configuration Issues
@@ -368,16 +368,16 @@ docker network inspect dev-stack-framework_default
 python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
 
 # Check configuration with framework
-./scripts/setup.sh --validate-only
+dev-stack up --validate-only
 
 # Show resolved configuration
-./scripts/setup.sh --debug --dry-run
+dev-stack up --debug --dry-run
 ```
 
 **Solutions:**
 ```bash
 # Create new configuration from sample
-./scripts/setup.sh --init --force
+dev-stack up --init --force
 
 # Fix YAML syntax errors
 vim dev-stack-config.yaml
@@ -408,7 +408,7 @@ cat application-local.yml.generated
 diff dev-stack-config.yaml dev-stack-framework/dev-stack-config.sample.yaml
 
 # Reset to defaults
-./scripts/setup.sh --init
+dev-stack up --init
 # Manually merge your changes
 ```
 
@@ -419,38 +419,38 @@ diff dev-stack-config.yaml dev-stack-framework/dev-stack-config.sample.yaml
 **Connection refused:**
 ```bash
 # Check if PostgreSQL is ready
-./scripts/manage.sh exec postgres pg_isready -h localhost
+dev-stack exec postgres pg_isready -h localhost
 
 # Check PostgreSQL logs
-./scripts/manage.sh logs postgres
+dev-stack logs postgres
 
 # Reset PostgreSQL data
-./scripts/manage.sh stop postgres
+dev-stack down postgres
 docker volume rm $(docker volume ls -q | grep postgres)
-./scripts/setup.sh --services=postgres
+dev-stack up postgres
 ```
 
 **Database doesn't exist:**
 ```bash
 # Create database manually
-./scripts/manage.sh exec postgres createdb -U postgres my_app_dev
+dev-stack exec postgres createdb -U postgres my_app_dev
 
 # Or recreate with correct configuration
 vim dev-stack-config.yaml
 # overrides:
 #   postgres:
 #     database: "my_app_dev"
-./scripts/setup.sh --services=postgres
+dev-stack up postgres
 ```
 
 **Permission denied:**
 ```bash
 # Check user and permissions
-./scripts/manage.sh exec postgres psql -U postgres -c "\du"
+dev-stack exec postgres psql -U postgres -c "\du"
 
 # Create user if missing
-./scripts/manage.sh exec postgres psql -U postgres -c "CREATE USER app_user WITH PASSWORD 'password';"
-./scripts/manage.sh exec postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE my_app_dev TO app_user;"
+dev-stack exec postgres psql -U postgres -c "CREATE USER app_user WITH PASSWORD 'password';"
+dev-stack exec postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE my_app_dev TO app_user;"
 ```
 
 ### Redis Issues
@@ -458,10 +458,10 @@ vim dev-stack-config.yaml
 **Memory issues:**
 ```bash
 # Check Redis memory usage
-./scripts/manage.sh exec redis redis-cli INFO memory
+dev-stack exec redis redis-cli INFO memory
 
 # Clear Redis data
-./scripts/manage.sh exec redis redis-cli FLUSHALL
+dev-stack exec redis redis-cli FLUSHALL
 
 # Increase memory limit
 vim dev-stack-config.yaml
@@ -473,7 +473,7 @@ vim dev-stack-config.yaml
 **Persistence issues:**
 ```bash
 # Check Redis persistence
-./scripts/manage.sh exec redis redis-cli LASTSAVE
+dev-stack exec redis redis-cli LASTSAVE
 
 # Disable persistence for development
 vim dev-stack-config.yaml
@@ -488,13 +488,13 @@ vim dev-stack-config.yaml
 **Services not available:**
 ```bash
 # Check LocalStack logs
-./scripts/manage.sh logs localstack
+dev-stack logs localstack
 
 # Check LocalStack health
 curl http://localhost:4566/health
 
 # Restart LocalStack
-./scripts/manage.sh restart localstack
+dev-stack restart localstack
 
 # Check enabled services
 curl http://localhost:4566/_localstack/health | jq
@@ -509,8 +509,8 @@ aws --endpoint-url=http://localhost:4566 sqs list-queues
 aws --endpoint-url=http://localhost:4566 sns list-topics
 
 # Recreate queues/topics
-./scripts/manage.sh stop localstack
-./scripts/setup.sh --services=localstack
+dev-stack down localstack
+dev-stack up localstack
 ```
 
 **DynamoDB issues:**
@@ -522,8 +522,8 @@ aws --endpoint-url=http://localhost:4566 dynamodb list-tables
 aws --endpoint-url=http://localhost:4566 dynamodb describe-table --table-name my-table
 
 # Recreate tables
-./scripts/manage.sh exec localstack awslocal dynamodb delete-table --table-name my-table
-./scripts/setup.sh --services=localstack
+dev-stack exec localstack awslocal dynamodb delete-table --table-name my-table
+dev-stack up localstack
 ```
 
 ## 🚀 Performance Issues
@@ -538,7 +538,7 @@ aws --endpoint-url=http://localhost:4566 dynamodb describe-table --table-name my
 **Solutions:**
 ```bash
 # Check resource usage
-./scripts/manage.sh monitor
+dev-stack status
 
 # Reduce memory limits for faster startup
 vim dev-stack-config.yaml
@@ -570,7 +570,7 @@ docker pull redis:7-alpine
 ```bash
 # Monitor memory usage
 docker stats
-./scripts/manage.sh monitor
+dev-stack status
 
 # Reduce service memory limits
 vim dev-stack-config.yaml
@@ -597,7 +597,7 @@ vim dev-stack-config.yaml
 **Solutions:**
 ```bash
 # Check PostgreSQL performance
-./scripts/manage.sh exec postgres psql -U postgres -c "SELECT * FROM pg_stat_activity;"
+dev-stack exec postgres psql -U postgres -c "SELECT * FROM pg_stat_activity;"
 
 # Optimize PostgreSQL for development
 vim dev-stack-config.yaml
@@ -631,8 +631,8 @@ docker inspect CONTAINER_ID
 docker stats CONTAINER_NAME
 
 # Execute shell in container
-./scripts/manage.sh exec postgres bash
-./scripts/manage.sh exec redis sh
+dev-stack exec postgres bash
+dev-stack exec redis sh
 
 # Check container logs with timestamps
 docker logs --timestamps CONTAINER_NAME
@@ -646,11 +646,11 @@ docker network ls
 docker network inspect dev-stack-framework_default
 
 # Test network connectivity between containers
-./scripts/manage.sh exec app-container ping postgres
-./scripts/manage.sh exec app-container telnet redis 6379
+dev-stack exec app-container ping postgres
+dev-stack exec app-container telnet redis 6379
 
 # Check DNS resolution
-./scripts/manage.sh exec app-container nslookup postgres
+dev-stack exec app-container nslookup postgres
 ```
 
 ### File System Debugging
@@ -661,10 +661,10 @@ docker volume ls
 docker volume inspect VOLUME_NAME
 
 # Check file permissions
-./scripts/manage.sh exec postgres ls -la /var/lib/postgresql/data
+dev-stack exec postgres ls -la /var/lib/postgresql/data
 
 # Copy files for debugging
-./scripts/manage.sh cp postgres:/var/log/postgresql/ ./postgres-logs/
+docker cp $(docker ps -q -f name=postgres):/var/log/postgresql/ ./postgres-logs/
 ```
 
 ## 🔧 Advanced Solutions
@@ -675,10 +675,10 @@ When all else fails, perform a complete reset:
 
 ```bash
 # Stop all services
-./scripts/manage.sh stop
+dev-stack down
 
 # Remove all framework resources
-./scripts/manage.sh cleanup
+dev-stack down --volumes
 
 # Clean Docker system
 docker system prune -a
@@ -691,9 +691,9 @@ rm .env.generated
 rm application-local.yml.generated
 
 # Initialize new configuration
-./scripts/setup.sh --init
+dev-stack up --init
 vim dev-stack-config.yaml
-./scripts/setup.sh
+dev-stack up
 ```
 
 ### Framework Recovery
@@ -709,10 +709,10 @@ rm -rf dev-stack-framework
 cp -r /path/to/fresh/dev-stack-framework ./
 
 # Make scripts executable
-chmod +x dev-stack-framework/scripts/*.sh
+# Scripts are no longer needed - use dev-stack CLI directly
 
 # Regenerate configuration
-scripts/setup.sh --init
+dev-stack init
 ```
 
 ### System Resource Recovery
@@ -749,10 +749,10 @@ echo "Docker Status:"
 docker info > /dev/null 2>&1 && echo "✓ Docker running" || echo "✗ Docker not running"
 
 echo "Services Status:"
-./scripts/manage.sh status
+dev-stack status
 
 echo "Resource Usage:"
-./scripts/manage.sh monitor | head -10
+dev-stack status | head -10
 
 echo "Disk Usage:"
 docker system df
@@ -769,17 +769,17 @@ Weekly maintenance routine:
 # weekly-maintenance.sh
 
 # Backup databases
-./scripts/manage.sh backup postgres
-./scripts/manage.sh backup mysql
+# Backup postgres (use docker exec or service-specific tools)
+# Backup mysql (use docker exec or service-specific tools)
 
 # Clean up Docker resources
 docker system prune
 
 # Update service images
-./scripts/manage.sh update
+dev-stack up --build
 
 # Validate configuration
-./scripts/setup.sh --validate-only
+dev-stack up --validate-only
 
 echo "Maintenance complete"
 ```
@@ -792,23 +792,23 @@ Before seeking help, try these steps:
 
 1. **Check the basics:**
    - [ ] Docker is running: `docker info`
-   - [ ] Services are running: `./scripts/manage.sh status`
+   - [ ] Services are running: `dev-stack status`
    - [ ] No port conflicts: `lsof -i :5432 :6379 :9092`
    - [ ] Sufficient resources: `docker stats`
 
 2. **Review logs:**
-   - [ ] Framework logs: `./scripts/manage.sh logs`
-   - [ ] Service-specific logs: `./scripts/manage.sh logs SERVICE_NAME`
+   - [ ] Framework logs: `dev-stack logs`
+   - [ ] Service-specific logs: `dev-stack logs SERVICE_NAME`
    - [ ] System logs: `dmesg | tail` (Linux)
 
 3. **Validate configuration:**
    - [ ] YAML syntax: `python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"`
-   - [ ] Framework validation: `./scripts/setup.sh --validate-only`
+   - [ ] Framework validation: `dev-stack up --validate-only`
 
 4. **Try simple fixes:**
-   - [ ] Restart services: `./scripts/manage.sh restart`
-   - [ ] Recreate services: `./scripts/setup.sh --force`
-   - [ ] Clear caches: `./scripts/manage.sh cleanup-docker`
+   - [ ] Restart services: `dev-stack restart`
+   - [ ] Recreate services: `dev-stack up --force`
+   - [ ] Clear caches: `dev-stack down --volumes-docker`
 
 ### Information to Collect
 
@@ -821,14 +821,14 @@ docker --version
 docker compose version
 
 # Framework status
-./scripts/manage.sh info
-./scripts/manage.sh status
+dev-stack services
+dev-stack status
 
 # Configuration
 cat dev-stack-config.yaml
 
 # Recent logs
-./scripts/manage.sh logs --since=1h
+dev-stack logs --since=1h
 
 # Resource usage
 docker stats --no-stream
@@ -841,14 +841,14 @@ Enable debug mode for detailed information:
 
 ```bash
 # Debug setup
-./scripts/setup.sh --debug
+dev-stack up --debug
 
 # Debug with dry run
-./scripts/setup.sh --debug --dry-run
+dev-stack up --debug --dry-run
 
 # Verbose logging
 export DEBUG=1
-./scripts/setup.sh
+dev-stack up
 ```
 
 ## 📚 Related Documentation
@@ -877,7 +877,7 @@ export DEBUG=1
 
 ```bash
 # 1. Stop everything
-./scripts/manage.sh cleanup-all
+dev-stack down --volumes-all
 
 # 2. Clean Docker completely
 docker system prune -a --volumes
@@ -887,18 +887,18 @@ docker system prune -a --volumes
 # Linux: sudo systemctl restart docker
 
 # 4. Start fresh
-./scripts/setup.sh --init
-./scripts/setup.sh
+dev-stack up --init
+dev-stack up
 
 # 5. Verify
-./scripts/manage.sh status
+dev-stack status
 ```
 
 ### Data Recovery
 
 ```bash
 # If you have backups
-./scripts/manage.sh restore postgres backup.sql
+# Restore postgres (use docker exec or pg_restore)
 
 # If no backups, check Docker volumes
 docker volume ls | grep postgres
@@ -906,4 +906,4 @@ docker volume ls | grep postgres
 docker run --rm -v VOLUME_NAME:/data -v $(pwd):/backup alpine cp -r /data /backup/
 ```
 
-Remember: Most issues can be resolved by restarting services or recreating them with `./scripts/setup.sh --force`. When in doubt, start with the simplest solutions first.
+Remember: Most issues can be resolved by restarting services or recreating them with `dev-stack up --force`. When in doubt, start with the simplest solutions first.

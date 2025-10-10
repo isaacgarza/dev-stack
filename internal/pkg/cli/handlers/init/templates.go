@@ -10,62 +10,13 @@ import (
 	"github.com/isaacgarza/dev-stack/internal/config"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/utils"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
+	pkgConfig "github.com/isaacgarza/dev-stack/internal/pkg/config"
 	"github.com/isaacgarza/dev-stack/internal/pkg/ui"
 )
 
-// generateConfig generates config from template
+// generateConfig generates config using code generation
 func (h *InitHandler) generateConfig(name, environment string, services []string, validation, advanced map[string]bool) (string, error) {
-	candidates := []string{
-		"internal/config/dev-stack-config.template",
-		"config/dev-stack-config.template",
-		".dev-stack/dev-stack-config.template",
-	}
-
-	var templateContent []byte
-	var err error
-
-	// Try to find template file
-	if templatePath, findErr := h.findTemplateFile(candidates, "template file"); findErr == nil {
-		templateContent, err = os.ReadFile(templatePath)
-		if err != nil {
-			return "", fmt.Errorf("failed to read template: %w", err)
-		}
-	} else {
-		// Use embedded template as fallback
-		templateContent = config.EmbeddedConfigTemplate
-		if len(templateContent) == 0 {
-			return "", fmt.Errorf("no template file found and no embedded template available")
-		}
-	}
-
-	// Parse template
-	tmpl, err := template.New("config").Parse(string(templateContent))
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
-	}
-
-	// Prepare template data
-	data := struct {
-		ProjectName string
-		Environment string
-		Services    []string
-		Validation  map[string]bool
-		Advanced    map[string]bool
-	}{
-		ProjectName: name,
-		Environment: environment,
-		Services:    services,
-		Validation:  validation,
-		Advanced:    advanced,
-	}
-
-	// Execute template
-	var result strings.Builder
-	if err := tmpl.Execute(&result, data); err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
-	}
-
-	return result.String(), nil
+	return pkgConfig.GenerateConfig(name, environment, services, validation, advanced), nil
 }
 
 // generateInitialComposeFiles generates initial compose files during init

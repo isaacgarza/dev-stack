@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/isaacgarza/dev-stack/internal/core/docker"
-	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
+	cliTypes "github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
+	"github.com/isaacgarza/dev-stack/internal/pkg/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/ui"
 	"github.com/isaacgarza/dev-stack/internal/pkg/utils"
 	"github.com/spf13/cobra"
@@ -22,13 +23,13 @@ func NewUpHandler() *UpHandler {
 }
 
 // Handle executes the up command
-func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *types.BaseCommand) error {
-	ui.Header("Starting Dev Stack")
+func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *cliTypes.BaseCommand) error {
+	ui.Header(constants.MsgStarting)
 
 	// Check if dev-stack is initialized
 	configPath := filepath.Join(constants.DevStackDir, constants.ConfigFileName)
 	if !utils.FileExists(configPath) {
-		return fmt.Errorf("dev-stack not initialized. Run 'dev-stack init' first")
+		return fmt.Errorf(constants.ErrNotInitialized)
 	}
 
 	// Load project configuration
@@ -52,12 +53,11 @@ func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []strin
 	// Parse flags
 	build, _ := cmd.Flags().GetBool("build")
 	forceRecreate, _ := cmd.Flags().GetBool("force-recreate")
-	noDeps, _ := cmd.Flags().GetBool("no-deps")
 
-	options := docker.StartOptions{
+	options := types.StartOptions{
 		Build:         build,
 		ForceRecreate: forceRecreate,
-		NoDeps:        noDeps,
+		Detach:        true,
 	}
 
 	// Determine services to start
@@ -71,8 +71,8 @@ func (h *UpHandler) Handle(ctx context.Context, cmd *cobra.Command, args []strin
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
-	ui.Success("Dev stack started successfully")
-	ui.Info("Run 'dev-stack status' to check service status")
+	ui.Success(constants.MsgStartSuccess)
+	ui.Info("Run '%s' to check service status", constants.CmdStatus)
 	return nil
 }
 

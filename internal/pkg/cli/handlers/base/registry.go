@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/core"
-	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/docs"
 	inithandler "github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/init"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/services"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
@@ -57,7 +56,6 @@ func (r *Registry) registerDefaultHandlers() {
 	r.RegisterHandler("status", core.NewStatusHandler())
 	r.RegisterHandler("deps", services.NewDepsHandler())
 	r.RegisterHandler("conflicts", services.NewConflictsHandler())
-	r.RegisterHandler("docs", docs.NewDocsHandler())
 	r.RegisterHandler("services", services.NewServicesHandler())
 	r.RegisterHandler("init", inithandler.NewInitHandler())
 }

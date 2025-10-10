@@ -6,6 +6,7 @@ import (
 
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/utils"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
+	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
 	"github.com/isaacgarza/dev-stack/internal/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ func NewInitHandler() *InitHandler {
 func (h *InitHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *types.BaseCommand) error {
 	force, _ := cmd.Flags().GetBool("force")
 
-	ui.Header("Initializing Dev Stack")
+	ui.Header(constants.MsgInitializing)
 
 	// Validate environment
 	if err := h.validateInitEnvironment(); err != nil && !force {
@@ -97,11 +98,11 @@ func (h *InitHandler) Handle(ctx context.Context, cmd *cobra.Command, args []str
 		ui.Warning("Failed to create README: %v", err)
 	}
 
-	ui.Success("Dev stack initialized successfully!")
+	ui.Success(constants.MsgInitSuccess)
 	ui.Info("Next steps:")
-	ui.Info("  1. Review the configuration in dev-stack/dev-stack-config.yml")
-	ui.Info("  2. Start your stack with: dev-stack up")
-	ui.Info("  3. Check status with: dev-stack status")
+	ui.Info("  1. Review the configuration in %s/%s", constants.DevStackDir, constants.ConfigFileName)
+	ui.Info("  2. Start your stack with: %s", constants.CmdUp)
+	ui.Info("  3. Check status with: %s", constants.CmdStatus)
 
 	return nil
 }

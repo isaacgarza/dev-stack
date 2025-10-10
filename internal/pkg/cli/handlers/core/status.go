@@ -23,12 +23,12 @@ func NewStatusHandler() *StatusHandler {
 
 // Handle executes the status command
 func (h *StatusHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *types.BaseCommand) error {
-	ui.Header("Dev Stack Status")
+	ui.Header(constants.MsgStatus)
 
 	// Check if dev-stack is initialized
 	configPath := filepath.Join(constants.DevStackDir, constants.ConfigFileName)
 	if !utils.FileExists(configPath) {
-		return fmt.Errorf("dev-stack not initialized. Run 'dev-stack init' first")
+		return fmt.Errorf(constants.ErrNotInitialized)
 	}
 
 	// Load project configuration
@@ -73,9 +73,10 @@ func (h *StatusHandler) Handle(ctx context.Context, cmd *cobra.Command, args []s
 		if status.State == "running" {
 			statusIcon = "🟢"
 		}
-		ui.Info("  %s %s: %s", statusIcon, status.Name, status.State)
+		ui.Info("  %s %s:", statusIcon, status.Name)
+		ui.Info("      📊 Status: %s", status.State)
 		if status.Health != "" {
-			ui.Info("    Health: %s", status.Health)
+			ui.Info("      💚 Health: %s", status.Health)
 		}
 	}
 

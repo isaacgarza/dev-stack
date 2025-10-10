@@ -6,16 +6,8 @@ import (
 	"strings"
 )
 
-// Factory implements FormatterFactory interface
-type Factory struct{}
-
-// NewFactory creates a new formatter factory
-func NewFactory() *Factory {
-	return &Factory{}
-}
-
 // CreateFormatter creates a formatter based on the specified format
-func (f *Factory) CreateFormatter(format string, writer io.Writer) (Formatter, error) {
+func CreateFormatter(format string, writer io.Writer) (Formatter, error) {
 	switch strings.ToLower(format) {
 	case "table", "":
 		return NewTableFormatter(writer), nil
@@ -29,6 +21,6 @@ func (f *Factory) CreateFormatter(format string, writer io.Writer) (Formatter, e
 }
 
 // GetSupportedFormats returns a list of supported output formats
-func (f *Factory) GetSupportedFormats() []string {
+func GetSupportedFormats() []string {
 	return []string{"table", "json", "yaml"}
 }

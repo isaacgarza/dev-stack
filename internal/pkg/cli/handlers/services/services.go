@@ -51,7 +51,7 @@ func (h *ServicesHandler) Handle(ctx context.Context, cmd *cobra.Command, args [
 	}
 
 	// Display results
-	formatter, err := display.NewFactory().CreateFormatter(format, cmd.OutOrStdout())
+	formatter, err := display.CreateFormatter(format, cmd.OutOrStdout())
 	if err != nil {
 		return fmt.Errorf("failed to create formatter: %w", err)
 	}

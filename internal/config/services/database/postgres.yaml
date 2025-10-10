@@ -111,3 +111,37 @@ use_cases:
   - Transactional data storage
   - Relational data modeling
   - ACID compliance requirements
+
+# Service operations
+operations:
+  connect:
+    command: ["psql"]
+    args:
+      user: ["-U", "{{.User}}"]
+      database: ["-d", "{{.Database}}"]
+      host: ["-h", "{{.Host}}"]
+    defaults:
+      user: "postgres"
+      host: "localhost"
+  
+  backup:
+    type: "command"
+    command: ["pg_dump", "-U", "{{.User}}", "-h", "{{.Host}}"]
+    args:
+      database: ["{{.Database}}"]
+    defaults:
+      user: "postgres"
+      host: "localhost"
+    extension: "sql"
+  
+  restore:
+    type: "command"
+    pre_commands:
+      clean:
+        - ["dropdb", "-U", "{{.User}}", "--if-exists", "{{.Database}}"]
+        - ["createdb", "-U", "{{.User}}", "{{.Database}}"]
+    command: ["psql", "-U", "{{.User}}"]
+    args:
+      database: ["-d", "{{.Database}}"]
+    defaults:
+      user: "postgres"

@@ -10,9 +10,6 @@ var EmbeddedCommandsYAML []byte
 //go:embed init-settings.yaml
 var EmbeddedInitSettingsYAML []byte
 
-//go:embed dev-stack-config.template
-var EmbeddedConfigTemplate []byte
-
 //go:embed docker-compose.template
 var EmbeddedDockerComposeTemplate []byte
 

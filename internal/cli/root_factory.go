@@ -10,16 +10,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// CreateRootCommand creates the root command using the YAML-driven factory
+// CreateRootCommand creates the root command using the functional builder
 func CreateRootCommand() (*cobra.Command, error) {
-	// Load command configuration
 	loader := config.NewLoader("")
 	commandConfig, err := loader.Load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load command configuration: %w", err)
 	}
 
-	// Validate configuration
 	validationResult := commandConfig.Validate()
 	if !validationResult.Valid {
 		fmt.Fprintf(os.Stderr, "Warning: Command configuration has validation errors:\n")
@@ -34,16 +32,11 @@ func CreateRootCommand() (*cobra.Command, error) {
 		}
 	}
 
-	// Create factory
-	factory := cli.NewFactory(commandConfig)
-
-	// Create root command using factory
-	rootCmd, err := factory.CreateRootCommand()
+	rootCmd, err := cli.BuildRootCommand(commandConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create root command: %w", err)
+		return nil, fmt.Errorf("failed to build root command: %w", err)
 	}
 
-	// Initialize configuration
 	cobra.OnInitialize(func() {
 		initFactoryConfig(commandConfig)
 	})
@@ -51,7 +44,7 @@ func CreateRootCommand() (*cobra.Command, error) {
 	return rootCmd, nil
 }
 
-// ExecuteFactory executes the root command using the factory
+// ExecuteFactory executes the root command using the functional builder
 func ExecuteFactory() error {
 	rootCmd, err := CreateRootCommand()
 	if err != nil {

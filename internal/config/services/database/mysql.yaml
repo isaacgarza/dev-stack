@@ -71,3 +71,36 @@ use_cases:
   - Primary application database
   - Transactional data storage
   - Relational data modeling
+
+# Service operations
+operations:
+  connect:
+    command: ["mysql"]
+    args:
+      user: ["-u", "{{.User}}"]
+      database: ["{{.Database}}"]
+      password: ["-p"]
+    defaults:
+      user: "root"
+  
+  backup:
+    type: "command"
+    command: ["mysqldump", "-u", "{{.User}}", "-p"]
+    args:
+      database: ["{{.Database}}"]
+      all: ["--all-databases"]
+    defaults:
+      user: "root"
+    extension: "sql"
+  
+  restore:
+    type: "command"
+    pre_commands:
+      clean:
+        - ["mysql", "-u", "{{.User}}", "-p", "-e", "DROP DATABASE IF EXISTS {{.Database}};"]
+        - ["mysql", "-u", "{{.User}}", "-p", "-e", "CREATE DATABASE {{.Database}};"]
+    command: ["mysql", "-u", "{{.User}}", "-p"]
+    args:
+      database: ["{{.Database}}"]
+    defaults:
+      user: "root"

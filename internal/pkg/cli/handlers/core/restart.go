@@ -6,8 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/isaacgarza/dev-stack/internal/core/docker"
-	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
+	cliTypes "github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
+	"github.com/isaacgarza/dev-stack/internal/pkg/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/ui"
 	"github.com/isaacgarza/dev-stack/internal/pkg/utils"
 	"github.com/spf13/cobra"
@@ -22,13 +23,13 @@ func NewRestartHandler() *RestartHandler {
 }
 
 // Handle executes the restart command
-func (h *RestartHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *types.BaseCommand) error {
-	ui.Header("Restarting Dev Stack")
+func (h *RestartHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *cliTypes.BaseCommand) error {
+	ui.Header(constants.MsgRestarting)
 
 	// Check if dev-stack is initialized
 	configPath := filepath.Join(constants.DevStackDir, constants.ConfigFileName)
 	if !utils.FileExists(configPath) {
-		return fmt.Errorf("dev-stack not initialized. Run 'dev-stack init' first")
+		return fmt.Errorf(constants.ErrNotInitialized)
 	}
 
 	// Load project configuration
@@ -61,7 +62,7 @@ func (h *RestartHandler) Handle(ctx context.Context, cmd *cobra.Command, args []
 
 	// Stop services first
 	ui.Info("Stopping services...")
-	stopOptions := docker.StopOptions{
+	stopOptions := types.StopOptions{
 		Timeout: timeout,
 	}
 	if err := dockerClient.Containers().Stop(ctx, cfg.Project.Name, serviceNames, stopOptions); err != nil {
@@ -70,15 +71,15 @@ func (h *RestartHandler) Handle(ctx context.Context, cmd *cobra.Command, args []
 
 	// Start services
 	ui.Info("Starting services...")
-	startOptions := docker.StartOptions{
+	startOptions := types.StartOptions{
 		Build: build,
 	}
 	if err := dockerClient.Containers().Start(ctx, cfg.Project.Name, serviceNames, startOptions); err != nil {
 		return fmt.Errorf("failed to start services: %w", err)
 	}
 
-	ui.Success("Dev stack restarted successfully")
-	ui.Info("Run 'dev-stack status' to check service status")
+	ui.Success(constants.MsgRestartSuccess)
+	ui.Info("Run '%s' to check service status", constants.CmdStatus)
 	return nil
 }
 
