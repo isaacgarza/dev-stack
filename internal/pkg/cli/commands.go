@@ -102,14 +102,14 @@ func NewLogsCommand(serviceManager *services.Manager, logger *slog.Logger) *cobr
 		RunE: func(cmd *cobra.Command, args []string) error {
 			follow, _ := cmd.Flags().GetBool("follow")
 			tail, _ := cmd.Flags().GetString("tail")
-			
+
 			ctx := context.Background()
 			options := types.LogOptions{
 				Follow:     follow,
 				Tail:       tail,
 				Timestamps: true,
 			}
-			
+
 			return serviceManager.GetLogs(ctx, args, options)
 		},
 	}
@@ -131,19 +131,19 @@ func NewExecCommand(serviceManager *services.Manager, logger *slog.Logger) *cobr
 			if len(args) < 2 {
 				return fmt.Errorf("requires service name and command")
 			}
-			
+
 			serviceName := args[0]
 			command := args[1:]
-			
+
 			interactive, _ := cmd.Flags().GetBool("interactive")
 			tty, _ := cmd.Flags().GetBool("tty")
-			
+
 			ctx := context.Background()
 			options := types.ExecOptions{
 				Interactive: interactive,
 				TTY:         tty,
 			}
-			
+
 			return serviceManager.ExecCommand(ctx, serviceName, command, options)
 		},
 	}
