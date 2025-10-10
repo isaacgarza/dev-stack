@@ -405,7 +405,8 @@ cat .env.generated
 cat application-local.yml.generated
 
 # Compare with sample configuration
-diff dev-stack-config.yaml dev-stack-framework/dev-stack-config.sample.yaml
+dev-stack init --dry-run > sample-config.yaml
+diff dev-stack-config.yaml sample-config.yaml
 
 # Reset to defaults
 dev-stack up --init

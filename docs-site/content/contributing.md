@@ -146,7 +146,7 @@ dev-stack/
 │   ├── content/                  # Markdown content files
 │   ├── config/                   # Hugo configuration
 │   └── themes/                   # Hugo themes
-└── dev-stack-config.sample.yaml # Sample configuration
+└── Taskfile.yml                  # Build system configuration
 ```
 
 ## 🛠️ Adding New Services
