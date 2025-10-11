@@ -2,8 +2,8 @@
 title: "Setup & Installation"
 description: "Complete setup guide for dev-stack with Docker, dependencies, and initial configuration"
 lead: "Get dev-stack up and running on your system with this comprehensive installation guide"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 10
 toc: true

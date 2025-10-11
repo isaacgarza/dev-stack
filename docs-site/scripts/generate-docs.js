@@ -16,12 +16,13 @@ function generateCLIReference() {
     const helpOutput = execSync('./dev-stack --help', { encoding: 'utf8' });
     const commands = extractCommands(helpOutput);
     
+    const today = new Date().toISOString().split('T')[0];
     let markdown = `---
 title: "CLI Reference"
 description: "Complete command reference for dev-stack CLI"
 lead: "Comprehensive reference for all dev-stack CLI commands and their usage"
-date: ${new Date().toISOString()}
-lastmod: ${new Date().toISOString()}
+date: "2025-10-01"
+lastmod: "${today}"
 draft: false
 weight: 50
 toc: true
@@ -76,12 +77,13 @@ function generateServicesGuide() {
         
         readServicesFromDir(servicesDir);
         
+        const today = new Date().toISOString().split('T')[0];
         let markdown = `---
 title: "Services"
 description: "Available services and configuration options"
 lead: "Explore all the services you can use with dev-stack"
-date: ${new Date().toISOString()}
-lastmod: ${new Date().toISOString()}
+date: "2025-10-01"
+lastmod: "${today}"
 draft: false
 weight: 30
 toc: true
@@ -118,6 +120,49 @@ ${Object.keys(services).length} services available for your development stack.
     }
 }
 
+// Generate homepage from README
+function generateHomepage() {
+    console.log('Generating homepage from README...');
+    
+    try {
+        const readmePath = path.join('..', 'README.md');
+        const readmeContent = fs.readFileSync(readmePath, 'utf8');
+        
+        // Extract content after the first heading
+        const lines = readmeContent.split('\n');
+        let contentStart = 0;
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].startsWith('# ')) {
+                contentStart = i;
+                break;
+            }
+        }
+        
+        const content = lines.slice(contentStart).join('\n');
+        
+        // Create frontmatter for Hugo with yyyy-MM-dd format
+        const today = new Date().toISOString().split('T')[0];
+        const frontmatter = `---
+title: "dev-stack"
+description: "A powerful development stack management tool built in Go for streamlined local development automation"
+lead: "Streamline your local development with powerful CLI tools and automated service management"
+date: "2025-10-01"
+lastmod: "${today}"
+draft: false
+weight: 50
+toc: true
+---
+
+`;
+        
+        const fullContent = frontmatter + content;
+        fs.writeFileSync('content/_index.md', fullContent);
+        console.log('✅ Generated content/_index.md from README.md');
+    } catch (error) {
+        console.warn('Could not generate homepage:', error.message);
+    }
+}
+
 // Extract command names from help output
 function extractCommands(helpOutput) {
     const lines = helpOutput.split('\n');
@@ -143,6 +188,7 @@ if (!fs.existsSync('content')) {
 }
 
 // Generate all docs
+generateHomepage();
 generateCLIReference();
 generateServicesGuide();
 

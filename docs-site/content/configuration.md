@@ -2,8 +2,8 @@
 title: "Configuration"
 description: "Complete configuration guide for dev-stack with examples and best practices"
 lead: "Learn how to configure dev-stack for your development environment"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 40
 toc: true

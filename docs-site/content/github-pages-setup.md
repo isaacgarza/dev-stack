@@ -1,3 +1,14 @@
+---
+title: "GitHub Pages Setup"
+description: "Guide for setting up and troubleshooting GitHub Pages documentation site"
+lead: "Configure GitHub Pages deployment for dev-stack documentation"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 90
+toc: true
+---
+
 # GitHub Pages Setup Guide
 
 This guide covers setting up and troubleshooting the GitHub Pages documentation site for dev-stack.

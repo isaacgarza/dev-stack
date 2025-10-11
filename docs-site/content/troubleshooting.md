@@ -2,8 +2,8 @@
 title: "Troubleshooting"
 description: "Common issues and solutions for dev-stack problems"
 lead: "Quick solutions to the most common dev-stack issues and problems"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 70
 toc: true

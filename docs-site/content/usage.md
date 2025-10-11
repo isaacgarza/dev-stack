@@ -2,8 +2,8 @@
 title: "Usage & Management"
 description: "Daily usage patterns, service management commands, and common workflows for dev-stack"
 lead: "Learn how to effectively use dev-stack for your daily development workflow"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 20
 toc: true

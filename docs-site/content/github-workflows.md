@@ -1,3 +1,14 @@
+---
+title: "GitHub Actions Workflows"
+description: "Documentation for CI/CD workflows and automation"
+lead: "Understand the GitHub Actions workflows that power dev-stack development"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 85
+toc: true
+---
+
 # GitHub Actions Workflows
 
 This document describes the GitHub Actions workflows that automate testing, validation, documentation, and releases for dev-stack.

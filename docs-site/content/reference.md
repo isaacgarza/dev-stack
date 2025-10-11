@@ -2,8 +2,8 @@
 title: "CLI Reference"
 description: "Complete command reference for dev-stack CLI"
 lead: "Comprehensive reference for all dev-stack CLI commands and their usage"
-date: 2025-10-10T04:10:05.115Z
-lastmod: 2025-10-10T04:10:05.117Z
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 50
 toc: true

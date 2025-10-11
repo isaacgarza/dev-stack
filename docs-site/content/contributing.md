@@ -2,8 +2,8 @@
 title: "Contributing"
 description: "How to contribute to dev-stack development and documentation"
 lead: "Join the dev-stack community and help make it better for everyone"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 60
 toc: true

@@ -2,8 +2,8 @@
 title: "dev-stack"
 description: "A powerful development stack management tool built in Go for streamlined local development automation"
 lead: "Streamline your local development with powerful CLI tools and automated service management"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 50
 toc: true
@@ -32,7 +32,7 @@ sudo mv dev-stack /usr/local/bin/
 
 ```bash
 # Initialize a new project
-dev-stack init go --name my-app
+dev-stack init
 
 # Start your development stack
 dev-stack up
