@@ -8,8 +8,8 @@ on:
     paths:
       - "docs-site/**"
       - "*.md"
-      - ".commitlintrc.json"
-      - ".release-please-config.json"
+      - ".github/.commitlintrc.json"
+      - ".github/.release-please-config.json"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,7 +40,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: wagoid/commitlint-github-action@v5
         with:
-          configFile: .commitlintrc.json
+          configFile: .github/.commitlintrc.json
 
       - name: Setup Hugo for validation
         uses: peaceiris/actions-hugo@v3

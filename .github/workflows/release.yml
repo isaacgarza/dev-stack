@@ -67,7 +67,7 @@ jobs:
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          config-file: .release-please-config.json
+          config-file: .github/.release-please-config.json
 
       - name: Release summary
         if: steps.release.outputs.releases_created

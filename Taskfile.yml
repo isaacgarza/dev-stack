@@ -135,6 +135,14 @@ tasks:
         fi
         echo "✅ Go modules are tidy"
 
+  lint-md:
+    desc: "📝 Lint markdown files"
+    silent: true
+    cmds:
+      - echo "📝 Linting markdown files..."
+      - cd docs-site && npm run lint:md
+      - echo "✅ Markdown linting passed"
+
   docs-sync-check:
     desc: "📚 Check if documentation is in sync"
     silent: true
