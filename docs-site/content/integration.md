@@ -1,3 +1,14 @@
+---
+title: "Integration Guide"
+description: "Integrate dev-stack with applications, IDEs, and CI/CD pipelines"
+lead: "Connect dev-stack with Spring Boot, testing frameworks, and development tools"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 40
+toc: true
+---
+
 # Integration Guide
 
 This guide covers integrating the Local Development Framework with Spring Boot applications, IDEs, testing frameworks, and CI/CD pipelines.

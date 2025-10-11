@@ -2,8 +2,8 @@
 title: "Setup & Installation"
 description: "Complete setup guide for dev-stack with Docker, dependencies, and initial configuration"
 lead: "Get dev-stack up and running on your system with this comprehensive installation guide"
-date: 2024-01-01T00:00:00+00:00
-lastmod: 2024-01-01T00:00:00+00:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 10
 toc: true
@@ -500,6 +500,40 @@ Now that you have dev-stack installed and configured:
 **Quick start:** Run `dev-stack init` to create your first project, then `dev-stack up` to start services.
 
 **Need help?** Check the [Troubleshooting Guide](troubleshooting.md) or run `dev-stack doctor`.
+
+## 🪝 Git Hooks Setup (Optional)
+
+For contributors and team development, set up pre-commit and pre-push hooks to ensure code quality:
+
+```bash
+# Install Git hooks for automatic checks
+task setup-hooks
+```
+
+This installs hooks that automatically run:
+- **Pre-commit**: Code formatting, linting, module tidying
+- **Pre-push**: All pre-commit checks + tests + build
+
+### Manual Usage
+
+You can also run these checks manually:
+
+```bash
+# Run pre-commit checks
+task pre-commit
+
+# Run pre-push checks  
+task pre-push
+```
+
+### Skip Hooks
+
+To skip hooks temporarily (not recommended):
+
+```bash
+git commit --no-verify
+git push --no-verify
+```
 
 ## 🗂️ See Also
 

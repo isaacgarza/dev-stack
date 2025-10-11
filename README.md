@@ -21,7 +21,7 @@ sudo mv dev-stack /usr/local/bin/
 
 ```bash
 # Initialize a new project
-dev-stack init go --name my-app
+dev-stack init
 
 # Start your development stack
 dev-stack up
@@ -65,5 +65,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-> **Built with ❤️ by the dev-stack team**  
+> **Built with ❤️ by the dev-stack team**
 > Making local development environments simple, consistent, and powerful.

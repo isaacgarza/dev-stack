@@ -2,8 +2,8 @@
 title: "Service Profiles"
 description: "Predefined service combinations for common development scenarios"
 lead: "Quickly start with predefined service combinations"
-date: 2025-10-07T12:20:14-05:00
-lastmod: 2025-10-07T12:20:14-05:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 35
 toc: true

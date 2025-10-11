@@ -2,8 +2,8 @@
 title: "Workflows"
 description: "Common workflows and task sequences for dev-stack"
 lead: "Step-by-step guides for common development tasks"
-date: 2025-10-07T12:20:14-05:00
-lastmod: 2025-10-07T12:20:14-05:00
+date: "2025-10-01"
+lastmod: "2025-10-11"
 draft: false
 weight: 40
 toc: true

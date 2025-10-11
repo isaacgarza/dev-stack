@@ -1,3 +1,14 @@
+---
+title: "Version Management System"
+description: "Multi-version support and automatic version switching for dev-stack"
+lead: "Install, manage, and switch between different dev-stack versions"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 75
+toc: true
+---
+
 # Version Management System
 
 The dev-stack version management system allows you to install, manage, and automatically switch between different versions of dev-stack based on project requirements.

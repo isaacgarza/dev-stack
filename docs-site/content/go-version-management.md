@@ -1,3 +1,14 @@
+---
+title: "Go Version Management"
+description: "Comprehensive Go version management system for dev-stack"
+lead: "Manage Go runtime versions and dev-stack binary versions across projects"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 80
+toc: true
+---
+
 # Version Management
 
 This document explains the comprehensive version management system in dev-stack, covering both Go runtime version management and dev-stack binary version management for multi-project environments.

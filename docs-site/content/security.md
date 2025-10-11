@@ -1,3 +1,14 @@
+---
+title: "Security Configuration"
+description: "Security scanning and configuration options for dev-stack"
+lead: "Configure security scanning, vulnerability checks, and best practices"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 70
+toc: true
+---
+
 # Security Configuration
 
 This document describes the security scanning and configuration options available in the dev-stack project.

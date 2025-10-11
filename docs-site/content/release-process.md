@@ -1,3 +1,14 @@
+---
+title: "Release Process"
+description: "Automated release process using Release-Please and conventional commits"
+lead: "Understand how dev-stack releases are automated and managed"
+date: "2025-10-01"
+lastmod: "2025-10-11"
+draft: false
+weight: 95
+toc: true
+---
+
 # Release Process
 
 This document describes the automated release process for dev-stack using Release-Please and conventional commits.
