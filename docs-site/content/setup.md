@@ -501,6 +501,40 @@ Now that you have dev-stack installed and configured:
 
 **Need help?** Check the [Troubleshooting Guide](troubleshooting.md) or run `dev-stack doctor`.
 
+## 🪝 Git Hooks Setup (Optional)
+
+For contributors and team development, set up pre-commit and pre-push hooks to ensure code quality:
+
+```bash
+# Install Git hooks for automatic checks
+task setup-hooks
+```
+
+This installs hooks that automatically run:
+- **Pre-commit**: Code formatting, linting, module tidying
+- **Pre-push**: All pre-commit checks + tests + build
+
+### Manual Usage
+
+You can also run these checks manually:
+
+```bash
+# Run pre-commit checks
+task pre-commit
+
+# Run pre-push checks  
+task pre-push
+```
+
+### Skip Hooks
+
+To skip hooks temporarily (not recommended):
+
+```bash
+git commit --no-verify
+git push --no-verify
+```
+
 ## 🗂️ See Also
 
 - [README](../README.md)

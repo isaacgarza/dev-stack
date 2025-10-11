@@ -89,6 +89,79 @@ tasks:
       - go mod tidy
       - echo "✅ Dependencies updated"
 
+  # === PRE-COMMIT CHECKS ===
+  pre-commit:
+    desc: "🔒 Run all pre-commit checks"
+    silent: true
+    cmds:
+      - echo "🔒 Running pre-commit checks..."
+      - task: fmt-check
+      - task: mod-tidy-check
+      - task: lint
+      - echo "✅ Pre-commit checks passed"
+
+  pre-push:
+    desc: "🚀 Run all pre-push checks"
+    silent: true
+    cmds:
+      - echo "🚀 Running pre-push checks..."
+      - task: pre-commit
+      - task: test
+      - task: build
+      - task: docs-lastmod-update
+      - echo "✅ Pre-push checks passed"
+
+  fmt-check:
+    desc: "📝 Check Go code formatting"
+    silent: true
+    cmds:
+      - |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "❌ Code is not formatted. Run: task fmt"
+          gofmt -s -l .
+          exit 1
+        fi
+        echo "✅ Code formatting OK"
+
+  mod-tidy-check:
+    desc: "📦 Check if go.mod is tidy"
+    silent: true
+    cmds:
+      - go mod tidy
+      - |
+        if ! git diff --exit-code go.mod go.sum; then
+          echo "❌ go.mod/go.sum not tidy. Run: go mod tidy"
+          exit 1
+        fi
+        echo "✅ Go modules are tidy"
+
+  docs-sync-check:
+    desc: "📚 Check if documentation is in sync"
+    silent: true
+    cmds:
+      - cd docs-site && npm run docs:generate
+      - |
+        # Check if there are content changes (ignoring timestamp changes in frontmatter)
+        DIFF_OUTPUT=$(git diff docs-site/content/_index.md docs-site/content/reference.md docs-site/content/services.md | grep -v "^[+-]date:" | grep -v "^[+-]lastmod:")
+        if echo "$DIFF_OUTPUT" | grep -q "^[+-]"; then
+          echo "❌ Documentation content out of sync. Run: cd docs-site && npm run docs:generate"
+          echo "$DIFF_OUTPUT"
+          exit 1
+        fi
+        echo "✅ Documentation is in sync"
+
+  docs-lastmod-update:
+    desc: "🗓️ Update lastmod dates for changed documentation files"
+    silent: true
+    cmds:
+      - ./scripts/update-docs-lastmod.sh
+
+  setup-hooks:
+    desc: "🪝 Install Git hooks for pre-commit and pre-push checks"
+    silent: true
+    cmds:
+      - ./scripts/setup-hooks.sh
+
   # === TESTING & QUALITY ===
   test:
     desc: "🧪 Run all tests with coverage report"
