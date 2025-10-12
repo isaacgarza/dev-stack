@@ -50,15 +50,49 @@ jobs:
         with:
           args: --timeout=5m
 
-      - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./cmd/... ./internal/...
+      - name: Run unit tests
+        run: task test-unit
 
-      - name: Upload coverage
+      - name: Run integration tests
+        run: task test-integration
+
+      - name: Run all tests with coverage
+        run: task test
+
+      - name: Check test coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Current test coverage: ${COVERAGE}%"
+          
+          # Set minimum coverage threshold
+          MIN_COVERAGE=15.0
+          
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+            echo "❌ Test coverage ${COVERAGE}% is below minimum threshold ${MIN_COVERAGE}%"
+            exit 1
+          else
+            echo "✅ Test coverage ${COVERAGE}% meets minimum threshold ${MIN_COVERAGE}%"
+          fi
+
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
           file: ./coverage.out
           flags: unittests
           name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Generate coverage report
+        run: |
+          go tool cover -html=coverage.out -o coverage.html
+          echo "Coverage report generated at coverage.html"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html
+          retention-days: 30
 
       - name: Build binary
         run: task build

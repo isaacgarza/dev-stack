@@ -1,5 +1,8 @@
 version: "3"
 
+# ============================================================================
+# VARIABLES
+# ============================================================================
 vars:
   BINARY_NAME: dev-stack
   BUILD_DIR: build
@@ -13,15 +16,22 @@ vars:
   LDFLAGS: '-ldflags "-X {{.MODULE_PATH}}/internal/cli.version={{.VERSION}} -X {{.MODULE_PATH}}/internal/cli.commit={{.COMMIT}} -X {{.MODULE_PATH}}/internal/cli.date={{.BUILD_DATE}}"'
   GOLANGCI_LINT_VERSION: "v2.4.0"
 
+# ============================================================================
+# TASKS
+# ============================================================================
 tasks:
-  # Default task - most common action
+  # ----------------------------------------------------------------------------
+  # DEFAULT TASK
+  # ----------------------------------------------------------------------------
   default:
     desc: "🚀 Build the binary (default task)"
     silent: true
     cmds:
       - task: build
 
-  # === BUILD TASKS ===
+  # ----------------------------------------------------------------------------
+  # BUILD TASKS
+  # ----------------------------------------------------------------------------
   build:
     desc: "🔨 Build the Go binary for current platform"
     deps: [deps]
@@ -61,7 +71,9 @@ tasks:
       - go install {{.LDFLAGS}} ./cmd/dev-stack
       - echo "✅ Installed to $(go env GOPATH)/bin/{{.BINARY_NAME}}"
 
-  # === DEVELOPMENT TASKS ===
+  # ----------------------------------------------------------------------------
+  # DEVELOPMENT TASKS
+  # ----------------------------------------------------------------------------
   dev:
     desc: "🚀 Quick start - build and show help"
     deps: [build]
@@ -80,6 +92,26 @@ tasks:
       - echo "👀 Rebuilding due to changes..."
       - task: build
 
+  # ----------------------------------------------------------------------------
+  # TEST MANAGEMENT
+  # ----------------------------------------------------------------------------
+  test-cleanup-verify:
+    desc: "📊 Verify test cleanup and organization"
+    cmds:
+      - |
+        echo "📊 Test file analysis:"
+        find . -name "*_test.go" -type f | wc -l | xargs echo "Total test files:"
+        find . -name "*_test.go" -exec wc -l {} + | tail -1 | xargs echo "Total test lines:"
+        echo ""
+        echo "🔍 Init package test files:"
+        find ./internal/pkg/cli/handlers/init -name "*_test.go" -exec basename {} \; | sort
+        echo ""
+        echo "📈 Init package test coverage:"
+        go test -cover ./internal/pkg/cli/handlers/init/...
+
+  # ----------------------------------------------------------------------------
+  # DEPENDENCY MANAGEMENT
+  # ----------------------------------------------------------------------------
   deps:
     desc: "📥 Download and tidy Go dependencies"
     silent: true
@@ -89,14 +121,233 @@ tasks:
       - go mod tidy
       - echo "✅ Dependencies updated"
 
-  # === PRE-COMMIT CHECKS ===
+  # ----------------------------------------------------------------------------
+  # GIT AUTOMATION
+  # ----------------------------------------------------------------------------
+  commit:
+    desc: "📝 Generate and create commit with dynamic message based on staged changes"
+    silent: true
+    cmds:
+      - |
+        # Check if there are staged changes
+        STAGED_FILES=$(git diff --cached --name-only)
+        if [ -z "$STAGED_FILES" ]; then
+          echo "❌ No staged changes found. Use 'git add' first."
+          exit 1
+        fi
+
+        echo "📝 Analyzing staged changes..."
+
+        # Generate commit type and scope
+        TYPE="feat"
+        SCOPE=""
+        DESCRIPTION=""
+
+        # Analyze file types
+        if echo "$STAGED_FILES" | grep -q "_test\.go"; then
+          TYPE="test"
+          TEST_COUNT=$(echo "$STAGED_FILES" | grep "_test\.go" | wc -l | tr -d ' ')
+          DESCRIPTION="add $TEST_COUNT test files"
+        fi
+
+        if echo "$STAGED_FILES" | grep -q "\.go" | grep -v "_test\.go"; then
+          if [ "$TYPE" = "test" ]; then
+            TYPE="feat"
+            DESCRIPTION="add tests and update code"
+          else
+            TYPE="feat"
+            SRC_COUNT=$(echo "$STAGED_FILES" | grep "\.go" | grep -v "_test\.go" | wc -l | tr -d ' ')
+            DESCRIPTION="update $SRC_COUNT source files"
+          fi
+        fi
+
+        if echo "$STAGED_FILES" | grep -q "\.yml\|\.yaml"; then
+          if echo "$STAGED_FILES" | grep -q "\.golangci\.yml"; then
+            TYPE="config"
+            SCOPE="lint"
+            DESCRIPTION="update linting configuration"
+          elif echo "$STAGED_FILES" | grep -q "Taskfile\.yml"; then
+            TYPE="build"
+            SCOPE="tasks"
+            DESCRIPTION="update build automation"
+          elif echo "$STAGED_FILES" | grep -q "ci\.yml\|\.github"; then
+            TYPE="ci"
+            DESCRIPTION="update CI/CD configuration"
+          else
+            TYPE="config"
+            DESCRIPTION="update configuration files"
+          fi
+        fi
+
+        if echo "$STAGED_FILES" | grep -q "README\|\.md"; then
+          TYPE="docs"
+          DESCRIPTION="update documentation"
+        fi
+
+        if echo "$STAGED_FILES" | grep -q "package\.json\|go\.mod\|go\.sum"; then
+          TYPE="deps"
+          DESCRIPTION="update dependencies"
+        fi
+
+        # Check for specific patterns in file names
+        if echo "$STAGED_FILES" | grep -qi "fix\|bug"; then
+          TYPE="fix"
+        fi
+
+        # Build commit message
+        if [ -n "$SCOPE" ]; then
+          COMMIT_MSG="$TYPE($SCOPE): $DESCRIPTION"
+        else
+          COMMIT_MSG="$TYPE: $DESCRIPTION"
+        fi
+
+        # Show what will be committed
+        echo "🔍 Staged files:"
+        echo "$STAGED_FILES" | sed 's/^/  /'
+        echo ""
+        echo "📝 Generated commit message:"
+        echo "  $COMMIT_MSG"
+        echo ""
+
+        # Commit with generated message
+        git commit -m "$COMMIT_MSG"
+        echo "✅ Committed successfully!"
+
+  # === GIT AUTOMATION ===
+  create-pr:
+    desc: "🔀 Create a pull request with auto-generated title and description based on branch changes"
+    silent: true
+    cmds:
+      - |
+        BRANCH=$(git branch --show-current)
+        if [ "$BRANCH" = "main" ]; then
+          echo "❌ Cannot create PR from main branch"
+          exit 1
+        fi
+
+        echo "🔀 Analyzing changes in branch: $BRANCH"
+
+        # Get commit messages and changed files
+        COMMITS=$(git log --oneline main..$BRANCH)
+        COMMIT_COUNT=$(git rev-list --count main..$BRANCH)
+        CHANGED_FILES=$(git diff --name-only main..$BRANCH)
+
+        # Analyze changes to generate title
+        TITLE="feat: "
+        if echo "$CHANGED_FILES" | grep -q "_test\.go"; then
+          TITLE="${TITLE}Add tests and "
+        fi
+        if echo "$CHANGED_FILES" | grep -q "\.yml\|\.yaml"; then
+          TITLE="${TITLE}improve CI/CD and "
+        fi
+        if echo "$CHANGED_FILES" | grep -q "Taskfile\.yml"; then
+          TITLE="${TITLE}enhance build automation and "
+        fi
+        if echo "$COMMITS" | grep -qi "fix\|bug"; then
+          TITLE="${TITLE}fix issues and "
+        fi
+        TITLE="${TITLE}improve codebase"
+
+        # Generate description based on file changes
+        DESCRIPTION="## 🚀 Changes Summary
+
+        **Branch:** \`$BRANCH\`
+        **Commits:** $COMMIT_COUNT
+
+        ### 📝 Recent Commits
+        \`\`\`
+        $COMMITS
+        \`\`\`
+
+        ### 📁 Files Changed"
+
+        if echo "$CHANGED_FILES" | grep -q "_test\.go"; then
+          TEST_COUNT=$(echo "$CHANGED_FILES" | grep "_test\.go" | wc -l)
+          DESCRIPTION="$DESCRIPTION
+        - **🧪 Tests:** $TEST_COUNT test files added/modified"
+        fi
+
+        if echo "$CHANGED_FILES" | grep -q "\.go" | grep -v "_test\.go"; then
+          SRC_COUNT=$(echo "$CHANGED_FILES" | grep "\.go" | grep -v "_test\.go" | wc -l)
+          DESCRIPTION="$DESCRIPTION
+        - **📦 Source Code:** $SRC_COUNT Go files modified"
+        fi
+
+        if echo "$CHANGED_FILES" | grep -q "\.yml\|\.yaml"; then
+          CONFIG_COUNT=$(echo "$CHANGED_FILES" | grep "\.yml\|\.yaml" | wc -l)
+          DESCRIPTION="$DESCRIPTION
+        - **⚙️ Configuration:** $CONFIG_COUNT YAML files updated"
+        fi
+
+        if echo "$CHANGED_FILES" | grep -q "Taskfile\.yml"; then
+          DESCRIPTION="$DESCRIPTION
+        - **🔧 Build System:** Taskfile.yml updated"
+        fi
+
+        DESCRIPTION="$DESCRIPTION
+
+        ### 🔍 Changed Files
+        \`\`\`
+        $CHANGED_FILES
+        \`\`\`
+
+        ## 🧪 Testing
+        - [ ] All tests pass
+        - [ ] No breaking changes
+        - [ ] Documentation updated if needed"
+
+        # Create PR
+        gh pr create \
+          --title "$TITLE" \
+          --body "$DESCRIPTION" \
+          --assignee @me
+
+  push-and-pr:
+    desc: "🚀 Push current branch and create PR in one command"
+    silent: true
+    cmds:
+      - |
+        BRANCH=$(git branch --show-current)
+        echo "🚀 Pushing branch: $BRANCH"
+        git push -u origin $BRANCH
+      - task: create-pr
+
   pre-commit:
     desc: "🔒 Run all pre-commit checks"
     silent: true
     cmds:
       - echo "🔒 Running pre-commit checks..."
-      - task: fmt-check
-      - task: mod-tidy-check
+      - task: pre-commit-fix
+      - task: pre-commit-verify
+
+  pre-commit-fix:
+    desc: "🔧 Auto-fix formatting and module issues"
+    silent: true
+    cmds:
+      - echo "🔧 Auto-fixing formatting and modules..."
+      - task: fmt
+      - go mod tidy
+
+  pre-commit-verify:
+    desc: "✅ Verify all checks pass after fixes"
+    silent: true
+    cmds:
+      - |
+        echo "✅ Verifying fixes..."
+        UNSTAGED_CHANGES=$(git diff --name-only)
+        if [ -n "$UNSTAGED_CHANGES" ]; then
+          echo ""
+          echo "❌ Pre-commit failed: Files were modified during formatting/tidy"
+          echo ""
+          echo "📋 Modified files:"
+          git diff --name-only
+          echo ""
+          echo "🔧 Please add these changes and commit again:"
+          echo "   git add ."
+          echo "   git commit"
+          echo ""
+          exit 1
+        fi
       - task: lint
       - echo "✅ Pre-commit checks passed"
 
@@ -105,8 +356,8 @@ tasks:
     silent: true
     cmds:
       - echo "🚀 Running pre-push checks..."
-      - task: pre-commit
       - task: test
+      - task: test-coverage-check
       - task: build
       - task: docs-lastmod-update
       - echo "✅ Pre-push checks passed"
@@ -170,7 +421,26 @@ tasks:
     cmds:
       - ./scripts/setup-hooks.sh
 
-  # === TESTING & QUALITY ===
+  refactor-tests:
+    desc: "🔧 Refactor test files to use constants instead of magic strings"
+    silent: true
+    cmds:
+      - |
+        echo "🔧 Refactoring test magic strings..."
+        echo "✅ Test constants file created at internal/pkg/cli/handlers/init/test_constants.go"
+        echo "📝 Manual refactoring recommended for context-specific strings"
+        echo ""
+        echo "Common patterns to replace:"
+        echo "  - \"dev-stack-test-*\" → TestTempDirPattern"
+        echo "  - \"dev-stack\" → constants.DevStackDir"
+        echo "  - \"dev-stack-config.yml\" → constants.ConfigFileName"
+        echo "  - \"test\" → TestConfigContent (when used as file content)"
+        echo "  - \"postgres\" → TestServicePostgres"
+        echo "  - \"already initialized\" → MsgAlreadyInitialized"
+
+  # ----------------------------------------------------------------------------
+  # TESTING & QUALITY ASSURANCE
+  # ----------------------------------------------------------------------------
   test:
     desc: "🧪 Run all tests with coverage report"
     deps: [deps]
@@ -194,6 +464,61 @@ tasks:
       - echo "📊 Opening coverage report..."
       - go tool cover -html=coverage.out
 
+  test-coverage-check:
+    desc: "🎯 Check if test coverage meets minimum threshold"
+    deps: [test]
+    silent: true
+    cmds:
+      - |
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        MIN_COVERAGE=15.0
+        echo "Current test coverage: ${COVERAGE}%"
+        echo "Minimum threshold: ${MIN_COVERAGE}%"
+
+        if command -v bc >/dev/null 2>&1; then
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+            echo "❌ Test coverage ${COVERAGE}% is below minimum threshold ${MIN_COVERAGE}%"
+            exit 1
+          else
+            echo "✅ Test coverage ${COVERAGE}% meets minimum threshold ${MIN_COVERAGE}%"
+          fi
+        else
+          # Fallback for systems without bc
+          COVERAGE_INT=$(echo "$COVERAGE" | cut -d'.' -f1)
+          MIN_COVERAGE_INT=$(echo "$MIN_COVERAGE" | cut -d'.' -f1)
+          if [ "$COVERAGE_INT" -lt "$MIN_COVERAGE_INT" ]; then
+            echo "❌ Test coverage ${COVERAGE}% is below minimum threshold ${MIN_COVERAGE}%"
+            exit 1
+          else
+            echo "✅ Test coverage ${COVERAGE}% meets minimum threshold ${MIN_COVERAGE}%"
+          fi
+        fi
+
+  test-unit:
+    desc: "🧪 Run unit tests only"
+    deps: [deps]
+    silent: true
+    cmds:
+      - echo "🧪 Running unit tests..."
+      - go test -race -short ./...
+      - echo "✅ Unit tests passed"
+
+  test-integration:
+    desc: "🔗 Run integration tests"
+    deps: [deps]
+    silent: true
+    cmds:
+      - echo "🔗 Running integration tests..."
+      - go test -race -tags=integration ./...
+      - echo "✅ Integration tests passed"
+
+  test-all:
+    desc: "🧪 Run all test types"
+    deps: [test-unit, test-integration]
+    silent: true
+    cmds:
+      - echo "✅ All tests completed successfully"
+
   lint:
     desc: "🔍 Run comprehensive linting (vet + fmt + golangci-lint)"
     deps: [deps]
@@ -209,12 +534,19 @@ tasks:
           exit 1
         fi
       - echo "✅ Basic linting passed"
-      - echo "🔍 Running golangci-lint..."
+      - echo "🔍 Running golangci-lint config verify..."
       - |
+        if [ ! -f .golangci.yml ]; then
+          echo "❌ .golangci.yml config file not found!"
+          exit 1
+        fi
         if [ ! -f $(go env GOPATH)/bin/golangci-lint ]; then
           echo "📦 Installing golangci-lint {{.GOLANGCI_LINT_VERSION}}..."
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin {{.GOLANGCI_LINT_VERSION}}
         fi
+        $(go env GOPATH)/bin/golangci-lint config verify
+      - echo "✅ golangci-lint config is valid"
+      - echo "🔍 Running golangci-lint..."
       - $(go env GOPATH)/bin/golangci-lint run ./...
       - echo "✅ All linting checks passed!"
 
@@ -246,7 +578,9 @@ tasks:
       - govulncheck ./...
       - echo "✅ Security scan complete"
 
-  # === DOCUMENTATION ===
+  # ----------------------------------------------------------------------------
+  # DOCUMENTATION
+  # ----------------------------------------------------------------------------
   docs:
     desc: "📚 Generate documentation"
     deps: [build]
@@ -256,7 +590,9 @@ tasks:
       - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
       - echo "✅ Documentation generated"
 
-  # === DOCKER ===
+  # ----------------------------------------------------------------------------
+  # DOCKER
+  # ----------------------------------------------------------------------------
   docker-build:
     desc: "🐳 Build Docker image"
     silent: true
@@ -273,7 +609,9 @@ tasks:
       - echo "🐳 Running Docker container..."
       - docker run --rm -it {{.BINARY_NAME}}:{{.VERSION}}
 
-  # === CLEANUP ===
+  # ----------------------------------------------------------------------------
+  # CLEANUP
+  # ----------------------------------------------------------------------------
   clean:
     desc: "🧹 Remove build artifacts and generated files"
     silent: true
@@ -294,7 +632,9 @@ tasks:
       - rm -rf vendor/
       - echo "✅ Deep clean complete"
 
-  # === UTILITY ===
+  # ----------------------------------------------------------------------------
+  # UTILITY
+  # ----------------------------------------------------------------------------
   version:
     desc: "ℹ️  Show version information"
     silent: true
@@ -328,7 +668,11 @@ tasks:
       - echo ""
       - echo "🧪 Testing & Quality:"
       - echo "   test           - Run tests with coverage"
+      - echo "   test-unit      - Run unit tests only"
+      - echo "   test-integration - Run integration tests"
+      - echo "   test-all       - Run all test types"
       - echo "   test-coverage  - View coverage in browser"
+      - echo "   test-coverage-check - Check coverage threshold"
       - echo "   lint           - Run all linting checks"
       - echo "   fmt            - Format code"
       - echo "   security       - Security vulnerability scan"
