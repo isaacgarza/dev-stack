@@ -16,6 +16,9 @@ func (h *InitHandler) validateInitEnvironment() error {
 	if _, err := os.Stat("dev-stack/dev-stack-config.yml"); err == nil {
 		return fmt.Errorf("dev-stack is already initialized in this directory")
 	}
+	if _, err := os.Stat("dev-stack/dev-stack-config.yaml"); err == nil {
+		return fmt.Errorf("dev-stack is already initialized in this directory")
+	}
 
 	// Check for required tools
 	requiredTools := []string{"docker"}
@@ -64,6 +67,15 @@ func (h *InitHandler) validateServices(services []string) error {
 		return fmt.Errorf("at least one service must be selected")
 	}
 
+	// Check for duplicates
+	seen := make(map[string]bool)
+	for _, serviceName := range services {
+		if seen[serviceName] {
+			return fmt.Errorf("duplicate service '%s' found", serviceName)
+		}
+		seen[serviceName] = true
+	}
+
 	// Validate each service exists
 	serviceUtils := utils.NewServiceUtils()
 	for _, serviceName := range services {
@@ -109,6 +121,10 @@ func (h *InitHandler) findTemplateFile(candidates []string, templateType string)
 
 // isCommandAvailable checks if a command is available in PATH
 func (h *InitHandler) isCommandAvailable(command string) bool {
+	if command == "" {
+		return false
+	}
+
 	_, err := os.Stat(filepath.Join("/usr/bin", command))
 	if err == nil {
 		return true
