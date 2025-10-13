@@ -242,8 +242,8 @@ tasks:
         CHANGED_FILES=$(git diff --name-only main..$BRANCH)
         FULL_DIFF=$(git diff main..$BRANCH --no-color)
         
-        # Create AI prompt for PR generation
-        AI_PROMPT="Analyze these Git branch changes and generate a professional pull request title and description.
+        # Create enhanced AI prompt for PR generation
+        AI_PROMPT="You are a senior software engineer creating a professional pull request. Analyze these Git changes and generate a high-quality PR title and description.
 
         Branch: $BRANCH
         Commits: $COMMIT_COUNT
@@ -254,29 +254,56 @@ tasks:
         Changed files:
         $CHANGED_FILES
         
-        Full diff:
-        $FULL_DIFF
+        Full diff (first 2000 chars):
+        $(echo "$FULL_DIFF" | head -c 2000)
         
-        Generate:
-        1. A concise PR title (under 60 chars) following conventional commits format
-        2. A comprehensive PR description with:
-           - Summary of changes
-           - Key features/fixes
-           - Files changed breakdown
-           - Testing checklist
+        Generate a professional PR following this format:
         
-        Format as:
-        TITLE: <title>
+        TITLE: <conventional-commit-style title under 60 chars>
+        
         DESCRIPTION:
-        <description>"
+        ## 📋 Summary
+        <2-3 sentence summary of what this PR accomplishes>
+        
+        ## 🎯 Type of Change
+        <Select appropriate checkboxes based on changes>
+        - [x] ✨ New feature (if adding functionality)
+        - [x] 🐛 Bug fix (if fixing issues)  
+        - [x] ♻️ Refactoring (if restructuring code)
+        - [x] 📚 Documentation update (if updating docs)
+        - [x] 🧪 Test improvement (if adding/updating tests)
+        - [x] 🔧 Configuration change (if updating config)
+        
+        ## 🔍 Key Changes
+        <Bullet points of main changes>
+        - Added: <what was added>
+        - Fixed: <what was fixed>
+        - Changed: <what was modified>
+        
+        ## 🧪 Testing
+        ### Manual Testing
+        - [x] I tested the changes locally
+        - [x] I verified the build works with \`task build\`
+        - [x] I ran the binary and confirmed expected behavior
+        
+        ### Automated Testing  
+        - [x] All existing tests pass (\`task test\`)
+        - [x] I added new tests for new functionality
+        
+        ## 📋 Code Quality Checklist
+        - [x] My code follows Go conventions and best practices
+        - [x] I ran \`task lint\` and addressed any linting issues
+        - [x] I added appropriate error handling
+        
+        Be specific about what changed and why. Use the actual file names and changes from the diff."
 
         # Use AI to generate PR content
         if command -v q >/dev/null 2>&1; then
           echo "🤖 Generating PR title and description..."
-          AI_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
+          RAW_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
           
-          # Clean ANSI codes from response
-          AI_RESPONSE=$(echo "$AI_RESPONSE" | sed 's/\[[0-9;]*m//g' | sed 's/^[> ]*//g')
+          # Clean ANSI codes and formatting from response
+          AI_RESPONSE=$(echo "$RAW_RESPONSE" | tr -d '\033' | sed 's/\[[0-9;]*m//g' | sed 's/^[> ]*//g' | sed 's/^["`'"'"']*//g' | sed 's/["`'"'"']*$//g')
           
           # Extract title and description
           TITLE=$(echo "$AI_RESPONSE" | grep "^TITLE:" | sed 's/^TITLE: //' | xargs)
@@ -309,26 +336,7 @@ tasks:
           TITLE="${TITLE}enhance codebase"
           
           # Fallback description
-          DESCRIPTION="## 🚀 Changes Summary
-
-        **Branch:** \`$BRANCH\`  
-        **Commits:** $COMMIT_COUNT
-
-        ### 📝 Recent Commits
-        \`\`\`
-        $COMMITS
-        \`\`\`
-
-        ### 📁 Files Changed (\$(echo \"$CHANGED_FILES\" | wc -l) files)
-        \`\`\`
-        $CHANGED_FILES
-        \`\`\`
-
-        ## 🧪 Testing Checklist
-        - [ ] All tests pass
-        - [ ] No breaking changes  
-        - [ ] Documentation updated if needed
-        - [ ] Code follows project standards"
+          DESCRIPTION="Branch $BRANCH with $COMMIT_COUNT commits. Files changed: $CHANGED_FILES"
         
           echo "📋 Template Generation Complete"
         fi
@@ -353,10 +361,10 @@ tasks:
         echo "🚀 Creating PR..."
 
         # Create PR
-        gh pr create \
+        PR_URL=$(gh pr create \
           --title "$TITLE" \
           --body "$DESCRIPTION" \
-          --assignee @me
+          --assignee @me 2>&1 | grep -o 'https://github.com[^[:space:]]*' || echo "")
 
         echo ""
         echo "╭─────────────────────────────────────────────╮"
@@ -366,7 +374,11 @@ tasks:
         echo "🎉 Pull request created successfully!"
         echo "🌿 Branch: $BRANCH"
         echo "📝 Title: $TITLE"
-        echo "🔗 View: $(gh pr view --web --json url --jq .url 2>/dev/null || echo 'Check GitHub')"
+        if [ -n "$PR_URL" ]; then
+          echo "🔗 View: $PR_URL"
+        else
+          echo "🔗 View: Check GitHub for the new PR"
+        fi
 
   push-and-pr:
     desc: "🚀 Push current branch and create PR in one command"
