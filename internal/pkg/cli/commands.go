@@ -6,11 +6,13 @@ import (
 	"log/slog"
 
 	"github.com/isaacgarza/dev-stack/internal/core/services"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/completion"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/core"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/doctor"
 	initHandler "github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/init"
 	cliServices "github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/services"
 	cliTypes "github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
-	"github.com/isaacgarza/dev-stack/internal/pkg/types"
+	pkgTypes "github.com/isaacgarza/dev-stack/internal/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -104,7 +106,7 @@ func NewLogsCommand(serviceManager *services.Manager, logger *slog.Logger) *cobr
 			tail, _ := cmd.Flags().GetString("tail")
 
 			ctx := context.Background()
-			options := types.LogOptions{
+			options := pkgTypes.LogOptions{
 				Follow:     follow,
 				Tail:       tail,
 				Timestamps: true,
@@ -139,7 +141,7 @@ func NewExecCommand(serviceManager *services.Manager, logger *slog.Logger) *cobr
 			tty, _ := cmd.Flags().GetBool("tty")
 
 			ctx := context.Background()
-			options := types.ExecOptions{
+			options := pkgTypes.ExecOptions{
 				Interactive: interactive,
 				TTY:         tty,
 			}
@@ -229,7 +231,7 @@ type serviceManagerAdapter struct {
 
 func (s *serviceManagerAdapter) StartServices(ctx context.Context, serviceNames []string, options cliTypes.StartOptions) error {
 	// Convert CLI types to internal types
-	internalOptions := types.StartOptions{
+	internalOptions := pkgTypes.StartOptions{
 		Build:         options.Build,
 		ForceRecreate: options.ForceRecreate,
 		Detach:        true,
@@ -238,7 +240,7 @@ func (s *serviceManagerAdapter) StartServices(ctx context.Context, serviceNames 
 }
 
 func (s *serviceManagerAdapter) StopServices(ctx context.Context, serviceNames []string, options cliTypes.StopOptions) error {
-	internalOptions := types.StopOptions{
+	internalOptions := pkgTypes.StopOptions{
 		Timeout:       options.Timeout,
 		Remove:        true,
 		RemoveVolumes: options.Volumes,
@@ -258,8 +260,8 @@ func (s *serviceManagerAdapter) GetServiceStatus(ctx context.Context, serviceNam
 	for i, status := range statuses {
 		result[i] = cliTypes.ServiceStatus{
 			Name:   status.Name,
-			Status: status.State,
-			Health: status.Health,
+			Status: status.State.String(),
+			Health: status.Health.String(),
 			Uptime: status.Uptime.String(),
 		}
 	}
@@ -285,4 +287,44 @@ func (l *loggerAdapter) Error(msg string, args ...interface{}) {
 
 func (l *loggerAdapter) Debug(msg string, args ...interface{}) {
 	l.logger.Debug(msg, args...)
+}
+
+// NewDoctorCommand creates the doctor command
+func NewDoctorCommand(logger *slog.Logger) *cobra.Command {
+	handler := doctor.NewDoctorHandler()
+
+	cmd := &cobra.Command{
+		Use:   "doctor",
+		Short: "Run health checks",
+		Long:  "Run comprehensive health checks on your dev-stack environment",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			base := &cliTypes.BaseCommand{
+				Logger: &loggerAdapter{logger: logger},
+			}
+			return handler.Handle(context.Background(), cmd, args, base)
+		},
+	}
+
+	return cmd
+}
+
+// NewCompletionCommand creates the completion command
+func NewCompletionCommand(logger *slog.Logger) *cobra.Command {
+	handler := completion.NewCompletionHandler()
+
+	cmd := &cobra.Command{
+		Use:       "completion [bash|zsh|fish|powershell]",
+		Short:     "Generate completion script",
+		Long:      "Generate completion script for your shell",
+		ValidArgs: pkgTypes.AllShellTypeStrings(),
+		Args:      cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			base := &cliTypes.BaseCommand{
+				Logger: &loggerAdapter{logger: logger},
+			}
+			return handler.Handle(context.Background(), cmd, args, base)
+		},
+	}
+
+	return cmd
 }

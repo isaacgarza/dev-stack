@@ -38,13 +38,15 @@ const (
 	TestEnvironmentDev   = "development"
 	TestEnvironmentProd  = "production"
 
-	// Test CLI commands (use actual constants)
+	// Test gitignore entries (use actual constants)
+	TestGitignoreEntry = constants.DevStackDir + "/" + constants.EnvGeneratedFileName
+)
+
+// Test CLI commands (use variables since they're computed)
+var (
 	CmdDevStackUp     = constants.CmdUp
 	CmdDevStackDown   = constants.CmdDown
 	CmdDevStackStatus = constants.CmdStatus
-
-	// Test gitignore entries (use actual constants)
-	TestGitignoreEntry = constants.DevStackDir + "/" + constants.EnvGeneratedFileName
 )
 
 // Test file paths (use actual constants for consistency)

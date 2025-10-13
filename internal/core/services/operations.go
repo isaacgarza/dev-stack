@@ -249,7 +249,7 @@ func (so *ServiceOperations) ScaleService(ctx context.Context, serviceName strin
 		return fmt.Errorf("failed to get service status: %w", err)
 	}
 
-	if len(statuses) == 0 || statuses[0].State != "running" {
+	if len(statuses) == 0 || !statuses[0].State.IsRunning() {
 		startOptions := types.StartOptions{
 			Build:         false,
 			ForceRecreate: options.NoRecreate,

@@ -118,8 +118,8 @@ type Secret struct {
 // ServiceStatus represents the runtime status of a service
 type ServiceStatus struct {
 	Name      string            `json:"name"`
-	State     string            `json:"state"`  // running, stopped, starting, stopping, error
-	Health    string            `json:"health"` // healthy, unhealthy, starting, none
+	State     ServiceState      `json:"state"`  // running, stopped, starting, stopping, error
+	Health    HealthStatus      `json:"health"` // healthy, unhealthy, starting, none
 	Uptime    time.Duration     `json:"uptime"`
 	CPUUsage  float64           `json:"cpu_usage"`
 	Memory    MemoryUsage       `json:"memory"`

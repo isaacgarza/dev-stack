@@ -93,23 +93,6 @@ tasks:
       - task: build
 
   # ----------------------------------------------------------------------------
-  # TEST MANAGEMENT
-  # ----------------------------------------------------------------------------
-  test-cleanup-verify:
-    desc: "📊 Verify test cleanup and organization"
-    cmds:
-      - |
-        echo "📊 Test file analysis:"
-        find . -name "*_test.go" -type f | wc -l | xargs echo "Total test files:"
-        find . -name "*_test.go" -exec wc -l {} + | tail -1 | xargs echo "Total test lines:"
-        echo ""
-        echo "🔍 Init package test files:"
-        find ./internal/pkg/cli/handlers/init -name "*_test.go" -exec basename {} \; | sort
-        echo ""
-        echo "📈 Init package test coverage:"
-        go test -cover ./internal/pkg/cli/handlers/init/...
-
-  # ----------------------------------------------------------------------------
   # DEPENDENCY MANAGEMENT
   # ----------------------------------------------------------------------------
   deps:
@@ -125,7 +108,7 @@ tasks:
   # GIT AUTOMATION
   # ----------------------------------------------------------------------------
   commit:
-    desc: "📝 Generate and create commit with dynamic message based on staged changes"
+    desc: "🤖 Generate AI-powered commit message based on staged changes"
     silent: true
     cmds:
       - |
@@ -136,72 +119,61 @@ tasks:
           exit 1
         fi
 
-        echo "📝 Analyzing staged changes..."
+        echo "🤖 Analyzing staged changes with AI..."
 
-        # Generate commit type and scope
-        TYPE="feat"
-        SCOPE=""
-        DESCRIPTION=""
+        # Get detailed diff for AI analysis
+        DIFF_CONTENT=$(git diff --cached --no-color)
+        FILE_LIST=$(echo "$STAGED_FILES" | tr '\n' ', ' | sed 's/,$//')
+        
+        # Create AI prompt for commit message generation
+        AI_PROMPT="Analyze these Git changes and generate a conventional commit message.
 
-        # Analyze file types
-        if echo "$STAGED_FILES" | grep -q "_test\.go"; then
-          TYPE="test"
-          TEST_COUNT=$(echo "$STAGED_FILES" | grep "_test\.go" | wc -l | tr -d ' ')
-          DESCRIPTION="add $TEST_COUNT test files"
-        fi
+        Files changed: $FILE_LIST
 
-        if echo "$STAGED_FILES" | grep -q "\.go" | grep -v "_test\.go"; then
-          if [ "$TYPE" = "test" ]; then
-            TYPE="feat"
-            DESCRIPTION="add tests and update code"
-          else
-            TYPE="feat"
-            SRC_COUNT=$(echo "$STAGED_FILES" | grep "\.go" | grep -v "_test\.go" | wc -l | tr -d ' ')
-            DESCRIPTION="update $SRC_COUNT source files"
-          fi
-        fi
+        Diff content:
+        $DIFF_CONTENT
 
-        if echo "$STAGED_FILES" | grep -q "\.yml\|\.yaml"; then
-          if echo "$STAGED_FILES" | grep -q "\.golangci\.yml"; then
-            TYPE="config"
-            SCOPE="lint"
-            DESCRIPTION="update linting configuration"
-          elif echo "$STAGED_FILES" | grep -q "Taskfile\.yml"; then
-            TYPE="build"
-            SCOPE="tasks"
-            DESCRIPTION="update build automation"
-          elif echo "$STAGED_FILES" | grep -q "ci\.yml\|\.github"; then
-            TYPE="ci"
-            DESCRIPTION="update CI/CD configuration"
-          else
-            TYPE="config"
-            DESCRIPTION="update configuration files"
-          fi
-        fi
+        Generate a conventional commit message following this format:
+        <type>(<scope>): <description>
 
-        if echo "$STAGED_FILES" | grep -q "README\|\.md"; then
-          TYPE="docs"
-          DESCRIPTION="update documentation"
-        fi
+        Types: feat, fix, docs, style, refactor, test, chore, ci, build, perf
+        Keep description under 50 characters, be specific and clear.
+        Only return the commit message, nothing else."
 
-        if echo "$STAGED_FILES" | grep -q "package\.json\|go\.mod\|go\.sum"; then
-          TYPE="deps"
-          DESCRIPTION="update dependencies"
-        fi
-
-        # Check for specific patterns in file names
-        if echo "$STAGED_FILES" | grep -qi "fix\|bug"; then
-          TYPE="fix"
-        fi
-
-        # Build commit message
-        if [ -n "$SCOPE" ]; then
-          COMMIT_MSG="$TYPE($SCOPE): $DESCRIPTION"
+        # Use AI to generate commit message (requires q CLI or similar)
+        if command -v q >/dev/null 2>&1; then
+          echo "🤖 Generating commit message..."
+          COMMIT_MSG=$(echo "$AI_PROMPT" | q chat --no-interactive)
+          
+          # Clean up the response (remove quotes, extra whitespace)
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | sed 's/^["'"'"']//;s/["'"'"']$//' | xargs)
+          
         else
+          echo "⚠️  AI not available, falling back to pattern-based analysis..."
+          # Fallback to existing logic
+          TYPE="feat"
+          DESCRIPTION="improve codebase"
+          
+          # Analyze file types for fallback
+          if echo "$STAGED_FILES" | grep -q "_test\.go"; then
+            TYPE="test"
+            DESCRIPTION="add/update tests"
+          elif echo "$STAGED_FILES" | grep -q "\.md$"; then
+            TYPE="docs"
+            DESCRIPTION="update documentation"
+          elif echo "$STAGED_FILES" | grep -q "Taskfile\.yml\|\.github/"; then
+            TYPE="ci"
+            DESCRIPTION="improve build automation"
+          elif echo "$STAGED_FILES" | grep -q "\.go$"; then
+            TYPE="feat"
+            DESCRIPTION="add features"
+          fi
+          
           COMMIT_MSG="$TYPE: $DESCRIPTION"
         fi
 
         # Show what will be committed
+        echo ""
         echo "🔍 Staged files:"
         echo "$STAGED_FILES" | sed 's/^/  /'
         echo ""
@@ -225,33 +197,90 @@ tasks:
           exit 1
         fi
 
-        echo "🔀 Analyzing changes in branch: $BRANCH"
+  create-pr:
+    desc: "🤖 Create AI-powered pull request with smart title and description"
+    silent: true
+    cmds:
+      - |
+        BRANCH=$(git branch --show-current)
+        if [ "$BRANCH" = "main" ]; then
+          echo "❌ Cannot create PR from main branch"
+          exit 1
+        fi
 
-        # Get commit messages and changed files
+        echo "🤖 Analyzing branch changes with AI: $BRANCH"
+
+        # Get comprehensive change analysis
         COMMITS=$(git log --oneline main..$BRANCH)
         COMMIT_COUNT=$(git rev-list --count main..$BRANCH)
         CHANGED_FILES=$(git diff --name-only main..$BRANCH)
+        FULL_DIFF=$(git diff main..$BRANCH --no-color)
+        
+        # Create AI prompt for PR generation
+        AI_PROMPT="Analyze these Git branch changes and generate a professional pull request title and description.
 
-        # Analyze changes to generate title
-        TITLE="feat: "
-        if echo "$CHANGED_FILES" | grep -q "_test\.go"; then
-          TITLE="${TITLE}Add tests and "
-        fi
-        if echo "$CHANGED_FILES" | grep -q "\.yml\|\.yaml"; then
-          TITLE="${TITLE}improve CI/CD and "
-        fi
-        if echo "$CHANGED_FILES" | grep -q "Taskfile\.yml"; then
-          TITLE="${TITLE}enhance build automation and "
-        fi
-        if echo "$COMMITS" | grep -qi "fix\|bug"; then
-          TITLE="${TITLE}fix issues and "
-        fi
-        TITLE="${TITLE}improve codebase"
+        Branch: $BRANCH
+        Commits: $COMMIT_COUNT
+        
+        Recent commits:
+        $COMMITS
+        
+        Changed files:
+        $CHANGED_FILES
+        
+        Full diff:
+        $FULL_DIFF
+        
+        Generate:
+        1. A concise PR title (under 60 chars) following conventional commits format
+        2. A comprehensive PR description with:
+           - Summary of changes
+           - Key features/fixes
+           - Files changed breakdown
+           - Testing checklist
+        
+        Format as:
+        TITLE: <title>
+        DESCRIPTION:
+        <description>"
 
-        # Generate description based on file changes
-        DESCRIPTION="## 🚀 Changes Summary
+        # Use AI to generate PR content
+        if command -v q >/dev/null 2>&1; then
+          echo "🤖 Generating PR title and description..."
+          AI_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
+          
+          # Extract title and description
+          TITLE=$(echo "$AI_RESPONSE" | grep "^TITLE:" | sed 's/^TITLE: //' | xargs)
+          DESCRIPTION=$(echo "$AI_RESPONSE" | sed -n '/^DESCRIPTION:/,$ p' | sed '1d')
+          
+          # Fallback if parsing fails
+          if [ -z "$TITLE" ]; then
+            TITLE="feat: improve codebase"
+          fi
+          if [ -z "$DESCRIPTION" ]; then
+            DESCRIPTION="## Changes Summary\n\nBranch: $BRANCH\nCommits: $COMMIT_COUNT\n\n### Files Changed\n$CHANGED_FILES"
+          fi
+          
+        else
+          echo "⚠️  AI not available, falling back to template-based generation..."
+          
+          # Fallback title generation
+          TITLE="feat: "
+          if echo "$CHANGED_FILES" | grep -q "_test\.go"; then
+            TITLE="${TITLE}add tests and "
+          fi
+          if echo "$CHANGED_FILES" | grep -q "\.go" | grep -v "_test\.go"; then
+            TITLE="${TITLE}improve core functionality and "
+          fi
+          if echo "$COMMITS" | grep -qi "fix\|bug"; then
+            TITLE="${TITLE}fix issues and "
+          fi
+          TITLE="${TITLE}enhance codebase"
+          
+          # Fallback description
+          DESCRIPTION="## 🚀 Changes Summary
 
-        **Branch:** \`$BRANCH\`
+        **Branch:** \`$BRANCH\`  
         **Commits:** $COMMIT_COUNT
 
         ### 📝 Recent Commits
@@ -259,48 +288,34 @@ tasks:
         $COMMITS
         \`\`\`
 
-        ### 📁 Files Changed"
-
-        if echo "$CHANGED_FILES" | grep -q "_test\.go"; then
-          TEST_COUNT=$(echo "$CHANGED_FILES" | grep "_test\.go" | wc -l)
-          DESCRIPTION="$DESCRIPTION
-        - **🧪 Tests:** $TEST_COUNT test files added/modified"
-        fi
-
-        if echo "$CHANGED_FILES" | grep -q "\.go" | grep -v "_test\.go"; then
-          SRC_COUNT=$(echo "$CHANGED_FILES" | grep "\.go" | grep -v "_test\.go" | wc -l)
-          DESCRIPTION="$DESCRIPTION
-        - **📦 Source Code:** $SRC_COUNT Go files modified"
-        fi
-
-        if echo "$CHANGED_FILES" | grep -q "\.yml\|\.yaml"; then
-          CONFIG_COUNT=$(echo "$CHANGED_FILES" | grep "\.yml\|\.yaml" | wc -l)
-          DESCRIPTION="$DESCRIPTION
-        - **⚙️ Configuration:** $CONFIG_COUNT YAML files updated"
-        fi
-
-        if echo "$CHANGED_FILES" | grep -q "Taskfile\.yml"; then
-          DESCRIPTION="$DESCRIPTION
-        - **🔧 Build System:** Taskfile.yml updated"
-        fi
-
-        DESCRIPTION="$DESCRIPTION
-
-        ### 🔍 Changed Files
+        ### 📁 Files Changed (\$(echo \"$CHANGED_FILES\" | wc -l) files)
         \`\`\`
         $CHANGED_FILES
         \`\`\`
 
-        ## 🧪 Testing
+        ## 🧪 Testing Checklist
         - [ ] All tests pass
-        - [ ] No breaking changes
-        - [ ] Documentation updated if needed"
+        - [ ] No breaking changes  
+        - [ ] Documentation updated if needed
+        - [ ] Code follows project standards"
+        fi
+
+        echo ""
+        echo "📝 Generated PR Title:"
+        echo "  $TITLE"
+        echo ""
+        echo "📄 Generated Description:"
+        echo "$DESCRIPTION" | head -10
+        echo "..."
+        echo ""
 
         # Create PR
         gh pr create \
           --title "$TITLE" \
           --body "$DESCRIPTION" \
           --assignee @me
+
+        echo "✅ Pull request created successfully!"
 
   push-and-pr:
     desc: "🚀 Push current branch and create PR in one command"
@@ -420,23 +435,6 @@ tasks:
     silent: true
     cmds:
       - ./scripts/setup-hooks.sh
-
-  refactor-tests:
-    desc: "🔧 Refactor test files to use constants instead of magic strings"
-    silent: true
-    cmds:
-      - |
-        echo "🔧 Refactoring test magic strings..."
-        echo "✅ Test constants file created at internal/pkg/cli/handlers/init/test_constants.go"
-        echo "📝 Manual refactoring recommended for context-specific strings"
-        echo ""
-        echo "Common patterns to replace:"
-        echo "  - \"dev-stack-test-*\" → TestTempDirPattern"
-        echo "  - \"dev-stack\" → constants.DevStackDir"
-        echo "  - \"dev-stack-config.yml\" → constants.ConfigFileName"
-        echo "  - \"test\" → TestConfigContent (when used as file content)"
-        echo "  - \"postgres\" → TestServicePostgres"
-        echo "  - \"already initialized\" → MsgAlreadyInitialized"
 
   # ----------------------------------------------------------------------------
   # TESTING & QUALITY ASSURANCE
@@ -664,6 +662,10 @@ tasks:
       - echo "🚀 Development:"
       - echo "   dev            - Quick start (build + help)"
       - echo "   watch          - Auto-rebuild on changes"
+      - echo ""
+      - echo "🧪 Testing:"
+      - echo "   test           - Run all tests"
+      - echo "   test-coverage  - Run tests with coverage"
       - echo "   deps           - Update dependencies"
       - echo ""
       - echo "🧪 Testing & Quality:"
@@ -691,6 +693,14 @@ tasks:
       - echo "ℹ️  Info:"
       - echo "   version        - Show version info"
       - echo "   help           - Show this help"
+      - echo ""
+      - echo "🤖 AI-Powered Git Automation:"
+      - echo "   commit         - AI-generated commit messages"
+      - echo "   create-pr      - AI-generated PR title/description"
+      - echo "   push-and-pr    - Push branch and create AI PR"
+      - echo "   pre-commit     - Run all pre-commit checks"
+      - echo "   pre-push       - Run all pre-push checks"
+      - echo "   setup-hooks    - Install Git hooks"
       - echo ""
       - echo "💡 Examples:"
       - echo "   task build && ./build/dev-stack --help"
