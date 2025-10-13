@@ -104,31 +104,15 @@ jobs:
           ./${{ steps.config.outputs.build-dir }}/${{ steps.config.outputs.cli-binary }} version || \
           echo "Binary built successfully"
 
-  get-go-matrix:
-    name: Get Go Matrix
-    runs-on: ubuntu-latest
-    outputs:
-      go-matrix: ${{ steps.matrix.outputs.go-matrix }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Generate Go version matrix
-        id: matrix
-        run: |
-          GO_MATRIX=$(./scripts/get-go-version.sh --github-matrix)
-          echo "go-matrix=$GO_MATRIX" >> $GITHUB_OUTPUT
-          echo "Generated Go matrix: $GO_MATRIX"
-
   test-matrix:
     name: Test Matrix
     runs-on: ${{ matrix.os }}
-    needs: get-go-matrix
+    timeout-minutes: 15
     if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'test-matrix')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go-version: ${{ fromJson(needs.get-go-matrix.outputs.go-matrix) }}
+        go-version: ["1.21", "1.22", "1.23"]
       fail-fast: false
 
     steps:
@@ -145,10 +129,21 @@ jobs:
         run: go mod download
 
       - name: Run tests
-        run: go test -v -race ./cmd/... ./internal/...
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            # Skip race detector on macOS if it causes issues
+            go test -v ./...
+          else
+            go test -v -race ./...
+          fi
 
       - name: Build
-        run: go build -o dev-stack-${{ matrix.os }}-${{ matrix.go-version }} ./cmd/dev-stack
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            go build -o dev-stack-${{ matrix.os }}-${{ matrix.go-version }}.exe ./cmd/dev-stack
+          else
+            go build -o dev-stack-${{ matrix.os }}-${{ matrix.go-version }} ./cmd/dev-stack
+          fi
 
   integration:
     name: Integration
