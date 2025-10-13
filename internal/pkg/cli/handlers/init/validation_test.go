@@ -100,11 +100,10 @@ func TestValidateDirectoryStructure(t *testing.T) {
 func TestIsCommandAvailable(t *testing.T) {
 	handler := NewInitHandler()
 
-	// Use a command that exists on all platforms
-	// Go should be available in test environment
-	existingCommand := "go"
+	// Use commands that definitely exist on each platform
+	existingCommand := "echo" // Available on Unix systems
 	if runtime.GOOS == "windows" {
-		existingCommand = "cmd"
+		existingCommand = "where" // Built-in Windows command
 	}
 
 	tests := []struct {
