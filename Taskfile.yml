@@ -175,10 +175,11 @@ tasks:
         echo "🤖 Analyzing branch changes with AI: $BRANCH"
 
         # Get comprehensive change analysis
-        COMMITS=$(git log --oneline main..$BRANCH)
-        COMMIT_COUNT=$(git rev-list --count main..$BRANCH)
-        CHANGED_FILES=$(git diff --name-only main..$BRANCH)
-        FULL_DIFF=$(git diff main..$BRANCH --no-color)
+
+        # commits that are in the current branch but not in main
+        COMMITS=$(git log --oneline origin/main..HEAD)
+        COMMIT_COUNT=$(git rev-list --count origin/main..$BRANCH)
+        CHANGED_FILES=$(git diff --name-only origin/main..$BRANCH)
         PR_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE.md)
 
         # Create AI prompt with PR template
@@ -195,9 +196,6 @@ tasks:
 
         Changed files:
         $CHANGED_FILES
-
-        Diff (first 2000 chars):
-        $(echo "$FULL_DIFF" | head -c 2000)
 
         Return: TITLE: <title>
         DESCRIPTION: <filled template>"
