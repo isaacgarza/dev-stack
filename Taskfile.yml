@@ -124,92 +124,41 @@ tasks:
         # Get detailed diff for AI analysis
         DIFF_CONTENT=$(git diff --cached --no-color)
         FILE_LIST=$(echo "$STAGED_FILES" | tr '\n' ', ' | sed 's/,$//')
+        COMMITLINT_CONFIG=$(cat .github/.commitlintrc.json)
         
-        # Create AI prompt for commit message generation
-        AI_PROMPT="Analyze these Git changes and generate a conventional commit message.
+        # Create AI prompt with commitlint config
+        AI_PROMPT="Generate a conventional commit message using this commitlint config:
+
+        $COMMITLINT_CONFIG
 
         Files changed: $FILE_LIST
 
-        Diff content:
+        Diff:
         $DIFF_CONTENT
 
-        Generate a conventional commit message following this format:
-        <type>(<scope>): <description>
+        Return only the commit message, nothing else."
 
-        Types: feat, fix, docs, style, refactor, test, chore, ci, build, perf
-        Keep description under 50 characters, be specific and clear.
-        Only return the commit message, nothing else."
-
-        # Use AI to generate commit message (requires q CLI or similar)
+        # Use AI to generate commit message
         if command -v q >/dev/null 2>&1; then
           echo "🤖 Generating commit message..."
-          RAW_MSG=$(echo "$AI_PROMPT" | q chat --no-interactive)
-          
-          # Clean up the response - remove ALL formatting artifacts
-          COMMIT_MSG=$(echo "$RAW_MSG" | tr -d '\033' | sed 's/\[[0-9;]*m//g' | sed 's/^[> ]*//g' | sed 's/^["`'"'"']*//g' | sed 's/["`'"'"']*$//g' | tr -s ' ' | xargs)
-          
-          # Debug output (remove this after testing)
-          echo "DEBUG - Raw: '$RAW_MSG'"
-          echo "DEBUG - Cleaned: '$COMMIT_MSG'"
-          
+          COMMIT_MSG=$(echo "$AI_PROMPT" | q chat --no-interactive | tr -d '\033' | sed 's/\[[0-9;]*m//g' | sed 's/^[> ]*//g' | xargs)
           echo "✨ AI Analysis Complete"
-          
         else
-          echo "⚠️  AI not available, using pattern-based analysis..."
-          # Fallback to existing logic
+          echo "⚠️  AI not available, using fallback..."
           TYPE="feat"
-          DESCRIPTION="improve codebase"
-          
-          # Analyze file types for fallback
-          if echo "$STAGED_FILES" | grep -q "_test\.go"; then
-            TYPE="test"
-            DESCRIPTION="add/update tests"
-          elif echo "$STAGED_FILES" | grep -q "\.md$"; then
-            TYPE="docs"
-            DESCRIPTION="update documentation"
-          elif echo "$STAGED_FILES" | grep -q "Taskfile\.yml\|\.github/"; then
-            TYPE="ci"
-            DESCRIPTION="improve build automation"
-          elif echo "$STAGED_FILES" | grep -q "\.go$"; then
-            TYPE="feat"
-            DESCRIPTION="add features"
+          if echo "$STAGED_FILES" | grep -q "_test\.go"; then TYPE="test"
+          elif echo "$STAGED_FILES" | grep -q "\.md$"; then TYPE="docs"
+          elif echo "$STAGED_FILES" | grep -q "Taskfile\.yml\|\.github/"; then TYPE="ci"
+          elif echo "$STAGED_FILES" | grep -q "go\.mod\|go\.sum"; then TYPE="deps"
           fi
-          
-          COMMIT_MSG="$TYPE: $DESCRIPTION"
-          echo "📋 Pattern Analysis Complete"
+          COMMIT_MSG="$TYPE: improve codebase"
         fi
 
-        # Validate commit message (ensure it's clean and follows format)
-        if [ -z "$COMMIT_MSG" ] || echo "$COMMIT_MSG" | grep -q '^[>\[\]`"'"'"']'; then
-          echo "⚠️  Generated message needs cleaning, using fallback..."
-          COMMIT_MSG="feat: improve codebase"
-        fi
-
-        # Enhanced output display
         echo ""
-        echo "╭─────────────────────────────────────────────╮"
-        echo "│                📝 COMMIT READY               │"
-        echo "╰─────────────────────────────────────────────╯"
-        echo ""
-        echo "🔍 Staged Files ($(echo "$STAGED_FILES" | wc -l | xargs)):"
-        echo "$STAGED_FILES" | sed 's/^/   📄 /'
-        echo ""
-        echo "💬 Generated Message:"
-        echo "   ✨ $COMMIT_MSG"
-        echo ""
+        echo "📝 Generated: $COMMIT_MSG"
         echo "🚀 Committing..."
-
-        # Commit with generated message
         git commit -m "$COMMIT_MSG"
-        
-        echo ""
-        echo "╭─────────────────────────────────────────────╮"
-        echo "│                ✅ SUCCESS!                   │"
-        echo "╰─────────────────────────────────────────────╯"
-        echo ""
-        echo "🎉 Commit created successfully!"
-        echo "📝 Message: $COMMIT_MSG"
-        echo "🔗 Hash: $(git rev-parse --short HEAD)"
+        echo "✅ Committed successfully!"
 
   # === GIT AUTOMATION ===
   create-pr:
@@ -241,9 +190,13 @@ tasks:
         COMMIT_COUNT=$(git rev-list --count main..$BRANCH)
         CHANGED_FILES=$(git diff --name-only main..$BRANCH)
         FULL_DIFF=$(git diff main..$BRANCH --no-color)
+        PR_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE.md)
         
-        # Create enhanced AI prompt for PR generation
-        AI_PROMPT="You are a senior software engineer creating a professional pull request. Analyze these Git changes and generate a high-quality PR title and description.
+        # Create AI prompt with PR template
+        AI_PROMPT="Generate a professional PR title and fill out this template based on the changes:
+
+        Template:
+        $PR_TEMPLATE
 
         Branch: $BRANCH
         Commits: $COMMIT_COUNT
@@ -254,131 +207,38 @@ tasks:
         Changed files:
         $CHANGED_FILES
         
-        Full diff (first 2000 chars):
+        Diff (first 2000 chars):
         $(echo "$FULL_DIFF" | head -c 2000)
         
-        Generate a professional PR following this format:
-        
-        TITLE: <conventional-commit-style title under 60 chars>
-        
-        DESCRIPTION:
-        ## 📋 Summary
-        <2-3 sentence summary of what this PR accomplishes>
-        
-        ## 🎯 Type of Change
-        <Select appropriate checkboxes based on changes>
-        - [x] ✨ New feature (if adding functionality)
-        - [x] 🐛 Bug fix (if fixing issues)  
-        - [x] ♻️ Refactoring (if restructuring code)
-        - [x] 📚 Documentation update (if updating docs)
-        - [x] 🧪 Test improvement (if adding/updating tests)
-        - [x] 🔧 Configuration change (if updating config)
-        
-        ## 🔍 Key Changes
-        <Bullet points of main changes>
-        - Added: <what was added>
-        - Fixed: <what was fixed>
-        - Changed: <what was modified>
-        
-        ## 🧪 Testing
-        ### Manual Testing
-        - [x] I tested the changes locally
-        - [x] I verified the build works with \`task build\`
-        - [x] I ran the binary and confirmed expected behavior
-        
-        ### Automated Testing  
-        - [x] All existing tests pass (\`task test\`)
-        - [x] I added new tests for new functionality
-        
-        ## 📋 Code Quality Checklist
-        - [x] My code follows Go conventions and best practices
-        - [x] I ran \`task lint\` and addressed any linting issues
-        - [x] I added appropriate error handling
-        
-        Be specific about what changed and why. Use the actual file names and changes from the diff."
+        Return: TITLE: <title>
+        DESCRIPTION: <filled template>"
 
         # Use AI to generate PR content
         if command -v q >/dev/null 2>&1; then
           echo "🤖 Generating PR title and description..."
-          RAW_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
+          AI_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive | tr -d '\033' | sed 's/\[[0-9;]*m//g')
           
-          # Clean ANSI codes and formatting from response
-          AI_RESPONSE=$(echo "$RAW_RESPONSE" | tr -d '\033' | sed 's/\[[0-9;]*m//g' | sed 's/^[> ]*//g' | sed 's/^["`'"'"']*//g' | sed 's/["`'"'"']*$//g')
-          
-          # Extract title and description
           TITLE=$(echo "$AI_RESPONSE" | grep "^TITLE:" | sed 's/^TITLE: //' | xargs)
           DESCRIPTION=$(echo "$AI_RESPONSE" | sed -n '/^DESCRIPTION:/,$ p' | sed '1d')
           
-          # Fallback if parsing fails
-          if [ -z "$TITLE" ]; then
-            TITLE="feat: improve codebase"
-          fi
-          if [ -z "$DESCRIPTION" ]; then
-            DESCRIPTION="## Changes Summary\n\nBranch: $BRANCH\nCommits: $COMMIT_COUNT\n\n### Files Changed\n$CHANGED_FILES"
-          fi
+          if [ -z "$TITLE" ]; then TITLE="feat: improve codebase"; fi
+          if [ -z "$DESCRIPTION" ]; then DESCRIPTION="## Summary\n\nBranch: $BRANCH\nCommits: $COMMIT_COUNT"; fi
           
           echo "✨ AI Analysis Complete"
-          
         else
-          echo "⚠️  AI not available, using template-based generation..."
-          
-          # Fallback title generation
-          TITLE="feat: "
-          if echo "$CHANGED_FILES" | grep -q "_test\.go"; then
-            TITLE="${TITLE}add tests and "
-          fi
-          if echo "$CHANGED_FILES" | grep -q "\.go" | grep -v "_test\.go"; then
-            TITLE="${TITLE}improve core functionality and "
-          fi
-          if echo "$COMMITS" | grep -qi "fix\|bug"; then
-            TITLE="${TITLE}fix issues and "
-          fi
-          TITLE="${TITLE}enhance codebase"
-          
-          # Fallback description
-          DESCRIPTION="Branch $BRANCH with $COMMIT_COUNT commits. Files changed: $CHANGED_FILES"
-        
-          echo "📋 Template Generation Complete"
+          echo "⚠️  AI not available, using template..."
+          TITLE="feat: improve codebase"
+          DESCRIPTION="## Summary\n\nBranch: $BRANCH\nCommits: $COMMIT_COUNT\n\nFiles changed: $CHANGED_FILES"
         fi
 
-        # Enhanced output display
         echo ""
-        echo "╭─────────────────────────────────────────────╮"
-        echo "│              🚀 PULL REQUEST READY           │"
-        echo "╰─────────────────────────────────────────────╯"
-        echo ""
-        echo "🌿 Branch: $BRANCH"
-        echo "📊 Commits: $COMMIT_COUNT"
-        echo "📁 Files: $(echo "$CHANGED_FILES" | wc -l | xargs)"
-        echo ""
-        echo "📝 Generated Title:"
-        echo "   ✨ $TITLE"
-        echo ""
-        echo "📄 Description Preview:"
-        echo "$DESCRIPTION" | head -5 | sed 's/^/   /'
-        echo "   ..."
-        echo ""
+        echo "📝 Title: $TITLE"
         echo "🚀 Creating PR..."
 
-        # Create PR
-        PR_URL=$(gh pr create \
-          --title "$TITLE" \
-          --body "$DESCRIPTION" \
-          --assignee @me 2>&1 | grep -o 'https://github.com[^[:space:]]*' || echo "")
+        PR_URL=$(gh pr create --title "$TITLE" --body "$DESCRIPTION" --assignee @me 2>&1 | grep -o 'https://github.com[^[:space:]]*' || echo "")
 
-        echo ""
-        echo "╭─────────────────────────────────────────────╮"
-        echo "│                ✅ SUCCESS!                   │"
-        echo "╰─────────────────────────────────────────────╯"
-        echo ""
-        echo "🎉 Pull request created successfully!"
-        echo "🌿 Branch: $BRANCH"
-        echo "📝 Title: $TITLE"
-        if [ -n "$PR_URL" ]; then
-          echo "🔗 View: $PR_URL"
-        else
-          echo "🔗 View: Check GitHub for the new PR"
-        fi
+        echo "✅ Pull request created!"
+        if [ -n "$PR_URL" ]; then echo "🔗 View: $PR_URL"; fi
 
   push-and-pr:
     desc: "🚀 Push current branch and create PR in one command"
@@ -434,8 +294,7 @@ tasks:
     silent: true
     cmds:
       - echo "🚀 Running pre-push checks..."
-      - task: test
-      - task: test-coverage-check
+      - task: test-all
       - task: build
       - task: docs-lastmod-update
       - echo "✅ Pre-push checks passed"
@@ -500,10 +359,10 @@ tasks:
       - ./scripts/setup-hooks.sh
 
   # ----------------------------------------------------------------------------
-  # TESTING & QUALITY ASSURANCE
+  # TESTING TASKS
   # ----------------------------------------------------------------------------
   test:
-    desc: "🧪 Run all tests with coverage report"
+    desc: "🧪 Run all tests with coverage"
     deps: [deps]
     sources:
       - "**/*.go"
@@ -516,6 +375,33 @@ tasks:
       - echo "🧪 Running tests with coverage..."
       - go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
       - echo "✅ Coverage report at coverage.out"
+
+  test-unit:
+    desc: "🧪 Run unit tests only"
+    deps: [deps]
+    silent: true
+    cmds:
+      - echo "🧪 Running unit tests..."
+      - go test -race -short ./...
+      - echo "✅ Unit tests passed"
+
+  test-integration:
+    desc: "🔗 Run integration tests"
+    deps: [deps]
+    silent: true
+    cmds:
+      - echo "🔗 Running integration tests..."
+      - go test -race -tags=integration ./...
+      - echo "✅ Integration tests passed"
+
+  test-cross-platform:
+    desc: "🌍 Run cross-platform compatibility tests"
+    deps: [deps]
+    silent: true
+    cmds:
+      - echo "🌍 Running cross-platform compatibility tests..."
+      - ./scripts/test-cross-platform.sh
+      - echo "✅ Cross-platform tests completed"
 
   test-coverage:
     desc: "📊 View test coverage report in browser"
@@ -555,29 +441,14 @@ tasks:
           fi
         fi
 
-  test-unit:
-    desc: "🧪 Run unit tests only"
-    deps: [deps]
-    silent: true
-    cmds:
-      - echo "🧪 Running unit tests..."
-      - go test -race -short ./...
-      - echo "✅ Unit tests passed"
-
-  test-integration:
-    desc: "🔗 Run integration tests"
-    deps: [deps]
-    silent: true
-    cmds:
-      - echo "🔗 Running integration tests..."
-      - go test -race -tags=integration ./...
-      - echo "✅ Integration tests passed"
-
   test-all:
-    desc: "🧪 Run all test types"
-    deps: [test-unit, test-integration]
+    desc: "🧪 Run comprehensive test suite"
     silent: true
     cmds:
+      - task: test-unit
+      - task: test-integration
+      - task: test-cross-platform
+      - task: test-coverage-check
       - echo "✅ All tests completed successfully"
 
   lint:
@@ -731,13 +602,16 @@ tasks:
       - echo "   test-coverage  - Run tests with coverage"
       - echo "   deps           - Update dependencies"
       - echo ""
-      - echo "🧪 Testing & Quality:"
-      - echo "   test           - Run tests with coverage"
+      - echo "🧪 Testing:"
+      - echo "   test           - Run all tests with coverage"
       - echo "   test-unit      - Run unit tests only"
       - echo "   test-integration - Run integration tests"
-      - echo "   test-all       - Run all test types"
+      - echo "   test-cross-platform - Run cross-platform tests"
+      - echo "   test-all       - Run comprehensive test suite"
       - echo "   test-coverage  - View coverage in browser"
       - echo "   test-coverage-check - Check coverage threshold"
+      - echo ""
+      - echo "🔍 Quality:"
       - echo "   lint           - Run all linting checks"
       - echo "   fmt            - Format code"
       - echo "   security       - Security vulnerability scan"
