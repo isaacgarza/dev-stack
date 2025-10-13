@@ -131,10 +131,6 @@ paths:
   build_dir: "build"
   docs_dir: "docs-site"
   cli_binary: "dev-stack"
-
-docker:
-  registry: "ghcr.io"
-  platforms: "linux/amd64,linux/arm64"
 ```
 
 ### Reusable Actions
