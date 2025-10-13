@@ -50,18 +50,10 @@ runs:
           echo "installed=true" >> $GITHUB_OUTPUT
         else
           echo "Installing Task runner..."
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            curl -sL https://github.com/go-task/task/releases/latest/download/task_windows_amd64.zip -o task.zip
-            unzip task.zip
-            mkdir -p ~/.local/bin
-            mv task.exe ~/.local/bin/
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          else
-            curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
-            echo "$HOME/.local/bin" >> $GITHUB_PATH
-          fi
+          curl -sL https://taskfile.dev/install.sh | sh -s -- -d -b ~/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           echo "installed=true" >> $GITHUB_OUTPUT
-          echo "Task installed"
+          echo "Task installed: $(~/.local/bin/task --version)"
         fi
 
     - name: Install additional tools
