@@ -36,6 +36,7 @@ The security workflow (`.github/workflows/security.yml`) runs automatically on:
 ### Scan Types
 
 #### 1. CodeQL Analysis
+
 - **Tool**: GitHub CodeQL
 - **Purpose**: Static analysis for security vulnerabilities and code quality
 - **Languages**: Go
@@ -43,6 +44,7 @@ The security workflow (`.github/workflows/security.yml`) runs automatically on:
 - **Results**: Available in GitHub Security tab
 
 #### 2. Dependency Review
+
 - **Tool**: GitHub Dependency Review Action
 - **Purpose**: Reviews dependency changes in pull requests
 - **Triggers**: Pull requests only
@@ -50,30 +52,35 @@ The security workflow (`.github/workflows/security.yml`) runs automatically on:
 - **Allowed Licenses**: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
 
 #### 3. Dependency Vulnerability Scanning
+
 - **Primary Tool**: Govulncheck (Go official vulnerability scanner)
 - **Secondary Tool**: Nancy (OSS Index) - optional with authentication
 - **Purpose**: Identify known vulnerabilities in Go dependencies
 - **Database**: Go vulnerability database and Sonatype OSS Index
 
 #### 4. Secrets Scanning
+
 - **Tool**: Gitleaks
 - **Purpose**: Detect hardcoded secrets and credentials
 - **Scope**: Full git history
 - **Configuration**: Custom rules for common secret patterns
 
 #### 5. Go Security Analysis
+
 - **Tool**: Gosec
 - **Purpose**: Go-specific security issue detection
 - **Output**: SARIF format uploaded to GitHub Security tab
 - **Rules**: Comprehensive Go security rule set
 
 #### 6. Container Security
+
 - **Tool**: Trivy
 - **Purpose**: Docker image vulnerability scanning
 - **Scope**: Base images and dependencies
 - **Triggers**: Main branch and PR from same repository
 
 #### 7. License Compliance
+
 - **Tool**: go-licenses (Google)
 - **Purpose**: License compatibility checking
 - **Output**: License report artifact
@@ -95,6 +102,7 @@ Nancy can optionally use Sonatype OSS Index for enhanced vulnerability data. To 
 ### Vulnerability Ignores
 
 #### Nancy Ignores
+
 Create or edit `.nancy-ignore` to exclude specific vulnerabilities:
 
 ```
@@ -104,6 +112,7 @@ OSS-INDEX-67890
 ```
 
 #### Dependabot Configuration
+
 Dependency updates are managed by Dependabot (`.github/dependabot.yml`):
 
 - **Schedule**: Weekly on Mondays at 9 AM PST
@@ -228,6 +237,7 @@ go vet ./...          # Go static analysis
 ### Workflow Notifications
 
 Security workflow failures will:
+
 - Block PR merges (for dependency review failures)
 - Create GitHub Security tab entries
 - Generate workflow run summaries
@@ -238,6 +248,7 @@ Security workflow failures will:
 ### Security Reports
 
 Weekly security scans generate:
+
 - Vulnerability assessment summaries
 - License compliance reports
 - Dependency update recommendations
@@ -246,6 +257,7 @@ Weekly security scans generate:
 ### Audit Trail
 
 All security activities are tracked via:
+
 - GitHub Actions workflow logs
 - Security tab findings history
 - Dependabot update history
@@ -256,24 +268,31 @@ All security activities are tracked via:
 ### Common Issues
 
 #### Nancy Authentication Errors
+
 ```
 Error: [401 Unauthorized] error accessing OSS Index
 ```
+
 **Solution**: Add OSS_INDEX_USERNAME and OSS_INDEX_TOKEN secrets, or ignore Nancy failures.
 
 #### Govulncheck Network Issues
+
 ```
 Error: fetching vulnerability database
 ```
+
 **Solution**: Check network connectivity and retry. Database updates may be temporarily unavailable.
 
 #### License Check Failures
+
 ```
 Error: disallowed license found
 ```
+
 **Solution**: Review dependency licenses and update allowlist or replace dependencies.
 
 #### False Positive Vulnerabilities
+
 **Solution**: Verify applicability, document reasoning, and add to ignore lists if confirmed false positive.
 
 ### Getting Help
@@ -289,6 +308,6 @@ Error: disallowed license found
 - [Sonatype OSS Index](https://ossindex.sonatype.org/)
 - [GitHub Security Features](https://docs.github.com/en/code-security)
 - [CodeQL Documentation](https://codeql.github.com/docs/)
-- [Gosec Rules](https://securego.io/docs/rules/)
+- [Gosec Rules](https://github.com/securecodewarrior/gosec#available-rules)
 - [Trivy Documentation](https://aquasecurity.github.io/trivy/)
 - [Gitleaks Configuration](https://github.com/gitleaks/gitleaks)

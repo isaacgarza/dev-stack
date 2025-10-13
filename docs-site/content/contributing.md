@@ -34,18 +34,18 @@ We welcome contributions from the development community! Whether you're fixing b
 
 - **Main Repository**: [isaacgarza/dev-stack](https://github.com/isaacgarza/dev-stack)
 - **Issues**: [Report bugs and request features](https://github.com/isaacgarza/dev-stack/issues)
-- **Discussions**: [Ask questions and share ideas](https://github.com/isaacgarza/dev-stack/discussions)
 - **Releases**: [Latest versions and changelog](https://github.com/isaacgarza/dev-stack/releases)
 
 ### Getting Help
 
 **Before opening an issue:**
+
 1. Check the [Troubleshooting Guide]({{< relref "troubleshooting" >}})
 2. Review [existing issues](https://github.com/isaacgarza/dev-stack/issues)
-3. Search [discussions](https://github.com/isaacgarza/dev-stack/discussions)
 
 **For support requests:**
-- Use [GitHub Discussions](https://github.com/isaacgarza/dev-stack/discussions) for questions
+
+- Use [GitHub Issues](https://github.com/isaacgarza/dev-stack/issues) for questions
 - Check the [CLI Reference]({{< relref "reference" >}}) for command help
 - Run `dev-stack doctor` for system diagnostics
 
@@ -74,6 +74,7 @@ dev-stack docs --dry-run
 This will update `docs-site/content/reference.md` and `docs-site/content/services.md` based on the latest YAML manifests.
 
 **Contributor Workflow Checklist:**
+
 1. Ensure you have Go 1.21+ installed and the project built (`task build`).
 2. Edit `scripts/commands.yaml` and/or service definitions in `internal/config/services/` to add or update commands/services.
 3. Run `dev-stack docs` to regenerate documentation from YAML manifests.
@@ -95,23 +96,27 @@ Documentation for commands (`docs-site/content/reference.md`) and services (`doc
 ### Development Setup
 
 1. **Fork and clone the repository**:
+
    ```bash
    git clone https://github.com/your-username/dev-stack.git
    cd dev-stack
    ```
 
 2. **Install Go version manager and dependencies**:
+
    ```bash
    # Install Go version specified in .go-version
    task setup
    ```
 
 3. **Build the project**:
+
    ```bash
    task build
    ```
 
 4. **Run tests**:
+
    ```bash
    task test
    ```
@@ -166,7 +171,7 @@ Create `services/my-service/service.yaml`:
 ```yaml
 name: my-service
 description: "A brief description of what this service does"
-category: database  # database|cache|observability|messaging|cloud-services
+category: database # database|cache|observability|messaging|cloud-services
 version: "1.0.0"
 maintainer: "Your Name <your.email@example.com>"
 
@@ -346,6 +351,7 @@ type(scope): description
 ```
 
 Examples:
+
 - `feat(services): add MySQL service configuration`
 - `fix(cli): resolve Docker network creation issue`
 - `docs(contributing): update setup instructions`
@@ -395,13 +401,13 @@ The project uses GitHub Actions for continuous integration:
 
 ### Development Questions
 
-- **GitHub Discussions**: For general questions and ideas
-- **Issues**: For bugs and feature requests
+- **Issues**: For bugs, feature requests, and questions
 - **Documentation**: Check the comprehensive docs in `docs-site/`
 
 ### Code Review
 
 All contributions go through code review. We look for:
+
 - Code quality and style
 - Test coverage
 - Documentation updates
@@ -425,4 +431,5 @@ All contributions go through code review. We look for:
 We appreciate your contributions! 🙏
 
 ---
-*This file syncs to docs-site/content/contributing.md automatically via `dev-stack docs`*
+
+_This file syncs to docs-site/content/contributing.md automatically via `dev-stack docs`_

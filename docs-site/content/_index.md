@@ -3,7 +3,7 @@ title: "dev-stack"
 description: "A powerful development stack management tool built in Go for streamlined local development automation"
 lead: "Streamline your local development with powerful CLI tools and automated service management"
 date: "2025-10-01"
-lastmod: "2025-10-11"
+lastmod: "2025-10-13"
 draft: false
 weight: 50
 toc: true
@@ -21,11 +21,38 @@ A powerful development stack management tool built in Go for streamlined local d
 
 ### Installation
 
+#### Quick Install (Recommended)
+
+```bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/isaacgarza/dev-stack/main/install.sh | bash
+```
+
+#### Manual Installation
+
+**macOS/Linux:**
+
 ```bash
 # Download the latest release
 curl -L -o dev-stack "https://github.com/isaacgarza/dev-stack/releases/latest/download/dev-stack-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
 chmod +x dev-stack
 sudo mv dev-stack /usr/local/bin/
+```
+
+**Windows:**
+
+```powershell
+# Download from releases page
+# https://github.com/isaacgarza/dev-stack/releases/latest
+```
+
+#### Package Managers
+
+**Homebrew (macOS):**
+
+```bash
+# Coming soon
+brew install isaacgarza/tap/dev-stack
 ```
 
 ### Basic Usage
@@ -47,30 +74,30 @@ dev-stack up
 
 ## Documentation
 
-- **[Setup & Installation](docs-site/content/setup.md)**
-- **[Usage Guide](docs-site/content/usage.md)**
-- **[Services Guide](docs-site/content/services.md)**
-- **[Configuration](docs-site/content/configuration.md)**
-- **[CLI Reference](docs-site/content/reference.md)**
-- **[Contributing](docs-site/content/contributing.md)**
+- **[Setup & Installation](setup.md)**
+- **[Usage Guide](usage.md)**
+- **[Services Guide](services.md)**
+- **[Configuration](configuration.md)**
+- **[CLI Reference](reference.md)**
+- **[Contributing](contributing.md)**
 
 ## Get Started
 
-1. **[Complete installation guide](docs-site/content/setup.md)**
-2. **[Learn basic usage](docs-site/content/usage.md)**
-3. **[Explore available services](docs-site/content/services.md)**
+1. **[Complete installation guide](setup.md)**
+2. **[Learn basic usage](usage.md)**
+3. **[Explore available services](services.md)**
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](docs-site/content/contributing.md) for details.
+We welcome contributions! Please see our [Contributing Guide](contributing.md) for details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/isaacgarza/dev-stack/blob/main/LICENSE) file for details.
 
 ## Support
 
-- 📖 [Documentation](docs-site/)
+- 📖 [Documentation](/)
 - 🐛 [Issues](https://github.com/isaacgarza/dev-stack/issues)
 - 💬 [Discussions](https://github.com/isaacgarza/dev-stack/discussions)
 

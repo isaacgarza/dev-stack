@@ -16,6 +16,7 @@ This document describes the automated release process for dev-stack using Releas
 ## Overview
 
 dev-stack uses a fully automated release process that:
+
 - Analyzes conventional commits to determine version bumps
 - Generates changelogs automatically
 - Creates GitHub releases with binaries and Docker images
@@ -32,6 +33,7 @@ task release-setup
 ```
 
 This will:
+
 - Check for required tools (yq, jq)
 - Generate all release configuration files
 
@@ -81,24 +83,25 @@ You can also trigger manually via GitHub Actions → Release Please → Run work
 
 ### Types
 
-| Type | Description | Changelog | Version Bump |
-|------|-------------|-----------|--------------|
-| `feat` | New feature | ✅ Features | Minor |
-| `fix` | Bug fix | ✅ Bug Fixes | Patch |
-| `perf` | Performance improvement | ✅ Performance | Patch |
-| `deps` | Dependency updates | ✅ Dependencies | Patch |
-| `revert` | Revert previous commit | ✅ Reverts | Patch |
-| `docs` | Documentation only | ❌ Hidden | None |
-| `style` | Code style changes | ❌ Hidden | None |
-| `refactor` | Code refactoring | ❌ Hidden | None |
-| `test` | Test changes | ❌ Hidden | None |
-| `build` | Build system changes | ❌ Hidden | None |
-| `ci` | CI/CD changes | ❌ Hidden | None |
-| `chore` | Other maintenance | ❌ Hidden | None |
+| Type       | Description             | Changelog       | Version Bump |
+| ---------- | ----------------------- | --------------- | ------------ |
+| `feat`     | New feature             | ✅ Features     | Minor        |
+| `fix`      | Bug fix                 | ✅ Bug Fixes    | Patch        |
+| `perf`     | Performance improvement | ✅ Performance  | Patch        |
+| `deps`     | Dependency updates      | ✅ Dependencies | Patch        |
+| `revert`   | Revert previous commit  | ✅ Reverts      | Patch        |
+| `docs`     | Documentation only      | ❌ Hidden       | None         |
+| `style`    | Code style changes      | ❌ Hidden       | None         |
+| `refactor` | Code refactoring        | ❌ Hidden       | None         |
+| `test`     | Test changes            | ❌ Hidden       | None         |
+| `build`    | Build system changes    | ❌ Hidden       | None         |
+| `ci`       | CI/CD changes           | ❌ Hidden       | None         |
+| `chore`    | Other maintenance       | ❌ Hidden       | None         |
 
 ### Examples
 
 #### Simple commits
+
 ```bash
 git commit -m "feat: add backup command"
 git commit -m "fix: resolve port conflict detection"
@@ -106,6 +109,7 @@ git commit -m "docs: update installation instructions"
 ```
 
 #### With scope
+
 ```bash
 git commit -m "feat(cli): add interactive mode"
 git commit -m "fix(docker): improve container health checks"
@@ -113,6 +117,7 @@ git commit -m "perf(config): optimize YAML parsing"
 ```
 
 #### Breaking changes
+
 ```bash
 # Option 1: Use ! after type
 git commit -m "feat!: change default configuration location"
@@ -125,6 +130,7 @@ instead of ~/.dev-stack/. Run 'dev-stack migrate-config' to update."
 ```
 
 #### Multi-line commits
+
 ```bash
 git commit -m "feat: add service health monitoring
 
@@ -181,10 +187,10 @@ commit_types:
 # Package managers
 package_managers:
   homebrew:
-    enabled: false  # Enable when ready
+    enabled: false # Enable when ready
     tap: "isaacgarza/homebrew-dev-stack"
   scoop:
-    enabled: false  # Enable when ready
+    enabled: false # Enable when ready
     bucket: "isaacgarza/scoop-dev-stack"
 ```
 

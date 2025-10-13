@@ -7,19 +7,18 @@ lastmod: "2025-10-11"
 draft: false
 weight: 10
 toc: true
-
 ---
 
 # Setup & Installation Guide (dev-stack)
 
 > **Quick Checklist**
+>
 > - Docker installed and running
 > - Sufficient RAM, disk, and CPU
 > - Framework copied or linked to your project
 > - Initial configuration created and edited
 > - Setup script run and services verified
 > - See troubleshooting below for common issues
-
 
 This guide covers everything you need to get **dev-stack** up and running on your system.
 
@@ -33,6 +32,7 @@ Choose your preferred installation method:
 ### Method 1: Download Binary (Recommended)
 
 **macOS and Linux:**
+
 ```bash
 # Download the latest release for your platform
 curl -L -o dev-stack "https://github.com/isaacgarza/dev-stack/releases/latest/download/dev-stack-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
@@ -41,6 +41,7 @@ sudo mv dev-stack /usr/local/bin/
 ```
 
 **Windows (PowerShell):**
+
 ```powershell
 # Download and install dev-stack for Windows
 Invoke-WebRequest -Uri "https://github.com/isaacgarza/dev-stack/releases/latest/download/dev-stack-windows-amd64.exe" -OutFile "dev-stack.exe"
@@ -117,6 +118,7 @@ docker compose version
 ```
 
 **Colima Configuration for Framework:**
+
 ```bash
 # For better performance with multiple services
 colima start --cpu 4 --memory 8 --disk 100 --vm-type=vz --mount-type=virtiofs
@@ -126,6 +128,7 @@ colima start --kubernetes --cpu 4 --memory 8
 ```
 
 **Managing Colima:**
+
 ```bash
 # Check status
 colima status
@@ -150,6 +153,7 @@ brew install --cask docker
 ```
 
 **Docker Desktop Configuration:**
+
 - Go to Settings > Resources
 - Set Memory to 8GB+
 - Set CPU to 4+ cores
@@ -158,6 +162,7 @@ brew install --cask docker
 ### Linux Setup
 
 **Ubuntu/Debian:**
+
 ```bash
 # Update package index
 sudo apt-get update
@@ -174,6 +179,7 @@ sudo usermod -aG docker $USER
 ```
 
 **CentOS/RHEL/Fedora:**
+
 ```bash
 # Install Docker
 sudo dnf install docker
@@ -187,6 +193,7 @@ sudo usermod -aG docker $USER
 ```
 
 **Verify Installation:**
+
 ```bash
 # Test Docker installation
 docker --version
@@ -256,6 +263,7 @@ dependencies {
 ### IDE Test Configuration
 
 **IntelliJ Run Configuration VM Options:**
+
 ```bash
 -Dspring.profiles.active=test
 -Dtestcontainers.reuse.enable=true
@@ -267,6 +275,7 @@ dependencies {
 ### Integration Test Strategies
 
 **Option 1: Use Framework Services (Recommended)**
+
 ```java
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -280,6 +289,7 @@ class IntegrationTest {
 ```
 
 **Option 2: Testcontainers with Framework Images**
+
 ```java
 @SpringBootTest
 @Testcontainers
@@ -303,6 +313,7 @@ class ContainerizedIntegrationTest {
 ### Recommended IntelliJ Plugins
 
 Install these plugins for better Docker/framework integration:
+
 - **Docker**: Built-in Docker support
 - **Database Tools and SQL**: Connect to framework databases
 - **Redis**: Redis client integration
@@ -363,6 +374,7 @@ dev-stack up
 ```
 
 This will:
+
 - Validate your configuration
 - Pull required Docker images
 - Generate Docker Compose and environment files
@@ -386,6 +398,7 @@ The framework automatically detects existing instances from other repositories a
 ### Workflow Example
 
 **First Repository:**
+
 ```bash
 cd /path/to/repo1
 dev-stack up
@@ -393,6 +406,7 @@ dev-stack up
 ```
 
 **Second Repository (Conflict Detection):**
+
 ```bash
 cd /path/to/repo2
 dev-stack up
@@ -511,6 +525,7 @@ task setup-hooks
 ```
 
 This installs hooks that automatically run:
+
 - **Pre-commit**: Code formatting, linting, module tidying
 - **Pre-push**: All pre-commit checks + tests + build
 
@@ -522,7 +537,7 @@ You can also run these checks manually:
 # Run pre-commit checks
 task pre-commit
 
-# Run pre-push checks  
+# Run pre-push checks
 task pre-push
 ```
 

@@ -10,6 +10,7 @@ toc: true
 ---
 
 <!-- AUTO-GENERATED-START -->
+
 # Service Profiles
 
 Service profiles are predefined combinations of services for common development scenarios. Use them to quickly start your development environment with the right services.
@@ -26,7 +27,6 @@ dev-stack up --profile <TAB>
 
 ## Available Profiles
 
-
 ### API Development
 
 Services for API development and testing
@@ -39,14 +39,13 @@ Services for API development and testing
 
 - prometheus
 
-
 **Quick start:**
+
 ```bash
 dev-stack up --profile api development
 ```
 
 ---
-
 
 ### Data Engineering
 
@@ -62,14 +61,13 @@ Services for data processing and analytics
 
 - localstack
 
-
 **Quick start:**
+
 ```bash
 dev-stack up --profile data engineering
 ```
 
 ---
-
 
 ### Microservices
 
@@ -87,14 +85,13 @@ Full microservices development stack
 
 - prometheus
 
-
 **Quick start:**
+
 ```bash
 dev-stack up --profile microservices
 ```
 
 ---
-
 
 ### Minimal Stack
 
@@ -104,14 +101,13 @@ Minimal services for basic development
 
 - postgres
 
-
 **Quick start:**
+
 ```bash
 dev-stack up --profile minimal stack
 ```
 
 ---
-
 
 ### Web Development
 
@@ -125,15 +121,13 @@ Services for web application development
 
 - jaeger
 
-
 **Quick start:**
+
 ```bash
 dev-stack up --profile web development
 ```
 
 ---
-
-
 
 ## Creating Custom Profiles
 

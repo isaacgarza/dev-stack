@@ -3,7 +3,7 @@ title: "Services"
 description: "Available services and configuration options"
 lead: "Explore all the services you can use with dev-stack"
 date: "2025-10-01"
-lastmod: "2025-10-11"
+lastmod: "2025-10-13"
 draft: false
 weight: 30
 toc: true
@@ -112,4 +112,3 @@ Apache Zookeeper coordination service for distributed systems
 **Default Port:** 2181
 
 ---
-

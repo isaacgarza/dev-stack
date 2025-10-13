@@ -7,7 +7,6 @@ lastmod: "2025-10-11"
 draft: false
 weight: 70
 toc: true
-
 ---
 
 # Troubleshooting Guide
@@ -41,6 +40,7 @@ This guide covers common issues, debugging techniques, and solutions for the Loc
 ## 📋 Overview
 
 Most issues with the framework fall into these categories:
+
 - Docker and container issues
 - Service connectivity problems
 - Configuration errors
@@ -87,12 +87,14 @@ dev-stack logs redis --tail=50
 ### Docker Not Running
 
 **Symptoms:**
+
 - "Cannot connect to the Docker daemon" error
 - `docker info` fails
 
 **Solutions:**
 
 **macOS with Colima:**
+
 ```bash
 # Check Colima status
 colima status
@@ -107,6 +109,7 @@ colima start --cpu 4 --memory 8 --vm-type=vz --mount-type=virtiofs
 ```
 
 **macOS with Docker Desktop:**
+
 ```bash
 # Restart Docker Desktop through the application
 # Or via command line:
@@ -114,6 +117,7 @@ killall Docker && open /Applications/Docker.app
 ```
 
 **Linux:**
+
 ```bash
 # Check Docker service
 sudo systemctl status docker
@@ -130,10 +134,12 @@ sudo usermod -aG docker $USER
 ### Docker Out of Space
 
 **Symptoms:**
+
 - "No space left on device" errors
 - Container creation fails
 
 **Solutions:**
+
 ```bash
 # Check Docker disk usage
 docker system df
@@ -154,11 +160,13 @@ dev-stack cleanup
 ### Docker Memory Issues
 
 **Symptoms:**
+
 - Services crash randomly
 - Slow performance
 - "Cannot allocate memory" errors
 
 **Solutions:**
+
 ```bash
 # Check current memory usage
 docker stats
@@ -181,11 +189,13 @@ vim dev-stack-config.yaml
 ### Cannot Connect to Database
 
 **Symptoms:**
+
 - Connection refused errors
 - Timeout connecting to PostgreSQL/MySQL
 - Application startup fails
 
 **Diagnosis:**
+
 ```bash
 # Check if service is running
 dev-stack status
@@ -204,6 +214,7 @@ mysql -h localhost -u root -p
 ```
 
 **Solutions:**
+
 ```bash
 # Restart database service
 dev-stack down
@@ -225,11 +236,13 @@ dev-stack up
 ### Redis Connection Issues
 
 **Symptoms:**
+
 - "Connection refused" to Redis
 - Authentication failures
 - Timeout errors
 
 **Diagnosis:**
+
 ```bash
 # Test Redis connection
 redis-cli -h localhost -p 6379 ping
@@ -245,6 +258,7 @@ dev-stack exec redis redis-cli INFO
 ```
 
 **Solutions:**
+
 ```bash
 # Restart Redis
 dev-stack restart redis
@@ -262,11 +276,13 @@ dev-stack services
 ### Kafka Connection Issues
 
 **Symptoms:**
+
 - Cannot connect to Kafka broker
 - Topic creation fails
 - Consumer/producer errors
 
 **Diagnosis:**
+
 ```bash
 # Check Kafka status
 dev-stack logs kafka
@@ -280,6 +296,7 @@ curl http://localhost:8080
 ```
 
 **Solutions:**
+
 ```bash
 # Restart Kafka stack
 dev-stack restart kafka
@@ -298,11 +315,13 @@ dev-stack exec zookeeper zkCli.sh -server localhost:2181
 ### Port Already in Use
 
 **Symptoms:**
+
 - "Port is already allocated" errors
 - "Address already in use" errors
 - Services fail to start
 
 **Diagnosis:**
+
 ```bash
 # Find what's using the port
 lsof -i :5432                          # PostgreSQL
@@ -315,6 +334,7 @@ dev-stack services
 ```
 
 **Solutions:**
+
 ```bash
 # Kill process using the port
 kill -9 PID
@@ -335,10 +355,12 @@ dev-stack up --force
 ### DNS Resolution Issues
 
 **Symptoms:**
+
 - Cannot resolve service hostnames
 - "Name or service not known" errors
 
 **Solutions:**
+
 ```bash
 # Use localhost instead of service names
 # In application configuration:
@@ -358,11 +380,13 @@ dev-stack up
 ### Invalid Configuration File
 
 **Symptoms:**
+
 - YAML parsing errors
 - "Configuration file not found"
 - Setup script fails with validation errors
 
 **Diagnosis:**
+
 ```bash
 # Validate YAML syntax
 python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
@@ -375,6 +399,7 @@ dev-stack up --debug --dry-run
 ```
 
 **Solutions:**
+
 ```bash
 # Create new configuration from sample
 dev-stack up --init --force
@@ -393,11 +418,13 @@ vim dev-stack-config.yaml
 ### Service Configuration Errors
 
 **Symptoms:**
+
 - Services start but behave incorrectly
 - Authentication failures
 - Wrong database/cache settings
 
 **Solutions:**
+
 ```bash
 # Check generated configuration
 cat docker-compose.generated.yml
@@ -418,6 +445,7 @@ dev-stack up --init
 ### PostgreSQL Issues
 
 **Connection refused:**
+
 ```bash
 # Check if PostgreSQL is ready
 dev-stack exec postgres pg_isready -h localhost
@@ -432,6 +460,7 @@ dev-stack up postgres
 ```
 
 **Database doesn't exist:**
+
 ```bash
 # Create database manually
 dev-stack exec postgres createdb -U postgres my_app_dev
@@ -445,6 +474,7 @@ dev-stack up postgres
 ```
 
 **Permission denied:**
+
 ```bash
 # Check user and permissions
 dev-stack exec postgres psql -U postgres -c "\du"
@@ -457,6 +487,7 @@ dev-stack exec postgres psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE my
 ### Redis Issues
 
 **Memory issues:**
+
 ```bash
 # Check Redis memory usage
 dev-stack exec redis redis-cli INFO memory
@@ -472,6 +503,7 @@ vim dev-stack-config.yaml
 ```
 
 **Persistence issues:**
+
 ```bash
 # Check Redis persistence
 dev-stack exec redis redis-cli LASTSAVE
@@ -487,6 +519,7 @@ vim dev-stack-config.yaml
 ### LocalStack Issues
 
 **Services not available:**
+
 ```bash
 # Check LocalStack logs
 dev-stack logs localstack
@@ -502,6 +535,7 @@ curl http://localhost:4566/_localstack/health | jq
 ```
 
 **SQS/SNS issues:**
+
 ```bash
 # List SQS queues
 aws --endpoint-url=http://localhost:4566 sqs list-queues
@@ -515,6 +549,7 @@ dev-stack up localstack
 ```
 
 **DynamoDB issues:**
+
 ```bash
 # List DynamoDB tables
 aws --endpoint-url=http://localhost:4566 dynamodb list-tables
@@ -532,11 +567,13 @@ dev-stack up localstack
 ### Slow Service Startup
 
 **Symptoms:**
+
 - Services take a long time to start
 - Timeouts during startup
 - Application fails to connect initially
 
 **Solutions:**
+
 ```bash
 # Check resource usage
 dev-stack status
@@ -563,11 +600,13 @@ docker pull redis:7-alpine
 ### High Memory Usage
 
 **Symptoms:**
+
 - System becomes slow
 - Out of memory errors
 - Services crash randomly
 
 **Solutions:**
+
 ```bash
 # Monitor memory usage
 docker stats
@@ -591,11 +630,13 @@ vim dev-stack-config.yaml
 ### Slow Database Performance
 
 **Symptoms:**
+
 - Long query execution times
 - Application timeouts
 - High database CPU usage
 
 **Solutions:**
+
 ```bash
 # Check PostgreSQL performance
 dev-stack exec postgres psql -U postgres -c "SELECT * FROM pg_stat_activity;"

@@ -1,0 +1,19 @@
+# Ignore themes directory (contains submodules)
+themes/
+
+# Ignore Hugo template files (contain Go template syntax)
+layouts/
+archetypes/
+
+# Ignore shell scripts
+*.sh
+scripts/*.sh
+
+# Ignore build outputs
+public/
+node_modules/
+resources/
+
+# Ignore generated files
+hugo_stats.json
+.hugo_build.lock

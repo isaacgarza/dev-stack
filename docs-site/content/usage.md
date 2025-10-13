@@ -7,7 +7,6 @@ lastmod: "2025-10-11"
 draft: false
 weight: 20
 toc: true
-
 ---
 
 # Usage & Management Guide (dev-stack)
@@ -30,6 +29,7 @@ This guide covers daily usage patterns, service management commands, and common 
 ## 📋 Overview
 
 **dev-stack** provides a unified CLI for all development stack operations:
+
 - **`dev-stack up`**: Start services and development environment
 - **`dev-stack down`**: Stop services and clean up
 - **`dev-stack status`**: Check service status and health
@@ -56,6 +56,7 @@ dev-stack up
 ```
 
 **Project structure created:**
+
 ```
 my-api/
 ├── main.go
@@ -82,6 +83,7 @@ dev-stack restart
 ```
 
 **Verify services are running:**
+
 ```bash
 dev-stack status
 dev-stack health redis
@@ -101,6 +103,7 @@ dev-stack up
 ```
 
 **Team workflow best practices:**
+
 - Commit `dev-stack-config.yaml` to version control
 - Use `.env.local` for personal overrides (don't commit)
 - Document service dependencies in README
@@ -144,6 +147,7 @@ open http://localhost:3000   # Grafana UI
 ### Daily Development Workflow
 
 **Start of day:**
+
 ```bash
 # Quick health check
 dev-stack doctor
@@ -156,6 +160,7 @@ dev-stack status
 ```
 
 **During development:**
+
 ```bash
 # View logs for debugging
 dev-stack logs api
@@ -169,6 +174,7 @@ dev-stack reset redis
 ```
 
 **End of day:**
+
 ```bash
 # Stop services
 dev-stack down
@@ -259,6 +265,7 @@ After mastering these workflows, explore advanced dev-stack features:
 4. **[Troubleshoot common issues](troubleshooting.md)** - Debug problems and optimize performance
 
 **Pro tips:**
+
 - Use `dev-stack config validate` to check your configuration
 - Set up shell completion: `dev-stack completion bash`
 - Create project templates for your team's common stacks

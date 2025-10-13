@@ -36,16 +36,19 @@ dev-stack up  # Uses version based on .dev-stack-version file
 Projects specify their dev-stack version requirements using `.dev-stack-version` files:
 
 **Simple text format:**
+
 ```
 1.2.3
 ```
 
 **Version constraint:**
+
 ```
 >=1.0.0
 ```
 
 **YAML format with metadata:**
+
 ```yaml
 version: "^1.2.0"
 metadata:
@@ -63,6 +66,7 @@ dev-stack automatically detects version requirements by searching for version fi
 4. `config/` subdirectory
 
 Supported file names:
+
 - `.dev-stack-version`
 - `.dev-stack-version.yaml`
 - `.dev-stack-version.yml`
@@ -82,16 +86,16 @@ When determining which version to use, dev-stack finds the project root by looki
 
 dev-stack supports semantic versioning constraints:
 
-| Constraint | Description | Example |
-|------------|-------------|---------|
-| `1.2.3` | Exact version | Must be exactly 1.2.3 |
-| `>=1.2.3` | Greater than or equal | 1.2.3, 1.2.4, 1.3.0, 2.0.0 |
-| `>1.2.3` | Greater than | 1.2.4, 1.3.0, 2.0.0 |
-| `<=1.2.3` | Less than or equal | 1.0.0, 1.2.2, 1.2.3 |
-| `<1.2.3` | Less than | 1.0.0, 1.2.2 |
-| `~1.2.3` | Tilde (patch changes) | 1.2.3, 1.2.4, 1.2.10 (but not 1.3.0) |
-| `^1.2.3` | Caret (minor changes) | 1.2.3, 1.3.0, 1.9.9 (but not 2.0.0) |
-| `*` | Any version | Any available version |
+| Constraint | Description           | Example                              |
+| ---------- | --------------------- | ------------------------------------ |
+| `1.2.3`    | Exact version         | Must be exactly 1.2.3                |
+| `>=1.2.3`  | Greater than or equal | 1.2.3, 1.2.4, 1.3.0, 2.0.0           |
+| `>1.2.3`   | Greater than          | 1.2.4, 1.3.0, 2.0.0                  |
+| `<=1.2.3`  | Less than or equal    | 1.0.0, 1.2.2, 1.2.3                  |
+| `<1.2.3`   | Less than             | 1.0.0, 1.2.2                         |
+| `~1.2.3`   | Tilde (patch changes) | 1.2.3, 1.2.4, 1.2.10 (but not 1.3.0) |
+| `^1.2.3`   | Caret (minor changes) | 1.2.3, 1.3.0, 1.9.9 (but not 2.0.0)  |
+| `*`        | Any version           | Any available version                |
 
 ## Commands
 
@@ -110,6 +114,7 @@ VERSION  ACTIVE  INSTALLED   SOURCE
 ```
 
 **Flags:**
+
 - `--json` - Output in JSON format
 
 ### `versions install`
@@ -125,6 +130,7 @@ dev-stack versions install latest
 ```
 
 The command will:
+
 1. Download the binary from GitHub releases
 2. Verify checksums (if available)
 3. Extract and install to version-specific directory
@@ -177,6 +183,7 @@ dev-stack versions detect /path/to/project
 ```
 
 **Example output:**
+
 ```
 Project: /home/user/my-project
 Required version: >=1.0.0
@@ -184,6 +191,7 @@ Resolved to installed version: 1.2.3
 ```
 
 **Flags:**
+
 - `--json` - Output in JSON format
 
 ### `versions set`
@@ -202,6 +210,7 @@ dev-stack versions set "1.2.3" --format yaml
 ```
 
 **Flags:**
+
 - `--format` - File format (`text` or `yaml`)
 
 ### `versions cleanup`
@@ -335,12 +344,14 @@ dev-stack versions cleanup --dry-run
 ### Common Issues
 
 **No compatible version found:**
+
 ```bash
 Error: No installed version satisfies requirement: >=1.3.0
 Run 'dev-stack versions install 1.3.0' to install a compatible version.
 ```
 
 **Solution:** Install a compatible version:
+
 ```bash
 dev-stack versions install 1.3.0
 # or install latest
@@ -348,17 +359,20 @@ dev-stack versions install latest
 ```
 
 **Version file not detected:**
+
 ```bash
 dev-stack versions detect
 # Output: No specific version requirement found
 ```
 
 **Solution:** Create a version requirement:
+
 ```bash
 dev-stack versions set ">=1.0.0"
 ```
 
 **Binary delegation fails:**
+
 - Check file permissions in `~/.dev-stack/versions/`
 - Verify version registry: `dev-stack versions list`
 - Reinstall problematic version: `dev-stack versions install X.Y.Z`

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "lint:md": "markdownlint --config ../.markdownlint.jsonc README.md content/",
-    "lint:links": "markdown-link-check README.md content/**/*.md",
+    "lint:links": "./scripts/check-links.sh",
     "lint:md:fix": "markdownlint --config ../.markdownlint.jsonc --fix README.md content/",
     "docs:generate": "node scripts/generate-docs.js",
     "docs:build": "npm run docs:generate && hugo --minify --gc",

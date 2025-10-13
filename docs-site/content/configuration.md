@@ -7,7 +7,6 @@ lastmod: "2025-10-11"
 draft: false
 weight: 40
 toc: true
-
 ---
 
 # Configuration Guide (dev-stack)
@@ -43,6 +42,7 @@ project:
 ```
 
 **Properties:**
+
 - `name` (required): Project identifier used in container and network names
 - `environment` (optional): Environment label (default: "local")
 
@@ -51,16 +51,17 @@ project:
 ```yaml
 services:
   enabled:
-    - redis              # In-memory data store
-    - postgres           # Primary database
-    - mysql              # Alternative database
-    - jaeger             # Distributed tracing
-    - prometheus         # Metrics collection
-    - localstack         # AWS services emulation
-    - kafka              # Event streaming platform
+    - redis # In-memory data store
+    - postgres # Primary database
+    - mysql # Alternative database
+    - jaeger # Distributed tracing
+    - prometheus # Metrics collection
+    - localstack # AWS services emulation
+    - kafka # Event streaming platform
 ```
 
 **Available Services:**
+
 - **redis**: In-memory data structure store
 - **postgres**: PostgreSQL relational database
 - **mysql**: MySQL relational database
@@ -73,11 +74,11 @@ services:
 
 ```yaml
 validation:
-  skip_warnings: false              # Skip resource and compatibility warnings
-  allow_multiple_databases: false   # Permit both MySQL and PostgreSQL
-  auto_start: true                  # Start services after setup
-  pull_latest_images: true          # Pull latest Docker images
-  cleanup_on_recreate: false        # Keep data when recreating services
+  skip_warnings: false # Skip resource and compatibility warnings
+  allow_multiple_databases: false # Permit both MySQL and PostgreSQL
+  auto_start: true # Start services after setup
+  pull_latest_images: true # Pull latest Docker images
+  cleanup_on_recreate: false # Keep data when recreating services
 ```
 
 ## ⚙️ Service Overrides
@@ -99,6 +100,7 @@ overrides:
 ```
 
 **Properties:**
+
 - `port`: Redis port (default: 6379)
 - `password`: Redis password (default: auto-generated)
 - `memory_limit`: Container memory limit
@@ -120,6 +122,7 @@ overrides:
 ```
 
 **Properties:**
+
 - `port`: PostgreSQL port (default: 5432)
 - `database`: Database name (default: based on project name)
 - `username`: Database user (default: based on project name)
@@ -144,6 +147,7 @@ overrides:
 ```
 
 **Properties:**
+
 - `port`: MySQL port (default: 3306)
 - `database`: Database name
 - `username`: Database user
@@ -179,6 +183,7 @@ overrides:
 ```
 
 **Properties:**
+
 - `ui_port`: Jaeger UI port (default: 16686)
 - `otlp_grpc_port`: OTLP gRPC receiver port (default: 4317)
 - `otlp_http_port`: OTLP HTTP receiver port (default: 4318)
@@ -203,6 +208,7 @@ overrides:
 ```
 
 **Properties:**
+
 - `port`: Prometheus port (default: 9090)
 - `scrape_interval`: Global scrape interval
 - `memory_limit`: Container memory limit
@@ -227,11 +233,11 @@ overrides:
     sqs_queues:
       - name: "user-events"
         visibility_timeout: 30
-        message_retention_period: 1209600  # 14 days
+        message_retention_period: 1209600 # 14 days
         max_receive_count: 3
-        dead_letter_queue: true  # Creates "user-events-dlq"
+        dead_letter_queue: true # Creates "user-events-dlq"
       - name: "notifications"
-        dead_letter_queue: "notifications-dlq"  # Custom DLQ name
+        dead_letter_queue: "notifications-dlq" # Custom DLQ name
 
     # SNS topics to create automatically
     sns_topics:
@@ -269,6 +275,7 @@ overrides:
 ```
 
 **LocalStack Properties:**
+
 - `port`: Main LocalStack port (default: 4566)
 - `dashboard_port`: LocalStack Web UI port (default: 8055)
 - `services`: AWS services to enable
@@ -277,6 +284,7 @@ overrides:
 - `dynamodb_tables`: DynamoDB tables to auto-create
 
 **SQS Queue Properties:**
+
 - `name`: Queue name (required)
 - `visibility_timeout`: Message visibility timeout in seconds
 - `message_retention_period`: Message retention in seconds
@@ -284,11 +292,13 @@ overrides:
 - `dead_letter_queue`: `true` for auto-naming, string for custom name
 
 **SNS Topic Properties:**
+
 - `name`: Topic name (required)
 - `display_name`: Human-readable name
 - `subscriptions`: Array of subscriptions
 
 **DynamoDB Table Properties:**
+
 - `name`: Table name (required)
 - `attribute_definitions`: Column definitions
 - `key_schema`: Primary key definition
@@ -314,7 +324,7 @@ overrides:
         partitions: 3
         replication_factor: 1
         cleanup_policy: "delete"
-        retention_ms: 604800000  # 7 days
+        retention_ms: 604800000 # 7 days
       - name: "order-processing"
         partitions: 6
         replication_factor: 1
@@ -324,6 +334,7 @@ overrides:
 ```
 
 **Kafka Properties:**
+
 - `port`: Kafka broker port (default: 9092)
 - `ui_port`: Kafka UI port (default: 8080)
 - `zookeeper_port`: Zookeeper port (default: 2181)
@@ -332,6 +343,7 @@ overrides:
 - `topics`: Custom topics to create
 
 **Topic Properties:**
+
 - `name`: Topic name (required)
 - `partitions`: Number of partitions
 - `replication_factor`: Replication factor
@@ -374,7 +386,7 @@ overrides:
   postgres:
     database: "data_api_dev"
     username: "data_user"
-    log_statement: "all"  # Log all SQL statements
+    log_statement: "all" # Log all SQL statements
 ```
 
 ### Full Observability Stack
@@ -483,7 +495,7 @@ overrides:
     effective_cache_size: "1GB"
 
 validation:
-  skip_warnings: true  # Skip resource warnings
+  skip_warnings: true # Skip resource warnings
 ```
 
 ## 🔧 Advanced Configuration
@@ -509,10 +521,10 @@ The framework validates your configuration and provides warnings:
 
 ```yaml
 validation:
-  skip_warnings: false              # Show all warnings
-  allow_multiple_databases: true    # Allow both MySQL and PostgreSQL
-  auto_start: true                  # Start services after setup
-  strict_mode: false                # Strict validation mode
+  skip_warnings: false # Show all warnings
+  allow_multiple_databases: true # Allow both MySQL and PostgreSQL
+  auto_start: true # Start services after setup
+  strict_mode: false # Strict validation mode
 ```
 
 ### Resource Management
@@ -520,14 +532,14 @@ validation:
 ```yaml
 # Global resource settings
 resources:
-  memory_limit: "8g"        # Total memory limit for all services
-  cpu_limit: "4"            # Total CPU limit
-  disk_limit: "50g"         # Total disk limit
+  memory_limit: "8g" # Total memory limit for all services
+  cpu_limit: "4" # Total CPU limit
+  disk_limit: "50g" # Total disk limit
 
 # Apply to all services
 overrides:
   global:
-    memory_limit: "512m"    # Default memory per service
+    memory_limit: "512m" # Default memory per service
     restart_policy: "unless-stopped"
 ```
 
@@ -567,10 +579,10 @@ overrides:
 # Optimize for development speed
 overrides:
   postgres:
-    fsync: "off"                    # Faster writes (development only)
-    synchronous_commit: "off"       # Async commits
+    fsync: "off" # Faster writes (development only)
+    synchronous_commit: "off" # Async commits
   redis:
-    save: ""                        # Disable persistence for speed
+    save: "" # Disable persistence for speed
 ```
 
 ### 4. Debugging
@@ -680,24 +692,28 @@ validation:
 ### Common Issues
 
 **Invalid YAML syntax:**
+
 ```bash
 # Validate YAML syntax
 python -c "import yaml; yaml.safe_load(open('dev-stack-config.yaml'))"
 ```
 
 **Service conflicts:**
+
 ```bash
 # Check for port conflicts
 dev-stack doctor
 ```
 
 **Resource warnings:**
+
 ```bash
 # Run with verbose output for debugging
 dev-stack --verbose up
 ```
 
 **Configuration not found:**
+
 ```bash
 # Create default configuration
 dev-stack init
