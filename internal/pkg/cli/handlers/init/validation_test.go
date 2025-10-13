@@ -1,6 +1,7 @@
 package init
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 
@@ -99,13 +100,20 @@ func TestValidateDirectoryStructure(t *testing.T) {
 func TestIsCommandAvailable(t *testing.T) {
 	handler := NewInitHandler()
 
+	// Use a command that exists on all platforms
+	// Go should be available in test environment
+	existingCommand := "go"
+	if runtime.GOOS == "windows" {
+		existingCommand = "cmd"
+	}
+
 	tests := []struct {
 		name     string
 		command  string
 		expected bool
 	}{
 		{"empty command", "", false},
-		{"existing command", "ls", true},
+		{"existing command", existingCommand, true},
 		{"nonexistent command", "nonexistent-command-12345", false},
 	}
 

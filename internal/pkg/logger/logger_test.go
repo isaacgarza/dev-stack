@@ -100,6 +100,12 @@ func TestInit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, defaultLogger)
 
+		// Write a test log to ensure file is created
+		Info("test message")
+
+		// Give a moment for file write on Windows
+		time.Sleep(100 * time.Millisecond)
+
 		// Verify file was created
 		_, err = os.Stat(logFile)
 		assert.NoError(t, err)
