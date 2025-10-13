@@ -39,6 +39,23 @@ global:
       type: "bool"
       description: "Show version information"
       default: false
+    quiet:
+      short: "q"
+      type: "bool"
+      description: "Suppress non-essential output (CI-friendly)"
+      default: false
+    json:
+      type: "bool"
+      description: "Output in JSON format (CI-friendly)"
+      default: false
+    no-color:
+      type: "bool"
+      description: "Disable colored output (CI-friendly)"
+      default: false
+    non-interactive:
+      type: "bool"
+      description: "Run in non-interactive mode (CI-friendly)"
+      default: false
 
 categories:
   lifecycle:

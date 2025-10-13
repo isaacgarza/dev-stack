@@ -11,6 +11,7 @@ import (
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/doctor"
 	initHandler "github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/init"
 	cliServices "github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/services"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/validate"
 	cliTypes "github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/config"
 	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
@@ -108,6 +109,8 @@ func getHandlerForCommand(name string, serviceManager *services.Manager) cliType
 		return cliServices.NewDepsHandler()
 	case constants.CmdNameConflicts:
 		return cliServices.NewConflictsHandler()
+	case constants.CmdNameValidate:
+		return validate.NewValidateHandler()
 	default:
 		return nil
 	}
