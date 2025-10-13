@@ -19,13 +19,4 @@ const (
 	MsgStartSuccess   = AppNameLower + " started successfully"
 	MsgStopSuccess    = AppNameLower + " stopped successfully"
 	MsgRestartSuccess = AppNameLower + " restarted successfully"
-
-	// Command references
-	CmdUp     = AppName + " up"
-	CmdDown   = AppName + " down"
-	CmdStatus = AppName + " status"
-	CmdInit   = AppName + " init"
-
-	// Error messages
-	ErrNotInitialized = AppName + " not initialized. Run '" + CmdInit + "' first"
 )

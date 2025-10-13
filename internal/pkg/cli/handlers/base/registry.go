@@ -3,7 +3,9 @@ package base
 import (
 	"fmt"
 
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/completion"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/core"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/doctor"
 	inithandler "github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/init"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/services"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
@@ -58,4 +60,6 @@ func (r *Registry) registerDefaultHandlers() {
 	r.RegisterHandler("conflicts", services.NewConflictsHandler())
 	r.RegisterHandler("services", services.NewServicesHandler())
 	r.RegisterHandler("init", inithandler.NewInitHandler())
+	r.RegisterHandler("doctor", doctor.NewDoctorHandler())
+	r.RegisterHandler("completion", completion.NewCompletionHandler())
 }
