@@ -230,6 +230,7 @@ The `.github/actions/setup-go-version` composite action automatically:
 4. Outputs the version for use in other steps
 
 Usage in workflows:
+
 ```yaml
 - name: Setup Go with centralized version
   uses: ./.github/actions/setup-go-version
@@ -265,26 +266,31 @@ jobs:
 To upgrade the Go version across the entire project:
 
 1. **Update the source file:**
+
    ```bash
    echo "1.22" > .go-version
    ```
 
 2. **Synchronize all configuration files:**
+
    ```bash
    task sync-version
    ```
 
 3. **Verify consistency:**
+
    ```bash
    task check-version
    ```
 
 4. **Update dependencies if needed:**
+
    ```bash
    go mod tidy
    ```
 
 5. **Test the changes:**
+
    ```bash
    task test
    ```
@@ -336,7 +342,7 @@ The `.golangci.yml` file is automatically updated to match:
 
 ```yaml
 run:
-  go: "1.21"  # Automatically synchronized
+  go: "1.21" # Automatically synchronized
 ```
 
 ##### Dockerfile Integration

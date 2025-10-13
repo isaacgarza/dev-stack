@@ -9,6 +9,9 @@ dev-stack
 *.jar
 *.war
 *.ear
+dev-stack-linux
+dev-stack-macos
+dev-stack-windows.exe
 
 # Documentation build artifacts (Hugo)
 docs-site/public/

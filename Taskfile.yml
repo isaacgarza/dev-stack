@@ -291,6 +291,28 @@ tasks:
       - echo "🚀 Running pre-push checks..."
       - task: test-all
       - task: build
+      - |
+        # Capture git state before docs generation
+        git diff --name-only > /tmp/git_before_docs || touch /tmp/git_before_docs
+      - task: docs
+      - |
+        # Check if docs generation made changes
+        git diff --name-only > /tmp/git_after_docs
+        if ! cmp -s /tmp/git_before_docs /tmp/git_after_docs; then
+          echo ""
+          echo "❌ Pre-push failed: Documentation was out of sync"
+          echo ""
+          echo "📋 Modified files:"
+          git diff --name-only
+          echo ""
+          echo "🔧 Please add these changes and commit again:"
+          echo "   git add ."
+          echo "   git commit"
+          echo ""
+          rm -f /tmp/git_before_docs /tmp/git_after_docs
+          exit 1
+        fi
+        rm -f /tmp/git_before_docs /tmp/git_after_docs
       - task: docs-lastmod-update
       - echo "✅ Pre-push checks passed"
 
@@ -501,6 +523,9 @@ tasks:
       - echo "✅ golangci-lint config is valid"
       - echo "🔍 Running golangci-lint..."
       - $(go env GOPATH)/bin/golangci-lint run ./...
+      - echo "📝 Linting documentation..."
+      - cd docs-site && npm run lint:md
+      - cd docs-site && npm run lint:links
       - echo "✅ All linting checks passed!"
 
   fmt:
@@ -515,6 +540,8 @@ tasks:
         fi
       - go fmt ./...
       - $(go env GOPATH)/bin/goimports -w .
+      - echo "📝 Formatting documentation..."
+      - cd docs-site && npm run format
       - echo "✅ Code formatted"
 
   security:
@@ -541,6 +568,8 @@ tasks:
     cmds:
       - echo "📚 Generating documentation..."
       - ./{{.BUILD_DIR}}/{{.BINARY_NAME}} docs --verbose
+      - echo "📝 Generating Hugo documentation..."
+      - cd docs-site && npm run docs:generate
       - echo "✅ Documentation generated"
 
   # ----------------------------------------------------------------------------
@@ -573,6 +602,8 @@ tasks:
       - rm -rf {{.BUILD_DIR}}/
       - rm -f coverage.out *.test *.prof
       - go clean -cache
+      - echo "📚 Cleaning documentation..."
+      - cd docs-site && npm run docs:clean
       - echo "✅ Clean complete"
 
   clean-all:

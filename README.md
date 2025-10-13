@@ -10,11 +10,35 @@ A powerful development stack management tool built in Go for streamlined local d
 
 ### Installation
 
+#### Quick Install (Recommended)
+
+```bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/isaacgarza/dev-stack/main/install.sh | bash
+```
+
+#### Manual Installation
+
+**macOS/Linux:**
 ```bash
 # Download the latest release
 curl -L -o dev-stack "https://github.com/isaacgarza/dev-stack/releases/latest/download/dev-stack-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
 chmod +x dev-stack
 sudo mv dev-stack /usr/local/bin/
+```
+
+**Windows:**
+```powershell
+# Download from releases page
+# https://github.com/isaacgarza/dev-stack/releases/latest
+```
+
+#### Package Managers
+
+**Homebrew (macOS):**
+```bash
+# Coming soon
+brew install isaacgarza/tap/dev-stack
 ```
 
 ### Basic Usage

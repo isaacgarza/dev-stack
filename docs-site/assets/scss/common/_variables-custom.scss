@@ -85,7 +85,12 @@ $docs-toc-link-hover-color: $primary-800;
 $docs-toc-link-hover-color-dark: #e7e3f0;
 
 // Hero section - Light background for light mode, dark for dark mode
-$hero-bg: linear-gradient(135deg, $primary-100 0%, $primary-50 50%, #ffffff 100%);
+$hero-bg: linear-gradient(
+  135deg,
+  $primary-100 0%,
+  $primary-50 50%,
+  #ffffff 100%
+);
 $hero-bg-dark: linear-gradient(135deg, #1a1722 0%, #252030 50%, #2d2440 100%);
 $hero-color: $primary-800;
 $hero-color-dark: #f9fafb;

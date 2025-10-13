@@ -22,7 +22,6 @@ This guide covers integrating the Local Development Framework with Spring Boot a
 - **IDE Integration:** Connect to framework databases, Redis, Kafka, and LocalStack from IntelliJ or VS Code.
 - **Testcontainers:** Use framework images or connect to running services for integration tests.
 
-
 The framework automatically generates configuration files and provides seamless integration with popular development tools and frameworks. This guide shows how to make the most of these integrations.
 
 ## 🍃 Spring Boot Integration
@@ -291,6 +290,7 @@ public class KafkaConfig {
 ### Service Integration Examples
 
 #### Event Processing Service
+
 ```java
 @Service
 @Slf4j
@@ -339,6 +339,7 @@ public class EventService {
 ### Integration Testing with Framework Services
 
 #### Test Configuration
+
 ```yaml
 # application-test.yml
 spring:
@@ -352,7 +353,7 @@ spring:
     redis:
       host: localhost
       port: 6379
-      database: 1  # Use different Redis database for tests
+      database: 1 # Use different Redis database for tests
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -368,6 +369,7 @@ cloud:
 ```
 
 #### Framework Integration Tests
+
 ```java
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -421,6 +423,7 @@ class FrameworkIntegrationTest {
 ```
 
 #### Testcontainers Alternative
+
 ```java
 @SpringBootTest
 @Testcontainers
@@ -457,6 +460,7 @@ class ContainerizedIntegrationTest {
 ### IntelliJ IDEA Setup
 
 #### Database Integration
+
 1. **Database Tool Window**: Connect to framework databases
    - Host: localhost
    - Port: 5432 (PostgreSQL) / 3306 (MySQL)
@@ -469,6 +473,7 @@ class ContainerizedIntegrationTest {
    - Password: From framework configuration
 
 #### Run Configurations
+
 ```xml
 <!-- IntelliJ Run Configuration -->
 <configuration name="Application (Local)" type="SpringBootApplicationConfigurationType">
@@ -484,6 +489,7 @@ class ContainerizedIntegrationTest {
 ```
 
 #### Test Configuration
+
 ```xml
 <configuration name="Integration Tests" type="JUnit" factoryName="JUnit">
   <option name="VM_PARAMETERS" value="-Dspring.profiles.active=test -Dtestcontainers.reuse.enable=true" />
@@ -501,6 +507,7 @@ class ContainerizedIntegrationTest {
 ### VS Code Setup
 
 #### Settings Configuration
+
 ```json
 {
   "spring-boot.ls.problem.application-properties.enabled": true,
@@ -516,6 +523,7 @@ class ContainerizedIntegrationTest {
 ```
 
 #### Launch Configuration
+
 ```json
 {
   "version": "0.2.0",
@@ -544,6 +552,7 @@ class ContainerizedIntegrationTest {
 ## 🚀 CI/CD Integration
 
 ### GitHub Actions
+
 ```yaml
 name: Integration Tests
 on: [push, pull_request]
@@ -558,8 +567,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
 
       - name: Start Framework Services
         run: |
@@ -577,6 +586,7 @@ jobs:
 ```
 
 ### Docker Compose for CI
+
 ```yaml
 # docker-compose.ci.yml - Lightweight for CI
 services:
@@ -588,17 +598,18 @@ services:
     ports:
       - "5432:5432"
     tmpfs:
-      - /var/lib/postgresql/data  # Use tmpfs for speed
+      - /var/lib/postgresql/data # Use tmpfs for speed
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     tmpfs:
-      - /data  # Use tmpfs for speed
+      - /data # Use tmpfs for speed
 ```
 
 ### GitLab CI
+
 ```yaml
 # .gitlab-ci.yml
 stages:
@@ -626,6 +637,7 @@ integration-tests:
 ## 🔄 Advanced Integration Patterns
 
 ### Health Check Integration
+
 ```java
 @Component
 public class FrameworkHealthIndicator implements HealthIndicator {
@@ -665,6 +677,7 @@ public class FrameworkHealthIndicator implements HealthIndicator {
 ```
 
 ### Metrics Integration
+
 ```java
 @Component
 public class FrameworkMetrics {

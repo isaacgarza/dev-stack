@@ -12,8 +12,11 @@
 // ===============================================
 
 // Ensure proper theme compatibility
-html, body {
-  transition: background-color 0.3s ease, color 0.3s ease;
+html,
+body {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 // Purple theme links for both light and dark modes
@@ -101,7 +104,8 @@ a {
   color: $hero-color !important;
   transition: background 0.3s ease;
 
-  h1, .display-4 {
+  h1,
+  .display-4 {
     color: $hero-heading-color !important;
   }
 
@@ -136,7 +140,8 @@ a {
     background: $hero-bg-dark !important;
     color: $hero-color-dark !important;
 
-    h1, .display-4 {
+    h1,
+    .display-4 {
       color: $hero-heading-color-dark !important;
     }
 
@@ -339,8 +344,6 @@ a {
 .footer {
   z-index: 1000 !important;
 }
-
-
 
 // ===============================================
 // BUTTONS
