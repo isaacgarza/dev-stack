@@ -101,14 +101,12 @@ func TestInit(t *testing.T) {
 		assert.NotNil(t, defaultLogger)
 
 		// Write a test log to ensure file is created
-		Info("test message")
+		Warn("test message")
 
-		// Give a moment for file write on Windows
-		time.Sleep(100 * time.Millisecond)
-
-		// Verify file was created
-		_, err = os.Stat(logFile)
+		// Verify file exists and has content
+		info, err := os.Stat(logFile)
 		assert.NoError(t, err)
+		assert.True(t, info.Size() > 0, "Log file should have content")
 	})
 
 	t.Run("invalid file path", func(t *testing.T) {
