@@ -201,7 +201,7 @@ tasks:
         DESCRIPTION: <filled template>"
 
         # Use AI to generate PR content
-        if command -v q >/dev/null 2>&1; then
+        if command -v q --trust-all-tools >/dev/null 2>&1; then
           echo "🤖 Generating PR title and description..."
           RAW_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
           # Strip all ANSI escape sequences and control characters
@@ -252,6 +252,7 @@ tasks:
     silent: true
     cmds:
       - echo "🔧 Auto-fixing formatting and modules..."
+      - git diff --name-only > /tmp/git_before_fixes || touch /tmp/git_before_fixes
       - task: fmt
       - go mod tidy
 
@@ -261,19 +262,24 @@ tasks:
     cmds:
       - |
         echo "✅ Verifying fixes..."
-        UNSTAGED_CHANGES=$(git diff --name-only)
-        if [ -n "$UNSTAGED_CHANGES" ]; then
-          echo ""
-          echo "❌ Pre-commit failed: Files were modified during formatting/tidy"
-          echo ""
-          echo "📋 Modified files:"
-          git diff --name-only
-          echo ""
-          echo "🔧 Please add these changes and commit again:"
-          echo "   git add ."
-          echo "   git commit"
-          echo ""
-          exit 1
+        # Check if pre-commit-fix made changes by comparing before/after states
+        if [ -f /tmp/git_before_fixes ]; then
+          git diff --name-only > /tmp/git_after_fixes
+          if ! cmp -s /tmp/git_before_fixes /tmp/git_after_fixes; then
+            echo ""
+            echo "❌ Pre-commit failed: Files were modified during formatting"
+            echo ""
+            echo "📋 Modified files:"
+            git diff --name-only
+            echo ""
+            echo "🔧 Please add these changes and commit again:"
+            echo "   git add ."
+            echo "   git commit"
+            echo ""
+            rm -f /tmp/git_before_fixes /tmp/git_after_fixes
+            exit 1
+          fi
+          rm -f /tmp/git_before_fixes /tmp/git_after_fixes
         fi
       - task: lint
       - echo "✅ Pre-commit checks passed"
