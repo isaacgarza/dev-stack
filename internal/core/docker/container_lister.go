@@ -50,8 +50,8 @@ func (cl *ContainerLister) List(ctx context.Context, projectName string, service
 
 		status := types.ServiceStatus{
 			Name:      serviceName,
-			State:     c.State,
-			Health:    getHealthStatus(c.Status),
+			State:     types.ServiceState(c.State),
+			Health:    types.HealthStatus(getHealthStatus(c.Status)),
 			CreatedAt: time.Unix(c.Created, 0),
 		}
 

@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -29,7 +30,7 @@ func (h *RestartHandler) Handle(ctx context.Context, cmd *cobra.Command, args []
 	// Check if dev-stack is initialized
 	configPath := filepath.Join(constants.DevStackDir, constants.ConfigFileName)
 	if !utils.FileExists(configPath) {
-		return fmt.Errorf(constants.ErrNotInitialized)
+		return errors.New(constants.ErrNotInitialized)
 	}
 
 	// Load project configuration

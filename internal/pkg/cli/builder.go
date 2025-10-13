@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -13,64 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// BuildRootCommand creates the root command with all subcommands using functional approach
+// BuildRootCommand creates the root command with all subcommands using YAML configuration
 func BuildRootCommand(config *config.CommandConfig) (*cobra.Command, error) {
-	log := logger.New(slog.LevelInfo)
-
-	rootCmd := &cobra.Command{
-		Use:     "dev-stack",
-		Short:   config.Metadata.Description,
-		Version: config.Metadata.CLIVersion,
-		Long: fmt.Sprintf(`%s
-
-Version: %s
-
-Use "dev-stack help <command>" for more information about a command.`,
-			config.Metadata.Description,
-			config.Metadata.CLIVersion),
-	}
-
-	if err := addGlobalFlags(rootCmd, config); err != nil {
-		return nil, fmt.Errorf("failed to add global flags: %w", err)
-	}
-
-	serviceManager, err := createServiceManager()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create service manager: %w", err)
-	}
-
-	rootCmd.AddCommand(NewUpCommand(serviceManager, log))
-	rootCmd.AddCommand(NewDownCommand(serviceManager, log))
-	rootCmd.AddCommand(NewStatusCommand(serviceManager, log))
-	rootCmd.AddCommand(NewRestartCommand(serviceManager, log))
-	rootCmd.AddCommand(NewLogsCommand(serviceManager, log))
-	rootCmd.AddCommand(NewExecCommand(serviceManager, log))
-	rootCmd.AddCommand(NewInitCommand(log))
-	rootCmd.AddCommand(NewConfigCommand(log))
-	rootCmd.AddCommand(NewServicesCommand(serviceManager, log))
-
-	return rootCmd, nil
-}
-
-// addGlobalFlags adds global flags to the root command
-func addGlobalFlags(cmd *cobra.Command, config *config.CommandConfig) error {
-	for name, flag := range config.Global.Flags {
-		switch flag.Type {
-		case "bool":
-			cmd.PersistentFlags().Bool(name, false, flag.Description)
-		case "string":
-			cmd.PersistentFlags().String(name, "", flag.Description)
-		case "int":
-			cmd.PersistentFlags().Int(name, 0, flag.Description)
-		}
-
-		if flag.Short != "" {
-			if pf := cmd.PersistentFlags().Lookup(name); pf != nil {
-				pf.Shorthand = flag.Short
-			}
-		}
-	}
-	return nil
+	// Use dynamic builder that reads from commands.yaml
+	return BuildDynamicRootCommand(config)
 }
 
 // createServiceManager creates and initializes the service manager
