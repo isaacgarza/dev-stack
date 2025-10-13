@@ -145,8 +145,12 @@ tasks:
           echo "🤖 Generating commit message..."
           RAW_MSG=$(echo "$AI_PROMPT" | q chat --no-interactive)
           
-          # Clean up the response (remove ANSI codes, prompts, quotes, extra whitespace)
-          COMMIT_MSG=$(echo "$RAW_MSG" | sed 's/\[[0-9;]*m//g' | sed 's/^> *//' | sed 's/^["'"'"'`]*//' | sed 's/["'"'"'`]*$//' | xargs)
+          # Clean up the response - remove ALL formatting artifacts
+          COMMIT_MSG=$(echo "$RAW_MSG" | tr -d '\033' | sed 's/\[[0-9;]*m//g' | sed 's/^[> ]*//g' | sed 's/^["`'"'"']*//g' | sed 's/["`'"'"']*$//g' | tr -s ' ' | xargs)
+          
+          # Debug output (remove this after testing)
+          echo "DEBUG - Raw: '$RAW_MSG'"
+          echo "DEBUG - Cleaned: '$COMMIT_MSG'"
           
           echo "✨ AI Analysis Complete"
           
