@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 
 	"github.com/isaacgarza/dev-stack/internal/core/docker"
+	"github.com/isaacgarza/dev-stack/internal/pkg/cli/handlers/utils"
 	"github.com/isaacgarza/dev-stack/internal/pkg/cli/types"
 	"github.com/isaacgarza/dev-stack/internal/pkg/constants"
 	"github.com/isaacgarza/dev-stack/internal/pkg/ui"
-	"github.com/isaacgarza/dev-stack/internal/pkg/utils"
+	pkgUtils "github.com/isaacgarza/dev-stack/internal/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -24,25 +25,33 @@ func NewStatusHandler() *StatusHandler {
 
 // Handle executes the status command
 func (h *StatusHandler) Handle(ctx context.Context, cmd *cobra.Command, args []string, base *types.BaseCommand) error {
-	ui.Header(constants.MsgStatus)
+	// Get CI-friendly flags
+	ciFlags := utils.GetCIFlags(cmd)
+
+	if !ciFlags.Quiet {
+		ui.Header(constants.MsgStatus)
+	}
 
 	// Check if dev-stack is initialized
 	configPath := filepath.Join(constants.DevStackDir, constants.ConfigFileName)
-	if !utils.FileExists(configPath) {
-		return errors.New(constants.ErrNotInitialized)
+	if !pkgUtils.FileExists(configPath) {
+		utils.HandleError(ciFlags, errors.New(constants.ErrNotInitialized))
+		return nil
 	}
 
 	// Load project configuration
 	cfg, err := LoadProjectConfig(configPath)
 	if err != nil {
-		return fmt.Errorf("failed to load configuration: %w", err)
+		utils.HandleError(ciFlags, fmt.Errorf("failed to load configuration: %w", err))
+		return nil
 	}
 
 	// Create Docker client
 	logger := base.Logger.(loggerAdapter)
 	dockerClient, err := docker.NewClient(logger.SlogLogger())
 	if err != nil {
-		return fmt.Errorf("failed to create Docker client: %w", err)
+		utils.HandleError(ciFlags, fmt.Errorf("failed to create Docker client: %w", err))
+		return nil
 	}
 	defer func() {
 		if err := dockerClient.Close(); err != nil {
@@ -59,27 +68,15 @@ func (h *StatusHandler) Handle(ctx context.Context, cmd *cobra.Command, args []s
 	// Get service status
 	statuses, err := dockerClient.Containers().List(ctx, cfg.Project.Name, serviceNames)
 	if err != nil {
-		return fmt.Errorf("failed to get service status: %w", err)
-	}
-
-	// Display status
-	if len(statuses) == 0 {
-		ui.Info("No services found")
+		utils.HandleError(ciFlags, fmt.Errorf("failed to get service status: %w", err))
 		return nil
 	}
 
-	ui.Info("Service Status:")
-	for _, status := range statuses {
-		statusIcon := "🔴"
-		if status.State == "running" {
-			statusIcon = "🟢"
-		}
-		ui.Info("  %s %s:", statusIcon, status.Name)
-		ui.Info("      📊 Status: %s", status.State)
-		if status.Health != "" {
-			ui.Info("      💚 Health: %s", status.Health)
-		}
-	}
+	// Handle CI-friendly output
+	utils.OutputResult(ciFlags, map[string]interface{}{
+		"services": statuses,
+		"count":    len(statuses),
+	}, constants.ExitSuccess)
 
 	return nil
 }

@@ -125,7 +125,7 @@ tasks:
         DIFF_CONTENT=$(git diff --cached --no-color)
         FILE_LIST=$(echo "$STAGED_FILES" | tr '\n' ', ' | sed 's/,$//')
         COMMITLINT_CONFIG=$(cat .github/.commitlintrc.json)
-        
+
         # Create AI prompt with commitlint config
         AI_PROMPT="Generate a conventional commit message using this commitlint config:
 
@@ -162,17 +162,6 @@ tasks:
 
   # === GIT AUTOMATION ===
   create-pr:
-    desc: "🔀 Create a pull request with auto-generated title and description based on branch changes"
-    silent: true
-    cmds:
-      - |
-        BRANCH=$(git branch --show-current)
-        if [ "$BRANCH" = "main" ]; then
-          echo "❌ Cannot create PR from main branch"
-          exit 1
-        fi
-
-  create-pr:
     desc: "🤖 Create AI-powered pull request with smart title and description"
     silent: true
     cmds:
@@ -191,7 +180,7 @@ tasks:
         CHANGED_FILES=$(git diff --name-only main..$BRANCH)
         FULL_DIFF=$(git diff main..$BRANCH --no-color)
         PR_TEMPLATE=$(cat .github/PULL_REQUEST_TEMPLATE.md)
-        
+
         # Create AI prompt with PR template
         AI_PROMPT="Generate a professional PR title and fill out this template based on the changes:
 
@@ -200,16 +189,16 @@ tasks:
 
         Branch: $BRANCH
         Commits: $COMMIT_COUNT
-        
+
         Recent commits:
         $COMMITS
-        
+
         Changed files:
         $CHANGED_FILES
-        
+
         Diff (first 2000 chars):
         $(echo "$FULL_DIFF" | head -c 2000)
-        
+
         Return: TITLE: <title>
         DESCRIPTION: <filled template>"
 
@@ -219,13 +208,13 @@ tasks:
           RAW_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
           # Strip all ANSI escape sequences and control characters
           AI_RESPONSE=$(echo "$RAW_RESPONSE" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | sed 's/\x1b\[[0-9;]*R//g' | tr -d '\033\007\015' | sed 's/^[> ]*//g')
-          
+
           TITLE=$(echo "$AI_RESPONSE" | grep "^TITLE:" | sed 's/^TITLE: //' | head -1 | tr -d '\n\r')
           DESCRIPTION=$(echo "$AI_RESPONSE" | sed -n '/^DESCRIPTION:/,$ p' | sed '1d')
-          
+
           if [ -z "$TITLE" ]; then TITLE="feat: improve codebase"; fi
           if [ -z "$DESCRIPTION" ]; then DESCRIPTION="## Summary\n\nBranch: $BRANCH\nCommits: $COMMIT_COUNT"; fi
-          
+
           echo "✨ AI Analysis Complete"
         else
           echo "⚠️  AI not available, using template..."
@@ -404,6 +393,32 @@ tasks:
       - echo "🌍 Running cross-platform compatibility tests..."
       - ./scripts/test-cross-platform.sh
       - echo "✅ Cross-platform tests completed"
+
+  test-ci:
+    desc: "🐳 Test using Colima to match GitHub Actions environment"
+    silent: true
+    cmds:
+      - echo "🐳 Testing with Colima (matches GitHub Actions)..."
+      - |
+        if ! command -v docker >/dev/null 2>&1; then
+          echo "❌ Docker not available. Start Colima first: colima start"
+          exit 1
+        fi
+      - |
+        GO_VERSION=$(cat .go-version | tr -d '[:space:]')
+        docker run --rm -v $(pwd):/app -w /app golang:${GO_VERSION} sh -c "
+          echo '📥 Downloading dependencies...' &&
+          go mod download &&
+          echo '🧪 Running tests...' &&
+          go test -v ./... &&
+          echo '🔨 Testing Windows build...' &&
+          GOOS=windows GOARCH=amd64 go build -buildvcs=false -o dev-stack-windows.exe ./cmd/dev-stack &&
+          echo '🔨 Testing macOS build...' &&
+          GOOS=darwin GOARCH=amd64 go build -buildvcs=false -o dev-stack-macos ./cmd/dev-stack &&
+          echo '🔨 Testing Linux build...' &&
+          go build -buildvcs=false -o dev-stack-linux ./cmd/dev-stack
+        "
+      - echo "✅ CI environment tests completed"
 
   test-coverage:
     desc: "📊 View test coverage report in browser"
@@ -609,6 +624,7 @@ tasks:
       - echo "   test-unit      - Run unit tests only"
       - echo "   test-integration - Run integration tests"
       - echo "   test-cross-platform - Run cross-platform tests"
+      - echo "   test-ci        - Test with Colima (matches GitHub Actions)"
       - echo "   test-all       - Run comprehensive test suite"
       - echo "   test-coverage  - View coverage in browser"
       - echo "   test-coverage-check - Check coverage threshold"
