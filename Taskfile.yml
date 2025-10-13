@@ -216,9 +216,11 @@ tasks:
         # Use AI to generate PR content
         if command -v q >/dev/null 2>&1; then
           echo "🤖 Generating PR title and description..."
-          AI_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive | tr -d '\033' | sed 's/\[[0-9;]*m//g')
+          RAW_RESPONSE=$(echo "$AI_PROMPT" | q chat --no-interactive)
+          # Strip all ANSI escape sequences and control characters
+          AI_RESPONSE=$(echo "$RAW_RESPONSE" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | sed 's/\x1b\[[0-9;]*R//g' | tr -d '\033\007\015' | sed 's/^[> ]*//g')
           
-          TITLE=$(echo "$AI_RESPONSE" | grep "^TITLE:" | sed 's/^TITLE: //' | xargs)
+          TITLE=$(echo "$AI_RESPONSE" | grep "^TITLE:" | sed 's/^TITLE: //' | head -1 | tr -d '\n\r')
           DESCRIPTION=$(echo "$AI_RESPONSE" | sed -n '/^DESCRIPTION:/,$ p' | sed '1d')
           
           if [ -z "$TITLE" ]; then TITLE="feat: improve codebase"; fi
