@@ -31,7 +31,7 @@
     "markdown-link-check": "^3.14.1",
     "markdownlint-cli": "^0.45.0",
     "prettier": "^3.6.2",
-    "vite": "^7.0.6"
+    "vite": "^7.1.12"
   },
   "keywords": [
     "documentation",
