@@ -22,7 +22,7 @@
     "@thulite/images": "^3.3.1",
     "@thulite/inline-svg": "^1.2.0",
     "@thulite/seo": "^2.4.1",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "thulite": "^2.6.3"
   },
   "devDependencies": {
